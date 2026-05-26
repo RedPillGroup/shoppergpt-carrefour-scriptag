@@ -22,15 +22,15 @@ export function MessageBubble({
     <motion.div
       class={`flex mb-2 md:mb-2.5 ${isUser ? 'justify-end' : ''}`}
       initial={
-        fadeInOnMount && !shouldReduceMotion ? { opacity: 0, y: 12, scale: 0.995 } : undefined
+        fadeInOnMount && !shouldReduceMotion ? { opacity: 0, y: 8, scale: 0.998 } : undefined
       }
       animate={fadeInOnMount && !shouldReduceMotion ? { opacity: 1, y: 0, scale: 1 } : undefined}
       transition={
         fadeInOnMount && !shouldReduceMotion
           ? {
-              duration: 0.65,
+              duration: 0.5,
               delay: fadeInDelay,
-              ease: [0.22, 1, 0.36, 1]
+              ease: [0.16, 1, 0.3, 1]
             }
           : undefined
       }

@@ -1,10 +1,46 @@
 import { h } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import EmblaCarousel, { EmblaCarouselType } from "embla-carousel";
-import { EDITORIAL_TILES, HERO_SLIDES } from "./data";
+import { PRODUCT_TILES, EVENTS_TILES, HERO_SLIDES } from "./data";
 
 interface Props {
   onSelect: (query: string) => void;
+}
+
+const EVENT_TILE_OVERLAY_CLASS =
+  "absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,.18)] via-[rgba(0,0,0,.35)] to-[rgba(0,0,0,.72)]";
+const EVENT_TILE_TEXT_WRAP_CLASS =
+  "absolute bottom-0 left-0 right-0 px-2.5 py-2 md:px-3.5 md:py-3 flex flex-col gap-0.5";
+const EVENT_TILE_BADGE_CLASS =
+  "text-[10px] md:text-[12px] font-semibold tracking-[0.08em] uppercase text-[rgba(255,255,255,.85)]";
+const EVENT_TILE_TITLE_CLASS =
+  "m-0 text-[16px] md:text-[22px] font-['Satisfy'] font-normal text-white ";
+
+function EventEditorialTile({
+  tile,
+  onSelect,
+}: {
+  tile: { img: string; badge: string; title: string; query: string };
+  onSelect: (query: string) => void;
+}) {
+  return (
+    <div
+      class="relative overflow-hidden cursor-pointer border border-[rgba(255,255,255,.15)] group min-h-0"
+      onClick={() => onSelect(tile.query)}
+    >
+      <img
+        class="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        src={tile.img}
+        alt=""
+        loading="lazy"
+      />
+      <div class={EVENT_TILE_OVERLAY_CLASS} />
+      <div class={EVENT_TILE_TEXT_WRAP_CLASS}>
+        <span class={EVENT_TILE_BADGE_CLASS}>{tile.badge}</span>
+        <p class={EVENT_TILE_TITLE_CLASS}>{tile.title}</p>
+      </div>
+    </div>
+  );
 }
 
 function HeroCarousel({ onSelect }: Props) {
@@ -61,7 +97,7 @@ function HeroCarousel({ onSelect }: Props) {
                 src={slide.img}
                 alt=""
               />
-              <div class="absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,.08)] to-[rgba(0,0,0,.55)]" />
+              <div class="absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,.22)] via-[rgba(0,0,0,.38)] to-[rgba(0,0,0,.72)]" />
               <div class="absolute bottom-0 left-0 right-0 px-4 py-4 md:px-7 md:py-6">
                 <p class="m-0 font-['Satisfy'] font-normal text-[24px] md:text-[clamp(26px,3vw,40px)] text-white leading-[1.2] md:leading-[1.25] whitespace-pre-line [text-shadow:0_2px_12px_rgba(0,0,0,.3)]">
                   {slide.title}
@@ -90,21 +126,46 @@ function HeroCarousel({ onSelect }: Props) {
 }
 
 function EditorialGrid({ onSelect }: Props) {
+  const leftEvent = EVENTS_TILES[0];
+  const rightEvent = EVENTS_TILES[1];
+
   return (
-    <div class="flex-1 grid grid-cols-2 grid-rows-2 overflow-hidden">
-      {EDITORIAL_TILES.map((tile, i) => (
-        <div key={i} class="relative overflow-hidden cursor-pointer border border-[rgba(255,255,255,.15)] group" onClick={() => onSelect(tile.query)}>
-          <img class="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" src={tile.img} alt="" loading="lazy" />
-          <div class="absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,.05)] to-[rgba(0,0,0,.6)]" />
-          <div class="absolute bottom-0 left-0 right-0 px-2.5 py-2 md:px-3.5 md:py-3 flex flex-col gap-0.5">
-            {tile.badge && <span class="text-[8px] md:text-[9px] font-bold tracking-[0.08em] uppercase text-[rgba(255,255,255,.85)]">{tile.badge}</span>}
-            {tile.price && <span class="text-[14px] md:text-[15px] font-bold text-white leading-none">{tile.price}</span>}
-            {tile.title && (
-              <p class="m-0 text-xs md:text-[13px] font-semibold text-white leading-[1.3] whitespace-pre-line">{tile.title}</p>
-            )}
-          </div>
+    <div class="flex-1 grid grid-cols-2 gap-3 overflow-hidden p-3">
+      <div class="grid grid-rows-2 gap-2.5 min-h-0">
+        {leftEvent && (
+          <EventEditorialTile tile={leftEvent} onSelect={onSelect} />
+        )}
+
+        <div class="grid grid-cols-2 gap-2.5 min-h-0">
+          {PRODUCT_TILES.slice(0, 2).map((product, i) => (
+            <div
+              key={i}
+              class="relative overflow-hidden cursor-pointer border border-[rgba(255,255,255,.15)] group min-h-0"
+              onClick={() => onSelect(product.query)}
+            >
+              <img
+                class="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                src={product.img}
+                alt=""
+                loading="lazy"
+              /> 
+              <div class="absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,.14)] via-[rgba(0,0,0,.3)] to-[rgba(0,0,0,.7)]" />
+              <div class="absolute bottom-0 left-0 right-0 px-2 py-1.5 md:px-2.5 md:py-2 flex flex-col">
+                <span class="text-[11px] md:text-[15px] font-400 text-white leading-none [text-shadow:0_2px_8px_rgba(0,0,0,.35)]">
+                  {product.price}
+                </span>
+                <p class="m-0 mt-0.5 text-[8px] md:text-[11px] text-white leading-[1.2] whitespace-pre-line [text-shadow:0_2px_8px_rgba(0,0,0,.35)]">
+                  {product.name}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
+
+      {rightEvent && (
+        <EventEditorialTile tile={rightEvent} onSelect={onSelect} />
+      )}
     </div>
   );
 }

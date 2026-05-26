@@ -4,13 +4,20 @@ export interface HeroSlide {
   query: string;
 }
 
-export interface EditorialTile {
+export interface EventTile {
   img: string;
-  badge: string | null;
-  title: string | null;
+  badge: string;
+  title: string;
   query: string;
-  price?: string;
 }
+
+export interface ProductTile {
+  img: string;
+  price: string;
+  name: string,
+  query: string;
+}
+
 
 export const HERO_SLIDES: HeroSlide[] = [
   {
@@ -30,7 +37,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
 ];
 
-export const EDITORIAL_TILES: EditorialTile[] = [
+export const EVENTS_TILES: EventTile[] = [
   {
     img: "https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=700&q=80&fit=crop",
     badge: "C'EST BIENTÔT",
@@ -39,22 +46,23 @@ export const EDITORIAL_TILES: EditorialTile[] = [
   },
   {
     img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=700&q=80&fit=crop",
-    badge: null,
-    title: null,
-    query: "Montrez-moi vos suggestions de buffet",
-  },
-  {
-    img: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=500&q=80&fit=crop",
-    badge: null,
-    price: "12,90 €",
-    title: "Mini-moricettes garnies",
-    query: "Montrez-moi les mini-moricettes garnies",
-  },
-  {
-    img: "https://images.unsplash.com/photo-1565299715199-866c917206bb?w=500&q=80&fit=crop",
     badge: "SUGGESTION DU MOMENT",
-    price: "39,99 €",
-    title: "Buffet pour la fête\ndes voisins",
-    query: "Je cherche un buffet pour la fête des voisins",
+    title: "Buffet pour la fête des voisins",
+    query: "Montrez-moi vos suggestions de buffet pour la fête des voisins",
   },
 ];
+
+export const PRODUCT_TILES:  ProductTile[] = [
+  {
+    img: "https://images.unsplash.com/photo-1671180401158-8d9d060d4966?q=80&w=1141&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    price: "39,99 €",
+    name: "Instant Apéro pour 6",
+    query: "Montre moi les produits Apéro"
+  },
+  {
+    img: "https://images.unsplash.com/photo-1676300185026-81a05335809f?q=80&w=1226&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    price: "8,99 €",
+    name: "8 mini burgers",
+    query: "Montre moi les mini burgers disponible"
+  }
+]

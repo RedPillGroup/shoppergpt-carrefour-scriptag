@@ -101,21 +101,21 @@ export function AssistantExperience() {
           <div class="flex-1 overflow-y-auto min-h-0 flex flex-col [scroll-behavior:smooth] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]">
             <motion.div
               class="shrink-0 px-5 py-6 md:px-8 md:py-9"
-              initial={shouldReduceMotion ? undefined : { opacity: 0, y: 12, scale: 0.995 }}
+              initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.998 }}
               animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
               transition={
                 shouldReduceMotion
                   ? undefined
                   : {
-                      duration: 0.75,
-                      ease: [0.22, 1, 0.36, 1],
-                      delay: 0.08
+                      duration: 0.42,
+                      ease: [0.16, 1, 0.3, 1],
+                      delay: 0.02
                     }
               }
             >
               <p class="m-0 font-normal text-[#C7B287] text-base md:text-lg leading-[1.45]">
                 Bonjour et bienvenue, je suis{' '}
-                <span class="font-['Satisfy'] font-normal text-[#C7B287] text-base md:text-lg">Cathia</span> votre agent
+                <span class="font-['Satisfy'] font-normal text-[#C7B287] text-base md:text-xl">Cathia</span> votre agent
                 intelligent traiteur. Que puis-je faire pour vous&nbsp;?
               </p>
             </motion.div>
@@ -129,7 +129,7 @@ export function AssistantExperience() {
                     m.role === 'assistant' && (i === 0 || messages[i - 1].role !== 'assistant')
                   }
                   fadeInOnMount={i === 0 && m.role === 'assistant'}
-                  fadeInDelay={i === 0 && m.role === 'assistant' ? 0.22 : 0}
+                  fadeInDelay={i === 0 && m.role === 'assistant' ? 0.1 : 0}
                 />
               ))}
               {isWaiting && <TypingIndicator />}
