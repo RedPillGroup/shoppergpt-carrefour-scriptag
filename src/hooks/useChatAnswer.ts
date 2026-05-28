@@ -15,6 +15,7 @@ export interface ChatAnswerCallbacks {
   onMeta: (meta: MetaPayload) => void;
   onComplete: (fullText: string) => void;
   onError: (message: string) => void;
+  onJwt?: (newJwt: string) => void;
 }
 
 /**
@@ -39,7 +40,7 @@ class SSEParser {
       if (line.startsWith("event: ")) {
         this.currentEvent = line.slice(7).trim();
       } else if (line.startsWith("data: ")) {
-        this.currentData += line.slice(6);
+        this.currentData += (this.currentData ? "\n" : "") + line.slice(6);
       } else if (line === "") {
         if (this.currentData) {
           callback(this.currentEvent || "message", this.currentData);
@@ -63,7 +64,6 @@ class SSEParser {
 export function useChatAnswer(
   question: string | null,
   jwt: string | null,
-  onJwt: (newJwt: string) => void,
   callbacks: ChatAnswerCallbacks
 ) {
   const callbacksRef = useRef(callbacks);
@@ -76,7 +76,7 @@ export function useChatAnswer(
     let accumulated = "";
 
     const run = async () => {
-      const { onToken, onMeta, onComplete, onError } = callbacksRef.current;
+      const { onToken, onMeta, onComplete, onError, onJwt } = callbacksRef.current;
 
       try {
         const headers: Record<string, string> = {
@@ -102,7 +102,7 @@ export function useChatAnswer(
 
         // Rotate session token if the server sends a new one
         const newToken = res.headers.get("X-Session-Token");
-        if (newToken && !cancelled) onJwt(newToken);
+        if (newToken && !cancelled) onJwt?.(newToken);
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -125,16 +125,16 @@ export function useChatAnswer(
                 // Malformed meta — ignore
               }
             } else {
-              // Text token: __NEWLINE__ is the API's way of encoding newlines inside SSE data
-              const token = data.split("__NEWLINE__").join("\n");
-              accumulated += token;
-              onToken(token);
+              // Accumulate raw data — __NEWLINE__ may be split across SSE event boundaries,
+              // so replacement happens on the full accumulated string at completion time.
+              accumulated += data;
+              onToken(data);
             }
           });
         }
 
         if (!cancelled) {
-          onComplete(accumulated);
+          onComplete(accumulated.replace(/__NEWLINE__/g, '\n'));
         }
       } catch (err: unknown) {
         if (!cancelled) {

@@ -11,7 +11,7 @@ import { TypingIndicator } from './chat/TypingIndicator';
 import { StreamingBubble } from './chat/StreamingBubble';
 import { ProductSuggestionCard } from './panel/ProductSuggestionCard';
 import { ChatInputBar } from './chat/ChatInputBar';
-import { EventRequirementsPanel } from './panel/EventRequirementsPanel';
+import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
 
 function parseString(value: unknown): string | undefined {
   if (typeof value === 'string') {
@@ -66,6 +66,12 @@ function extractEventRequirements(meta: MetaPayload): Partial<EventRequirements>
     const budget = parseNumber(source.budget);
     if (budget !== undefined) next.budget = budget;
   }
+  if ('menu_steps' in source) {
+    const steps = source.menu_steps;
+    if (Array.isArray(steps) && steps.length > 0 && steps.every(s => typeof s === 'string')) {
+      next.menu_steps = steps as string[];
+    }
+  }
 
   return next;
 }
@@ -83,6 +89,8 @@ export function AssistantExperience() {
   const [panelKey, setPanelKey] = useState(0);
   const [eventRequirements, setEventRequirements] = useState<EventRequirements>({});
   const [eventScreenEnabled, setEventScreenEnabled] = useState(false);
+  const [productsByStep, setProductsByStep] = useState<Record<string, Product[]>>({});
+  const [menuQuantities, setMenuQuantities] = useState<Record<string, number>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const updatePanel = useCallback((title: string, subtitle: string, products: Product[]) => {
@@ -100,7 +108,8 @@ export function AssistantExperience() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, streamingText]);
 
-  useChatAnswer(question, jwt, newJwt => setJwt(newJwt), {
+  useChatAnswer(question, jwt, {
+    onJwt: newJwt => setJwt(newJwt),
     onToken: token => setStreamingText(prev => prev + token),
     onMeta: (meta: MetaPayload) => {
       const incomingRequirements = extractEventRequirements(meta);
@@ -111,11 +120,33 @@ export function AssistantExperience() {
 
       const products = extractProducts(meta.tool_results ?? []);
       if (products.length > 0) {
-        updatePanel(
-          'Suggestions personnalisées',
-          `${products.length} produit${products.length > 1 ? 's' : ''} recommandé${products.length > 1 ? 's' : ''}`,
-          products
-        );
+        // Phase 3: group products by menu_step and accumulate across multiple tool calls
+        const withStep = products.filter(p => p.menu_step);
+        const withoutStep = products.filter(p => !p.menu_step);
+
+        if (withStep.length > 0) {
+          setProductsByStep(prev => {
+            const next = { ...prev };
+            for (const p of withStep) {
+              const step = p.menu_step!;
+              const existing = next[step] ?? [];
+              // Deduplicate by id
+              if (!existing.some(e => e.id === p.id)) {
+                next[step] = [...existing, p];
+              }
+            }
+            return next;
+          });
+        }
+
+        // Fallback: products without menu_step go to the legacy panel
+        if (withoutStep.length > 0) {
+          updatePanel(
+            'Suggestions personnalisées',
+            `${withoutStep.length} produit${withoutStep.length > 1 ? 's' : ''} recommandé${withoutStep.length > 1 ? 's' : ''}`,
+            withoutStep
+          );
+        }
       }
     },
     onComplete: fullText => {
@@ -159,6 +190,14 @@ export function AssistantExperience() {
     }
   }, [send]);
 
+  const handleQuantityChange = useCallback((productId: string, delta: number) => {
+    setMenuQuantities(prev => {
+      const current = prev[productId] ?? 0;
+      const next = Math.max(0, current + delta);
+      return { ...prev, [productId]: next };
+    });
+  }, []);
+
   const isStreaming = isLoading && streamingText.length > 0;
   const isWaiting = isLoading && streamingText.length === 0;
 
@@ -197,7 +236,7 @@ export function AssistantExperience() {
                 />
               ))}
               {isWaiting && <TypingIndicator />}
-              {isStreaming && <StreamingBubble text={streamingText} />}
+              {isStreaming && <StreamingBubble text={streamingText.replace(/__NEWLINE__/g, '\n')} />}
             </div>
 
             <div ref={bottomRef} />
@@ -214,7 +253,12 @@ export function AssistantExperience() {
 
         <div class="row-start-2 md:row-start-auto md:col-start-2 flex flex-col overflow-hidden min-h-0">
           {eventScreenEnabled ? (
-            <EventRequirementsPanel requirements={eventRequirements} />
+            <MenuBuilderPanel
+              requirements={eventRequirements}
+              productsByStep={productsByStep}
+              quantities={menuQuantities}
+              onQuantityChange={handleQuantityChange}
+            />
           ) : displayedProducts.length > 0 ? (
             <>
               <div class="py-3 px-4 md:py-3.5 md:px-6 bg-white border-b border-[#E8ECF0] flex items-center justify-between shrink-0 gap-3">

@@ -7,6 +7,7 @@ export interface Product {
   allergens: string[];
   description?: string;
   category?: string;
+  menu_step?: string;
 }
 
 export interface Message {
@@ -40,10 +41,16 @@ export interface ChangeShopEvent {
   store_id: string;
 }
 
+export type MenuStep = 'Apéritifs' | 'Entrées' | 'Plats' | 'Fromages' | 'Desserts' | 'Boissons';
+
+export const ALL_MENU_STEPS: MenuStep[] = ['Apéritifs', 'Entrées', 'Plats', 'Fromages', 'Desserts', 'Boissons'];
+
 export interface EventRequirements {
   event_type?: string;
   event_date?: string;
   guests_adults?: number;
   guests_kids?: number;
   budget?: number;
+  /** Confirmed course categories, in order. Only set after the user has validated them. */
+  menu_steps?: string[];
 }
