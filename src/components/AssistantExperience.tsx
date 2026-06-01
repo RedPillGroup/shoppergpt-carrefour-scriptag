@@ -1,6 +1,6 @@
 import { h } from 'preact';
 import { useRef, useEffect, useState, useCallback } from 'preact/hooks';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useShopperStore } from '../store';
 import { EventRequirements, Product } from '../types';
 import { useChatAnswer, MetaPayload } from '../hooks/useChatAnswer';
@@ -12,6 +12,7 @@ import { StreamingBubble } from './chat/StreamingBubble';
 import { ProductSuggestionCard } from './panel/ProductSuggestionCard';
 import { ChatInputBar } from './chat/ChatInputBar';
 import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
+import { ProductDetailModal } from './panel/ProductDetailModal';
 
 function parseString(value: unknown): string | undefined {
   if (typeof value === 'string') {
@@ -77,7 +78,7 @@ function extractEventRequirements(meta: MetaPayload): Partial<EventRequirements>
 }
 
 export function AssistantExperience() {
-  const { messages, addMessage, isLoading, setIsLoading, jwt, setJwt } = useShopperStore();
+  const { messages, addMessage, isLoading, setIsLoading, jwt, setJwt, selectedProduct, setSelectedProduct } = useShopperStore();
   const shouldReduceMotion = useReducedMotion();
   const [input, setInput] = useState('');
   const [question, setQuestion] = useState<string | null>(null);
@@ -119,35 +120,74 @@ export function AssistantExperience() {
       }
 
       const products = extractProducts(meta.tool_results ?? []);
+
+      // Backend tells us, via tool_metadata.menu_update, whether this is:
+      //   • { type: 'full',    active_steps:  [...] } → recommend_menu_products
+      //   • { type: 'partial', steps_updated: [...] } → update_menu_step
+      // We pick the right merge strategy from that — the tool_results array
+      // itself only carries flattened products, so we can't infer the tool
+      // from there.
+      const menuUpdate = meta.tool_metadata?.menu_update;
+
       if (products.length > 0) {
         const withStep = products.filter(p => p.menu_step);
         const withoutStep = products.filter(p => !p.menu_step);
 
         if (withStep.length > 0) {
-          // Group incoming products by step, then replace each step entirely so
-          // re-runs with updated preferences (halal, sans poisson, …) clear stale items.
+          // Group incoming products by step
           const incomingByStep: Record<string, typeof withStep> = {};
           for (const p of withStep) {
             const step = p.menu_step!;
             (incomingByStep[step] ??= []).push(p);
           }
-          setProductsByStep(prev => ({ ...prev, ...incomingByStep }));
 
           // Pre-seed quantities from the backend's recommended_quantity field.
-          // Only set a quantity when the product carries a suggestion AND the user
-          // has not already manually adjusted that product's quantity (keep manual
-          // changes intact so a re-run after preference changes doesn't reset them).
           const suggestions: Record<string, number> = {};
           for (const p of withStep) {
             if (p.recommended_quantity != null && p.recommended_quantity > 0) {
               suggestions[p.id] = p.recommended_quantity;
             }
           }
-          if (Object.keys(suggestions).length > 0) {
-            setMenuQuantities(prev => ({
-              ...suggestions,   // new recommendations as the base
-              ...prev,          // keep any quantity the user already touched manually
-            }));
+
+          if (menuUpdate?.type === 'full') {
+            // FULL MENU REGENERATION (recommend_menu_products).
+            // Wipe the panel clean — any step the backend didn't return
+            // (e.g. Fromages dropped by the budget guard) should disappear,
+            // not linger from a previous iteration.
+            setProductsByStep(incomingByStep);
+            setMenuQuantities(suggestions);
+          } else if (menuUpdate?.type === 'partial') {
+            // PARTIAL UPDATE (update_menu_step).
+            // Replace only the listed steps; keep untouched courses intact.
+            // Preserve any quantity the user manually adjusted on unchanged
+            // products.
+            const updatedSteps = new Set(menuUpdate.steps_updated ?? Object.keys(incomingByStep));
+            setProductsByStep(prev => {
+              const next = { ...prev };
+              for (const step of updatedSteps) {
+                // Replace each updated step with whatever the backend returned
+                // (empty array if the new selection has 0 products).
+                next[step] = incomingByStep[step] ?? [];
+              }
+              return next;
+            });
+            if (Object.keys(suggestions).length > 0) {
+              setMenuQuantities(prev => ({
+                ...suggestions,   // new recommendations as the base
+                ...prev,          // user's manual changes always win
+              }));
+            }
+          } else {
+            // No menu_update metadata → likely search_traiteur_products or
+            // an unknown tool.  Conservative merge that just adds products
+            // to their steps without wiping anything.
+            setProductsByStep(prev => ({ ...prev, ...incomingByStep }));
+            if (Object.keys(suggestions).length > 0) {
+              setMenuQuantities(prev => ({
+                ...suggestions,
+                ...prev,
+              }));
+            }
           }
         }
 
@@ -214,7 +254,7 @@ export function AssistantExperience() {
   const isWaiting = isLoading && streamingText.length === 0;
 
   return (
-    <div class="flex flex-col h-full min-h-0 text-[#1A1A2E] bg-[#FAF9F7]">
+    <div class="relative flex flex-col h-full min-h-0 text-[#1A1A2E] bg-[#FAF9F7]">
       <div class="grid flex-1 grid-rows-2 md:grid-rows-1 md:grid-cols-[38%_1fr] overflow-hidden min-h-0">
         <div class="row-start-1 md:row-start-auto md:col-start-1 flex flex-col bg-white border-b md:border-b-0 md:border-r border-[#E8ECF0] min-h-0">
           <div class="flex-1 overflow-y-auto min-h-0 flex flex-col [scroll-behavior:smooth] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]">
@@ -304,6 +344,16 @@ export function AssistantExperience() {
           )}
         </div>
       </div>
+
+      {/* Product detail modal — rendered above everything else inside the widget */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <ProductDetailModal
+            productId={selectedProduct.id}
+            onClose={() => setSelectedProduct(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { Product } from '../../types';
+import { useShopperStore } from '../../store';
 
 interface Props {
   product: Product;
@@ -12,9 +13,13 @@ const PLACEHOLDER =
 
 export function MenuProductCard({ product, quantity, onQuantityChange }: Props) {
   const inMenu = quantity > 0;
+  const setSelectedProduct = useShopperStore(s => s.setSelectedProduct);
 
   return (
-    <div class="bg-white rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-col">
+    <div
+      class="bg-white rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-col cursor-pointer"
+      onClick={() => setSelectedProduct(product)}
+    >
 
       {/* ── Image + overlays ─────────────────────────────── */}
       <div class="relative shrink-0">
@@ -38,7 +43,10 @@ export function MenuProductCard({ product, quantity, onQuantityChange }: Props) 
         </div>
 
         {/* Quantity pill — anchored at image bottom, centred */}
-        <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-0.5 gap-0">
+        <div
+          class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-0.5 gap-0"
+          onClick={e => e.stopPropagation()}
+        >
           <button
             onClick={() => onQuantityChange(-1)}
             disabled={quantity === 0}

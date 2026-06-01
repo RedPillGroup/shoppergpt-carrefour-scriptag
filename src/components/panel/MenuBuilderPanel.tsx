@@ -104,7 +104,7 @@ export function MenuBuilderPanel({
           {!hasProducts ? (
             /* Empty state — waiting for LLM to return products */
             <div class="flex flex-col items-center justify-center py-16 gap-3">
-              <div class="w-12 h-12 rounded-full bg-[#F4EFE5] flex items-center justify-center text-[#C7B287]">
+              {/* <div class="w-12 h-12 rounded-full bg-[#F4EFE5] flex items-center justify-center text-[#C7B287]">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -121,7 +121,7 @@ export function MenuBuilderPanel({
                 {steps.length > 0
                   ? 'Les produits pour votre menu arrivent…'
                   : 'Les produits apparaîtront ici une fois les étapes confirmées.'}
-              </p>
+              </p> */}
             </div>
           ) : (
             <div class="flex flex-col gap-8">

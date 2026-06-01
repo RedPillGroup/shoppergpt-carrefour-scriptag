@@ -7,6 +7,20 @@ export interface MetaPayload {
   message_id?: string;
   tool_metadata?: {
     event_requirements?: Record<string, unknown>;
+    /**
+     * Carrefour Traiteur — surfaced by `recommend_menu_products` (full menu)
+     * and `update_menu_step` (partial).  Lets the frontend choose the right
+     * merge strategy for productsByStep / menuQuantities so stale items from
+     * earlier iterations don't linger (e.g. when the budget guard drops
+     * Fromages entirely).
+     */
+    menu_update?: {
+      type: 'full' | 'partial';
+      /** Steps the backend actually included in this response. */
+      active_steps?: string[];
+      /** Steps the partial update touched (only present when type='partial'). */
+      steps_updated?: string[];
+    };
   };
 }
 
