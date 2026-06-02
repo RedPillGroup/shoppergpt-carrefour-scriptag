@@ -78,10 +78,15 @@ class SSEParser {
 export function useChatAnswer(
   question: string | null,
   jwt: string | null,
-  callbacks: ChatAnswerCallbacks
+  callbacks: ChatAnswerCallbacks,
+  // Returns the current panel state to sync server-side before the LLM runs,
+  // so the assistant sees manual quantity/removal edits. Read at request time.
+  getClientState?: () => Record<string, unknown> | null
 ) {
   const callbacksRef = useRef(callbacks);
   callbacksRef.current = callbacks;
+  const getClientStateRef = useRef(getClientState);
+  getClientStateRef.current = getClientState;
 
   useEffect(() => {
     if (!question) return;
@@ -107,6 +112,7 @@ export function useChatAnswer(
           body: JSON.stringify({
             query: question,
             client_id: getClientId(),
+            client_state: getClientStateRef.current?.() ?? undefined,
           }),
         });
 

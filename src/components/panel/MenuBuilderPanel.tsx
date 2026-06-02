@@ -126,7 +126,12 @@ export function MenuBuilderPanel({
           ) : (
             <div class="flex flex-col gap-8">
               {steps.map(step => {
-                const products = productsByStep[step] ?? [];
+                // Order by quantity (desc) so selected items rank first and
+                // qty-0 showcase suggestions sink to the bottom. Stable tie-break
+                // preserves the backend's relevance order within equal quantities.
+                const products = [...(productsByStep[step] ?? [])].sort(
+                  (a, b) => (quantities[b.id] ?? 0) - (quantities[a.id] ?? 0),
+                );
                 return (
                   <section
                     key={step}

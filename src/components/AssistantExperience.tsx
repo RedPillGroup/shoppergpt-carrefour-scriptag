@@ -109,6 +109,19 @@ export function AssistantExperience() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, streamingText]);
 
+  // Snapshot the current panel (products + user-adjusted quantities) so the
+  // backend can sync manual edits before the LLM answers. Read at request time.
+  const getClientState = (): Record<string, unknown> | null => {
+    const products = Object.entries(productsByStep).flatMap(([step, list]) =>
+      list.map(p => ({
+        sku: p.id,
+        menu_step: step,
+        recommended_quantity: menuQuantities[p.id] ?? 0,
+      })),
+    );
+    return products.length > 0 ? { products } : null;
+  };
+
   useChatAnswer(question, jwt, {
     onJwt: newJwt => setJwt(newJwt),
     onToken: token => setStreamingText(prev => prev + token),
@@ -223,7 +236,7 @@ export function AssistantExperience() {
       setIsLoading(false);
       setQuestion(null);
     }
-  });
+  }, getClientState);
 
   const send = useCallback((text?: string) => {
     const t = (text ?? input).trim();
