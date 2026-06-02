@@ -126,11 +126,15 @@ export function MenuBuilderPanel({
           ) : (
             <div class="flex flex-col gap-8">
               {steps.map(step => {
-                // Order by quantity (desc) so selected items rank first and
-                // qty-0 showcase suggestions sink to the bottom. Stable tie-break
-                // preserves the backend's relevance order within equal quantities.
+                // Keep backend order stable, only push qty-0 suggestions to the end.
+                // This avoids cards jumping around when users tweak quantities.
                 const products = [...(productsByStep[step] ?? [])].sort(
-                  (a, b) => (quantities[b.id] ?? 0) - (quantities[a.id] ?? 0),
+                  (a, b) => {
+                    const aIsEmpty = (quantities[a.id] ?? 0) <= 0;
+                    const bIsEmpty = (quantities[b.id] ?? 0) <= 0;
+                    if (aIsEmpty === bIsEmpty) return 0;
+                    return aIsEmpty ? 1 : -1;
+                  },
                 );
                 return (
                   <section

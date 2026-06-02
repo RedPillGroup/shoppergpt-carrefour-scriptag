@@ -40,14 +40,16 @@ function buildProduct(p: Record<string, unknown>): Product | null {
  * (one call per course) are fully captured.
  */
 export function extractProducts(toolResults: unknown[]): Product[] {
-  const products: Product[] = [];
-  const seen = new Set<string>();
+  // Use a Map to deduplicate by id — last occurrence wins so that when the
+  // backend sends multiple tool results in one meta event (e.g. add_product
+  // followed by set_quantity), the final state always takes precedence over
+  // the intermediate one. Insertion order is preserved for stable card layout.
+  const byId = new Map<string, Product>();
 
   const push = (p: Record<string, unknown>) => {
     const product = buildProduct(p);
-    if (product && !seen.has(product.id)) {
-      seen.add(product.id);
-      products.push(product);
+    if (product) {
+      byId.set(product.id, product);
     }
   };
 
@@ -82,5 +84,5 @@ export function extractProducts(toolResults: unknown[]): Product[] {
     }
   }
 
-  return products;
+  return Array.from(byId.values());
 }

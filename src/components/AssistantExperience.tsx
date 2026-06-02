@@ -113,11 +113,16 @@ export function AssistantExperience() {
   // backend can sync manual edits before the LLM answers. Read at request time.
   const getClientState = (): Record<string, unknown> | null => {
     const products = Object.entries(productsByStep).flatMap(([step, list]) =>
-      list.map(p => ({
-        sku: p.id,
-        menu_step: step,
-        recommended_quantity: menuQuantities[p.id] ?? 0,
-      })),
+      list.map(p => {
+        const qty = menuQuantities[p.id] ?? 0;
+        return {
+          sku: p.id,
+          menu_step: step,
+          qty,
+          // Backward-compatible alias expected by older backend handlers.
+          recommended_quantity: qty,
+        };
+      }),
     );
     return products.length > 0 ? { products } : null;
   };
@@ -157,8 +162,8 @@ export function AssistantExperience() {
           // Pre-seed quantities from the backend's recommended_quantity field.
           const suggestions: Record<string, number> = {};
           for (const p of withStep) {
-            if (p.recommended_quantity != null && p.recommended_quantity > 0) {
-              suggestions[p.id] = p.recommended_quantity;
+            if (p.recommended_quantity != null && Number.isFinite(p.recommended_quantity)) {
+              suggestions[p.id] = Math.max(0, p.recommended_quantity);
             }
           }
 
@@ -186,8 +191,8 @@ export function AssistantExperience() {
             });
             if (Object.keys(suggestions).length > 0) {
               setMenuQuantities(prev => ({
-                ...suggestions,   // new recommendations as the base
-                ...prev,          // user's manual changes always win
+                ...prev,        // keep untouched products as-is
+                ...suggestions, // backend wins for products it returned
               }));
             }
           } else {
