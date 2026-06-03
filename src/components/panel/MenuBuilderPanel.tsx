@@ -18,6 +18,17 @@ function fmtEur(value: number): string {
   );
 }
 
+/** "Menu d'anniversaire" vs "Menu de soirée" (élision before vowel / mute h). */
+function menuEventLabel(eventType: string): string {
+  const t = eventType.trim();
+  if (!t) return 'Mon menu traiteur';
+  const first = t.charAt(0).toLowerCase();
+  if (/^[aeiouyhéèêëàâîïôûù]/.test(first)) {
+    return `Menu d'${t}`;
+  }
+  return `Menu de ${t}`;
+}
+
 export function MenuBuilderPanel({
   requirements,
   productsByStep,
@@ -58,10 +69,13 @@ export function MenuBuilderPanel({
 
 
   const hasProducts = Object.keys(productsByStep).length > 0;
+  const hasSelectedProducts = useMemo(
+    () => Object.values(quantities).some(qty => qty > 0),
+    [quantities],
+  );
 
-  // Build display labels
   const eventLabel = requirements.event_type
-    ? `Menu de ${requirements.event_type}`
+    ? menuEventLabel(requirements.event_type)
     : 'Mon menu traiteur';
   const dateLabel = requirements.event_date ? `le ${requirements.event_date}` : null;
 
@@ -69,8 +83,8 @@ export function MenuBuilderPanel({
     <div class="flex-1 min-h-0 flex flex-col overflow-hidden bg-[#FAF9F7]">
       {/* ── Sticky top bar — event title + date + voir la liste ─────────────── */}
       <div class="bg-white border-b border-[#E8ECF0] px-4 py-5 md:px-5 flex gap-3">
-        {/* Cursive event info — centred, takes remaining space */}
-        <div class="flex-1 flex flex-col gap-2 min-w-0">
+        {/* Cursive event info — centred in the space beside the list button, using elegant font */}
+        <div class="flex-1 flex flex-col gap-2 min-w-0 items-center justify-center text-center">
           <span class="text-[#C7B287] text-[15px] md:text-[18px] leading-none">
             {eventLabel}
           </span>
@@ -81,19 +95,16 @@ export function MenuBuilderPanel({
           )}
         </div>
 
-        {/* Voir la liste des courses — icon button on the right */}
-        <button
-          class="flex flex-col items-center gap-1 text-[#9A8C78] hover:text-[#C7B287] transition-colors border border-[#E8D9C0] rounded-xl px-2.5 py-2 bg-white justify-center"
-          title="Voir la liste des courses"
-        >
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16">
-            <rect x="4" y="2" width="12" height="16" rx="2" />
-            <path d="M7 6h6M7 9.5h6M7 13h4" stroke-linecap="round" />
-          </svg>
-          <p class="text-[7px] md:text-[8px] uppercase tracking-wide font-semibold text-center leading-none">
-            Liste
-          </p>
-        </button>
+        {hasSelectedProducts && (
+          <button
+            class="flex flex-col items-center gap-1 text-[#9A8C78] hover:text-[#C7B287] transition-colors border border-[#E8D9C0] rounded-xl px-2.5 py-2 bg-white justify-center shrink-0"
+            title="Ajouter au panier"
+          >
+            <p class="text-[7px] md:text-[8px] uppercase tracking-wide font-semibold text-center leading-none">
+              Ajouter au panier
+            </p>
+          </button>
+        )}
       </div>
 
       {/* ── Scrollable product sections ──────────────────────────────────────── */}
@@ -221,10 +232,10 @@ export function MenuBuilderPanel({
           </div>
           <div class="flex items-baseline justify-between gap-1">
             <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
-              Prix/pers.
+              Budget
             </span>
             <span class="text-[9px] md:text-[10px] text-[#8D7A4E] tabular-nums">
-              {pricePerPerson !== undefined ? fmtEur(pricePerPerson) : '—'}
+              {requirements.budget !== undefined ? fmtEur(requirements.budget) : '—'}
             </span>
           </div>
         </div>
@@ -232,18 +243,18 @@ export function MenuBuilderPanel({
         <div class="bg-[#C7B287] text-white px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
           <div class="flex items-baseline justify-between gap-1">
             <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
-              Budget
-            </span>
-            <span class="text-[9px] md:text-[10px] text-white tabular-nums font-semibold">
-              {requirements.budget !== undefined ? fmtEur(requirements.budget) : '—'}
-            </span>
-          </div>
-          <div class="flex items-baseline justify-between gap-1">
-            <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
               Coût total
             </span>
             <span class="text-[9px] md:text-[10px] text-white tabular-nums font-semibold">
               {totalCost > 0 ? fmtEur(totalCost) : '—'}
+            </span>
+          </div>
+          <div class="flex items-baseline justify-between gap-1">
+            <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
+              Prix/pers.
+            </span>
+            <span class="text-[9px] md:text-[10px] text-white tabular-nums font-semibold">
+              {pricePerPerson !== undefined ? fmtEur(pricePerPerson) : '—'}
             </span>
           </div>
         </div>
