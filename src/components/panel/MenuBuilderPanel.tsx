@@ -102,7 +102,7 @@ export function MenuBuilderPanel({
           )}
         </div>
 
-        {hasSelectedProducts && (
+        {/* {hasSelectedProducts && (
           <button
             class="flex flex-col items-center gap-1 text-[#9A8C78] hover:text-[#C7B287] transition-colors border border-[#E8D9C0] rounded-xl px-2.5 py-2 bg-white justify-center shrink-0"
             title="Ajouter au panier"
@@ -111,7 +111,7 @@ export function MenuBuilderPanel({
               Ajouter au panier
             </p>
           </button>
-        )}
+        )} */}
       </div>
 
       {/* ── Scrollable product sections ──────────────────────────────────────── */}

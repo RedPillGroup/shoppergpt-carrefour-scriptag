@@ -1,4 +1,5 @@
 import { h } from 'preact';
+import { Coffee, Flower, LayoutGrid, PartyPopper, Wheat } from 'lucide-preact';
 
 interface IconProps {
   size?: number;
@@ -14,12 +15,17 @@ function normalizeKey(step: string): string {
 export function getStepIcon(step: string, size = 22): h.JSX.Element | null {
   const key = normalizeKey(step);
   const map: Record<string, h.JSX.Element> = {
-    aperitifs: <IconApero size={size} />,
-    entrees:   <IconEntrees size={size} />,
-    plats:     <IconPlats size={size} />,
-    fromages:  <IconFromages size={size} />,
-    desserts:  <IconDesserts size={size} />,
-    boissons:  <IconBoissons size={size} />,
+    aperitifs:      <IconApero size={size} />,
+    entrees:        <IconEntrees size={size} />,
+    plats:          <IconPlats size={size} />,
+    plateaux:       <LayoutGrid size={size} color="currentColor" strokeWidth={1.5} />,
+    fromages:       <IconFromages size={size} />,
+    desserts:       <IconDesserts size={size} />,
+    boissons:       <IconBoissons size={size} />,
+    pains:          <Wheat size={size} color="currentColor" strokeWidth={1.5} />,
+    'petit dej':    <Coffee size={size} color="currentColor" strokeWidth={1.5} />,
+    'table & deco': <PartyPopper size={size} color="currentColor" strokeWidth={1.5} />,
+    fleurs:         <Flower size={size} color="currentColor" strokeWidth={1.5} />,
   };
   return map[key] ?? null;
 }
