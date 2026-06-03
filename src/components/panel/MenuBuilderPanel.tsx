@@ -9,6 +9,8 @@ interface Props {
   productsByStep: Record<string, Product[]>;
   quantities: Record<string, number>;
   onQuantityChange: (productId: string, delta: number) => void;
+  /** True while GET /menu is refreshing after a menu-changing turn. */
+  syncing?: boolean;
 }
 
 /** Format a number as "1 234,56 €" (French locale). */
@@ -33,7 +35,8 @@ export function MenuBuilderPanel({
   requirements,
   productsByStep,
   quantities,
-  onQuantityChange
+  onQuantityChange,
+  syncing = false
 }: Props) {
   // Confirmed steps drive tab bar order + section order
   const steps: string[] = useMemo(() => {
@@ -80,7 +83,11 @@ export function MenuBuilderPanel({
   const dateLabel = requirements.event_date ? `le ${requirements.event_date}` : null;
 
   return (
-    <div class="flex-1 min-h-0 flex flex-col overflow-hidden bg-[#FAF9F7]">
+    <div
+      class={`flex-1 min-h-0 flex flex-col overflow-hidden bg-[#FAF9F7] transition-opacity duration-200 ${
+        syncing ? 'opacity-60 pointer-events-none' : ''
+      }`}
+    >
       {/* ── Sticky top bar — event title + date + voir la liste ─────────────── */}
       <div class="bg-white border-b border-[#E8ECF0] px-4 py-5 md:px-5 flex gap-3">
         {/* Cursive event info — centred in the space beside the list button, using elegant font */}

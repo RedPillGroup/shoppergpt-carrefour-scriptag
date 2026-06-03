@@ -3,8 +3,8 @@ import { useRef, useEffect, useState, useCallback } from 'preact/hooks';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useShopperStore } from '../store';
 import { EventRequirements, Product } from '../types';
-import { useChatAnswer, MetaPayload } from '../hooks/useChatAnswer';
-import { extractProducts } from '../utils/productExtractor';
+import { useChatAnswer } from '../hooks/useChatAnswer';
+import { fetchServerMenu, menuResponseToPanelState } from '../api/menu';
 import { EditorialPanel } from './panel/EditorialPanel';
 import { MessageBubble } from './chat/MessageBubble';
 import { TypingIndicator } from './chat/TypingIndicator';
@@ -13,69 +13,6 @@ import { ProductSuggestionCard } from './panel/ProductSuggestionCard';
 import { ChatInputBar } from './chat/ChatInputBar';
 import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
 import { ProductDetailModal } from './panel/ProductDetailModal';
-
-function parseString(value: unknown): string | undefined {
-  if (typeof value === 'string') {
-    const normalized = value.trim();
-    return normalized.length > 0 ? normalized : undefined;
-  }
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return `${value}`;
-  }
-  return undefined;
-}
-
-function parseNumber(value: unknown): number | undefined {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === 'string') {
-    const normalized = value.trim().replace(',', '.');
-    if (!normalized) return undefined;
-    const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }
-  return undefined;
-}
-
-function extractEventRequirements(meta: MetaPayload): Partial<EventRequirements> {
-  const raw = meta.tool_metadata?.event_requirements;
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    return {};
-  }
-
-  const source = raw as Record<string, unknown>;
-  const next: Partial<EventRequirements> = {};
-
-  if ('event_type' in source) {
-    const eventType = parseString(source.event_type);
-    if (eventType !== undefined) next.event_type = eventType;
-  }
-  if ('event_date' in source) {
-    const eventDate = parseString(source.event_date);
-    if (eventDate !== undefined) next.event_date = eventDate;
-  }
-  if ('guests_adults' in source) {
-    const adults = parseNumber(source.guests_adults);
-    if (adults !== undefined) next.guests_adults = adults;
-  }
-  if ('guests_kids' in source) {
-    const kids = parseNumber(source.guests_kids);
-    if (kids !== undefined) next.guests_kids = kids;
-  }
-  if ('budget' in source) {
-    const budget = parseNumber(source.budget);
-    if (budget !== undefined) next.budget = budget;
-  }
-  if ('menu_steps' in source) {
-    const steps = source.menu_steps;
-    if (Array.isArray(steps) && steps.length > 0 && steps.every(s => typeof s === 'string')) {
-      next.menu_steps = steps as string[];
-    }
-  }
-
-  return next;
-}
 
 export function AssistantExperience() {
   const { messages, addMessage, isLoading, setIsLoading, jwt, setJwt, selectedProduct, setSelectedProduct } = useShopperStore();
@@ -92,131 +29,87 @@ export function AssistantExperience() {
   const [eventScreenEnabled, setEventScreenEnabled] = useState(false);
   const [productsByStep, setProductsByStep] = useState<Record<string, Product[]>>({});
   const [menuQuantities, setMenuQuantities] = useState<Record<string, number>>({});
+  const [panelSyncing, setPanelSyncing] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const jwtRef = useRef(jwt);
+  const menuRevisionRef = useRef(0);
+  const menuEtagRef = useRef<string | null>(null);
+  const productsByStepRef = useRef(productsByStep);
+  const menuQuantitiesRef = useRef(menuQuantities);
+  const panelSyncedThisTurnRef = useRef(false);
+  jwtRef.current = jwt;
+  productsByStepRef.current = productsByStep;
+  menuQuantitiesRef.current = menuQuantities;
 
-  const updatePanel = useCallback((title: string, subtitle: string, products: Product[]) => {
-    setPanelVisible(false);
-    setTimeout(() => {
-      setProductsTitle(title);
-      setProductsSubtitle(subtitle);
-      setDisplayedProducts(products);
-      setPanelKey(k => k + 1);
-      setPanelVisible(true);
-    }, 280);
+  const applyPanelState = useCallback((panel: ReturnType<typeof menuResponseToPanelState>) => {
+    setProductsByStep(panel.productsByStep);
+    setMenuQuantities(panel.menuQuantities);
+    setEventRequirements(panel.eventRequirements);
+    menuRevisionRef.current = panel.menuRevision;
+    if (panel.hasMenu) {
+      setEventScreenEnabled(true);
+    }
   }, []);
+
+  /** Authoritative panel sync from MongoDB (GET /menu + ETag). */
+  const syncPanelFromServer = useCallback(async (force = false) => {
+    const token = jwtRef.current;
+    if (!token) return;
+    setPanelSyncing(true);
+    try {
+      const { data, etag, notModified } = await fetchServerMenu(token, {
+        ifNoneMatch: force ? null : menuEtagRef.current,
+      });
+      if (etag) menuEtagRef.current = etag;
+      if (notModified || !data) return;
+      applyPanelState(menuResponseToPanelState(data));
+    } catch (err) {
+      console.warn('[shopper-gpt] GET /menu failed:', err);
+    } finally {
+      setPanelSyncing(false);
+    }
+  }, [applyPanelState]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, streamingText]);
 
+  useEffect(() => {
+    if (jwt) void syncPanelFromServer();
+  }, [jwt, syncPanelFromServer]);
+
   // Snapshot the current panel (products + user-adjusted quantities) so the
   // backend can sync manual edits before the LLM answers. Read at request time.
   const getClientState = (): Record<string, unknown> | null => {
-    const products = Object.entries(productsByStep).flatMap(([step, list]) =>
+    const products = Object.entries(productsByStepRef.current).flatMap(([step, list]) =>
       list.map(p => {
-        const qty = menuQuantities[p.id] ?? 0;
+        const qty = menuQuantitiesRef.current[p.id] ?? 0;
         return {
           sku: p.id,
           menu_step: step,
           qty,
-          // Backward-compatible alias expected by older backend handlers.
           recommended_quantity: qty,
         };
       }),
     );
-    return products.length > 0 ? { products } : null;
+    const base = { menu_revision: menuRevisionRef.current };
+    return products.length > 0 ? { ...base, products } : base;
   };
 
   useChatAnswer(question, jwt, {
-    onJwt: newJwt => setJwt(newJwt),
+    onJwt: newJwt => {
+      setJwt(newJwt);
+      jwtRef.current = newJwt;
+    },
     onToken: token => setStreamingText(prev => prev + token),
-    onMeta: (meta: MetaPayload) => {
-      const incomingRequirements = extractEventRequirements(meta);
-      if (Object.keys(incomingRequirements).length > 0) {
-        setEventRequirements(prev => ({ ...prev, ...incomingRequirements }));
-        setEventScreenEnabled(true);
-      }
-
-      const products = extractProducts(meta.tool_results ?? []);
-
-      // Backend tells us, via tool_metadata.menu_update, whether this is:
-      //   • { type: 'full',    active_steps:  [...] } → recommend_menu_products
-      //   • { type: 'partial', steps_updated: [...] } → update_menu_step
-      // We pick the right merge strategy from that — the tool_results array
-      // itself only carries flattened products, so we can't infer the tool
-      // from there.
-      const menuUpdate = meta.tool_metadata?.menu_update;
-
-      if (products.length > 0) {
-        const withStep = products.filter(p => p.menu_step);
-        const withoutStep = products.filter(p => !p.menu_step);
-
-        if (withStep.length > 0) {
-          // Group incoming products by step
-          const incomingByStep: Record<string, typeof withStep> = {};
-          for (const p of withStep) {
-            const step = p.menu_step!;
-            (incomingByStep[step] ??= []).push(p);
-          }
-
-          // Pre-seed quantities from the backend's recommended_quantity field.
-          const suggestions: Record<string, number> = {};
-          for (const p of withStep) {
-            if (p.recommended_quantity != null && Number.isFinite(p.recommended_quantity)) {
-              suggestions[p.id] = Math.max(0, p.recommended_quantity);
-            }
-          }
-
-          if (menuUpdate?.type === 'full') {
-            // FULL MENU REGENERATION (recommend_menu_products).
-            // Wipe the panel clean — any step the backend didn't return
-            // (e.g. Fromages dropped by the budget guard) should disappear,
-            // not linger from a previous iteration.
-            setProductsByStep(incomingByStep);
-            setMenuQuantities(suggestions);
-          } else if (menuUpdate?.type === 'partial') {
-            // PARTIAL UPDATE (update_menu_step).
-            // Replace only the listed steps; keep untouched courses intact.
-            // Preserve any quantity the user manually adjusted on unchanged
-            // products.
-            const updatedSteps = new Set(menuUpdate.steps_updated ?? Object.keys(incomingByStep));
-            setProductsByStep(prev => {
-              const next = { ...prev };
-              for (const step of updatedSteps) {
-                // Replace each updated step with whatever the backend returned
-                // (empty array if the new selection has 0 products).
-                next[step] = incomingByStep[step] ?? [];
-              }
-              return next;
-            });
-            if (Object.keys(suggestions).length > 0) {
-              setMenuQuantities(prev => ({
-                ...prev,        // keep untouched products as-is
-                ...suggestions, // backend wins for products it returned
-              }));
-            }
-          } else {
-            // No menu_update metadata → likely search_traiteur_products or
-            // an unknown tool.  Conservative merge that just adds products
-            // to their steps without wiping anything.
-            setProductsByStep(prev => ({ ...prev, ...incomingByStep }));
-            if (Object.keys(suggestions).length > 0) {
-              setMenuQuantities(prev => ({
-                ...suggestions,
-                ...prev,
-              }));
-            }
-          }
-        }
-
-        // Fallback: products without menu_step go to the legacy panel
-        if (withoutStep.length > 0) {
-          updatePanel(
-            'Suggestions personnalisées',
-            `${withoutStep.length} produit${withoutStep.length > 1 ? 's' : ''} recommandé${withoutStep.length > 1 ? 's' : ''}`,
-            withoutStep
-          );
-        }
+    onMeta: meta => {
+      const needsSync =
+        Boolean(meta.sync_conflict) ||
+        meta.menu_changed === true ||
+        (typeof meta.menu_revision === 'number' && meta.menu_revision > menuRevisionRef.current);
+      if (needsSync) {
+        panelSyncedThisTurnRef.current = true;
+        void syncPanelFromServer(true);
       }
     },
     onComplete: fullText => {
@@ -229,6 +122,10 @@ export function AssistantExperience() {
       setStreamingText('');
       setIsLoading(false);
       setQuestion(null);
+      if (!panelSyncedThisTurnRef.current) {
+        void syncPanelFromServer();
+      }
+      panelSyncedThisTurnRef.current = false;
     },
     onError: msg => {
       addMessage({
@@ -250,6 +147,7 @@ export function AssistantExperience() {
     setInput('');
     setStreamingText('');
     setIsLoading(true);
+    panelSyncedThisTurnRef.current = false;
     setQuestion(t);
   }, [input, isLoading, addMessage, setIsLoading]);
 
@@ -328,6 +226,7 @@ export function AssistantExperience() {
               productsByStep={productsByStep}
               quantities={menuQuantities}
               onQuantityChange={handleQuantityChange}
+              syncing={panelSyncing}
             />
           ) : displayedProducts.length > 0 ? (
             <>
