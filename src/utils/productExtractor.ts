@@ -9,13 +9,13 @@ export function buildProduct(p: Record<string, unknown>): Product | null {
   const name = String(p.name ?? p.title ?? p.libelle ?? "").trim();
   if (!id || !name) return null;
 
+  const rawPersons = p.persons ?? p.nb_personnes ?? p.servings;
   return {
     id,
     name,
     price: Number(p.price ?? p.price_eur ?? p.prix ?? p.price_ttc ?? 0),
-    persons: Number(p.persons ?? p.nb_personnes ?? p.servings ?? 1),
+    persons: rawPersons != null ? Number(rawPersons) : null,
     image: String(p.image ?? p.image_url ?? p.photo ?? ""),
-    allergens: Array.isArray(p.allergens) ? (p.allergens as string[]) : [],
     description: String(p.description ?? ""),
     category: String(p.category ?? p.categorie ?? p.type ?? "Traiteur"),
     menu_step: p.menu_step ? String(p.menu_step) : undefined,

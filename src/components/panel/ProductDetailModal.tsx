@@ -23,8 +23,7 @@ interface ProductDetail {
   persons?: number | null;
   image_url?: string | null;
   bac_type?: string | null;
-  dietary_tags?: string[];
-  flavour_tags?: string[];
+  tags?: string[];
   composition?: Composition | null;
   menu_step?: string | null;
   department?: string | null;
@@ -110,7 +109,7 @@ function useFocusTrap(onEscape: () => void) {
  *
  * Rendered as a Framer Motion animated overlay on top of the widget.
  * Fetches fresh data from GET /product/{productId} on mount so that
- * composition, dietary tags, and other rich fields are always up to date.
+ * composition, tags, and other rich fields are always up to date.
  *
  * A11y: focus is trapped inside the panel, Escape closes it, ARIA role/modal
  * attributes are set. All implemented without a library so Shadow DOM styling
@@ -207,8 +206,7 @@ function SkeletonContent() {
 function DetailContent({ detail }: { detail: ProductDetail }) {
   const [ingredientsOpen, setIngredientsOpen] = useState(false);
 
-  const hasDietaryTags = (detail.dietary_tags?.length ?? 0) > 0;
-  const hasFlavourTags = (detail.flavour_tags?.length ?? 0) > 0;
+  const hasTags = (detail.tags?.length ?? 0) > 0;
   const hasComposition = detail.composition != null && (detail.composition.pieces?.length ?? 0) > 0;
   const hasIngredients = !!detail.ingredients?.trim();
 
@@ -274,21 +272,10 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
           </div>
         )}
 
-        {/* Dietary tags */}
-        {hasDietaryTags && (
+        {/* Tags — raw Carrefour product tags (dietary, flavour, temperature…) */}
+        {hasTags && (
           <div class="flex flex-wrap gap-1">
-            {detail.dietary_tags!.map(tag => (
-              <span key={tag} class="text-[10px] font-medium bg-[#EEF5EE] text-[#5A8A5A] px-2 py-0.5 rounded-full">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Flavour tags: salé · froid · simple et convivial */}
-        {hasFlavourTags && (
-          <div class="flex flex-wrap gap-1">
-            {detail.flavour_tags!.map(tag => (
+            {detail.tags!.map(tag => (
               <span key={tag} class="text-[10px] bg-[#F4EFE5] text-[#9A8C78] px-2 py-0.5 rounded-full">
                 {tag}
               </span>

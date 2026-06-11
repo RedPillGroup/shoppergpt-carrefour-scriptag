@@ -2,9 +2,9 @@ export interface Product {
   id: string;
   name: string;
   price: number;
-  persons: number;
+  /** How many people one unit covers — null when Carrefour doesn't provide the data. */
+  persons: number | null;
   image: string;
-  allergens: string[];
   description?: string;
   category?: string;
   menu_step?: string;

@@ -72,10 +72,6 @@ export function MenuBuilderPanel({
 
 
   const hasProducts = Object.keys(productsByStep).length > 0;
-  const hasSelectedProducts = useMemo(
-    () => Object.values(quantities).some(qty => qty > 0),
-    [quantities],
-  );
 
   const eventLabel = requirements.event_type
     ? menuEventLabel(requirements.event_type)
@@ -102,16 +98,6 @@ export function MenuBuilderPanel({
           )}
         </div>
 
-        {/* {hasSelectedProducts && (
-          <button
-            class="flex flex-col items-center gap-1 text-[#9A8C78] hover:text-[#C7B287] transition-colors border border-[#E8D9C0] rounded-xl px-2.5 py-2 bg-white justify-center shrink-0"
-            title="Ajouter au panier"
-          >
-            <p class="text-[7px] md:text-[8px] uppercase tracking-wide font-semibold text-center leading-none">
-              Ajouter au panier
-            </p>
-          </button>
-        )} */}
       </div>
 
       {/* ── Scrollable product sections ──────────────────────────────────────── */}
@@ -120,26 +106,12 @@ export function MenuBuilderPanel({
       >
         <div class="px-4 pt-5 pb-6 md:px-6 md:pt-6">
           {!hasProducts ? (
-            /* Empty state — waiting for LLM to return products */
             <div class="flex flex-col items-center justify-center py-16 gap-3">
-              {/* <div class="w-12 h-12 rounded-full bg-[#F4EFE5] flex items-center justify-center text-[#C7B287]">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  width="22"
-                  height="22"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 8v4l3 3" />
-                </svg>
-              </div>
               <p class="text-sm text-[#9A8C78] text-center max-w-[200px] leading-relaxed m-0">
                 {steps.length > 0
                   ? 'Les produits pour votre menu arrivent…'
                   : 'Les produits apparaîtront ici une fois les étapes confirmées.'}
-              </p> */}
+              </p>
             </div>
           ) : (
             <div class="flex flex-col gap-8">

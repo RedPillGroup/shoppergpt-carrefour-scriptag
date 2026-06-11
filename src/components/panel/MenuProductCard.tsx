@@ -78,7 +78,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange }: Props) 
         <div class="text-[10px] md:text-[11px] text-[#6B7280] leading-snug line-clamp-2">
           {product.name}
         </div>
-        {product.persons > 1 && (
+        {product.persons != null && product.persons > 1 && (
           <div class="text-[9px] text-[#B0A898]">
             {product.persons} pers. · {(product.price / product.persons).toFixed(2).replace('.', ',')} €/pers.
           </div>

@@ -3,6 +3,9 @@ import { useShopperStore } from '../../store';
 import { Product } from '../../types';
 import { dispatchCartUpdated } from '../../events';
 
+const PLACEHOLDER =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='148' viewBox='0 0 200 148'%3E%3Crect width='200' height='148' fill='%23F3F1EE'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23C7B287' font-size='36'%3E🍽%3C/text%3E%3C/svg%3E";
+
 interface Props {
   product: Product;
 }
@@ -34,9 +37,10 @@ export function ProductSuggestionCard({ product }: Props) {
       <div class="relative overflow-hidden">
         <img
           class="w-full h-[128px] md:h-[148px] object-cover block transition-transform duration-300 hover:scale-[1.04]"
-          src={product.image}
+          src={product.image || PLACEHOLDER}
           alt={product.name}
           loading="lazy"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
         />
         <div class="absolute top-2 left-2 md:top-2.5 md:left-2.5 bg-[#C7B287] text-white text-[9px] md:text-[10px] font-semibold px-2 py-[3px] md:px-2.5 rounded-[20px]">
           {product.category}
@@ -52,21 +56,10 @@ export function ProductSuggestionCard({ product }: Props) {
         <div class="text-xs md:text-[13px] font-semibold text-[#1A1A2E] leading-[1.3]">
           {product.name}
         </div>
-        <div class="text-[10px] md:text-[11px] text-[#6B7280]">
-          Pour {product.persons} personnes ·{' '}
-          {(product.price / product.persons).toFixed(2).replace('.', ',')} €/pers.
-        </div>
-
-        {product.allergens.length > 0 && (
-          <div class="flex flex-wrap gap-1">
-            {product.allergens.map(a => (
-              <span
-                key={a}
-                class="bg-[#fffbeb] text-[#92400e] border border-[#fde68a] text-[9px] md:text-[10px] px-1.5 md:px-[7px] py-[2px] rounded-[20px]"
-              >
-                ⚠ {a}
-              </span>
-            ))}
+        {product.persons != null && product.persons > 0 && (
+          <div class="text-[10px] md:text-[11px] text-[#6B7280]">
+            Pour {product.persons} personne{product.persons > 1 ? 's' : ''} ·{' '}
+            {(product.price / product.persons).toFixed(2).replace('.', ',')} €/pers.
           </div>
         )}
 

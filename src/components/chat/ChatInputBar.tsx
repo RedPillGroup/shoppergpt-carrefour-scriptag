@@ -21,25 +21,6 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
 
   return (
     <div class="py-2.5 px-3.5 md:py-3.5 md:px-[18px] border-t border-[#E8ECF0] flex items-center gap-1.5 md:gap-2 shrink-0 bg-white">
-      <button
-        class="w-8 h-8 md:w-9 md:h-9 border-0 bg-transparent text-[#B0A898] rounded-full flex items-center justify-center cursor-pointer transition-colors hover:text-[#C7B287] shrink-0"
-        title="Suggestions"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          width="16"
-          height="16"
-          class="md:w-[18px] md:h-[18px]"
-        >
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
-
       <div class="flex-1 bg-[#F5F3F0] rounded-3xl min-h-9 md:min-h-10 px-1.5 py-1 flex items-center gap-1">
         <textarea
           ref={textareaRef}
@@ -68,24 +49,6 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
           </svg>
         </button>
       </div>
-
-      <button
-        class="w-8 h-8 md:w-9 md:h-9 border-0 bg-transparent text-[#B0A898] rounded-full flex items-center justify-center cursor-pointer transition-colors hover:text-[#C7B287] shrink-0"
-        title="Microphone"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          width="16"
-          height="16"
-          class="md:w-[18px] md:h-[18px]"
-        >
-          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" />
-        </svg>
-      </button>
     </div>
   );
 }

@@ -9,7 +9,6 @@ import { EditorialPanel } from './panel/EditorialPanel';
 import { MessageBubble } from './chat/MessageBubble';
 import { TypingIndicator } from './chat/TypingIndicator';
 import { StreamingBubble } from './chat/StreamingBubble';
-import { ProductSuggestionCard } from './panel/ProductSuggestionCard';
 import { ChatInputBar } from './chat/ChatInputBar';
 import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
 import { ProductDetailModal } from './panel/ProductDetailModal';
@@ -20,11 +19,6 @@ export function AssistantExperience() {
   const [input, setInput] = useState('');
   const [question, setQuestion] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState('');
-  const [productsTitle, setProductsTitle] = useState('Nos suggestions');
-  const [productsSubtitle, setProductsSubtitle] = useState('');
-  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
-  const [panelVisible, setPanelVisible] = useState(true);
-  const [panelKey, setPanelKey] = useState(0);
   const [eventRequirements, setEventRequirements] = useState<EventRequirements>({});
   const [eventScreenEnabled, setEventScreenEnabled] = useState(false);
   const [productsByStep, setProductsByStep] = useState<Record<string, Product[]>>({});
@@ -228,34 +222,6 @@ export function AssistantExperience() {
               onQuantityChange={handleQuantityChange}
               syncing={panelSyncing}
             />
-          ) : displayedProducts.length > 0 ? (
-            <>
-              <div class="py-3 px-4 md:py-3.5 md:px-6 bg-white border-b border-[#E8ECF0] flex items-center justify-between shrink-0 gap-3">
-                <div>
-                  <div class="text-sm md:text-[15px] font-bold">{productsTitle}</div>
-                  {productsSubtitle && (
-                    <div class="text-[11px] md:text-xs text-[#6B7280] mt-0.5">
-                      {productsSubtitle}
-                    </div>
-                  )}
-                </div>
-                <div class="bg-[#C7B287] text-white text-[11px] md:text-xs font-semibold px-2.5 py-1 md:px-3 rounded-[20px] shrink-0">
-                  {displayedProducts.length} produit{displayedProducts.length > 1 ? 's' : ''}
-                </div>
-              </div>
-              <div class="flex-1 overflow-y-auto py-4 px-4 md:py-5 md:px-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]">
-                <div
-                  key={panelKey}
-                  class={`transition-all duration-300 ${panelVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
-                >
-                  <div class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-3 md:gap-4">
-                    {displayedProducts.map(p => (
-                      <ProductSuggestionCard key={p.id} product={p} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
           ) : (
             <EditorialPanel onSelect={q => send(q)} />
           )}
