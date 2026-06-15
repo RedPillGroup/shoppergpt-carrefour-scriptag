@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "webpack --mode production",
+    "build": "webpack --mode production && cp ../shopper-gpt-carrefour-sandbox/chat.html dist/index.html",
     "dev": "webpack --mode development --watch"
   },
   "dependencies": {
