@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.40.0",
+    "remark-breaks": "^4.0.0",
     "embla-carousel": "^8.6.0",
     "framer-motion": "^11.2.0",
     "lucide-preact": "^1.17.0",
