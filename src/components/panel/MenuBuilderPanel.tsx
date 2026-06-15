@@ -107,11 +107,11 @@ export function MenuBuilderPanel({
         <div class="px-4 pt-5 pb-6 md:px-6 md:pt-6">
           {!hasProducts ? (
             <div class="flex flex-col items-center justify-center py-16 gap-3">
-              <p class="text-sm text-[#9A8C78] text-center max-w-[200px] leading-relaxed m-0">
+              {/* <p class="text-sm text-[#9A8C78] text-center max-w-[200px] leading-relaxed m-0">
                 {steps.length > 0
                   ? 'Les produits pour votre menu arrivent…'
                   : 'Les produits apparaîtront ici une fois les étapes confirmées.'}
-              </p>
+              </p> */}
             </div>
           ) : (
             <div class="flex flex-col gap-8">
