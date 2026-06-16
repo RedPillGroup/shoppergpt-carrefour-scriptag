@@ -1,7 +1,7 @@
 import { h } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { motion } from 'framer-motion';
-import { getApiUrl } from '../../api/config';
+import { getApiUrl, getClientId } from '../../api/config';
 import { useShopperStore } from '../../store';
 
 interface CompositionPiece {
@@ -129,7 +129,10 @@ export function ProductDetailModal({ productId, onClose }: Props) {
     setError(null);
     setDetail(null);
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-client-id': getClientId(),
+    };
     if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
 
     fetch(`${getApiUrl()}/product/${productId}`, { headers })

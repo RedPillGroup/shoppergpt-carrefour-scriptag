@@ -1,4 +1,4 @@
-import { getApiUrl } from "./config";
+import { getApiUrl, getClientId } from "./config";
 import { EventRequirements, Product } from "../types";
 import { buildProduct } from "../utils/productExtractor";
 
@@ -115,7 +115,10 @@ export async function fetchServerMenu(
   jwt: string | null,
   options?: { ifNoneMatch?: string | null }
 ): Promise<FetchServerMenuResult> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-client-id": getClientId(),
+  };
   if (jwt) headers["Authorization"] = `Bearer ${jwt}`;
   if (options?.ifNoneMatch) headers["If-None-Match"] = options.ifNoneMatch;
 
