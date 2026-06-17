@@ -1,7 +1,9 @@
 import { h, render } from "preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AssistantExperience } from "./components/AssistantExperience";
+import { getInitialSessionId } from "./api/config";
 import { initDOMEventListeners } from "./events";
+import { useShopperStore } from "./store";
 import styles from "./styles/tailwind.css";
 import satisfyWoff2 from "./assets/fonts/Satisfy-Regular.woff2";
 
@@ -35,6 +37,13 @@ function injectStyles(shadow: ShadowRoot) {
 function bootstrap() {
   injectDocumentFonts();
   initDOMEventListeners();
+
+  // Seed the session from the script tag's data-session-id (= Carrefour PHPSESSID,
+  // injected server-side). The shoppergpt:session event can still update it later.
+  const initialSessionId = getInitialSessionId();
+  if (initialSessionId) {
+    useShopperStore.getState().setSessionId(initialSessionId);
+  }
 
   // Embedded chat mode: host page provides a <div id="shoppergpt-chat"> mount point
   const embeddedChatMount = document.getElementById("shoppergpt-chat");

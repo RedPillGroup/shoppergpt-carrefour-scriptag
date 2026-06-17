@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "preact/hooks";
 import { getApiUrl, getClientId } from "../api/config";
+import { useShopperStore } from "../store";
 
 export interface MetaPayload {
   tool_calls?: Array<{ name: string; params: Record<string, unknown> }>;
@@ -85,6 +86,12 @@ export function useChatAnswer(
           "Content-Type": "application/json",
           "x-client-id": getClientId(),
         };
+        // Session = X-Session-Id (Carrefour PHPSESSID). Backend keys state/history
+        // on it and ignores the JWT when present. Authorization kept as fallback.
+        const sessionId = useShopperStore.getState().sessionId;
+        if (sessionId) {
+          headers["X-Session-Id"] = sessionId;
+        }
         if (jwt) {
           headers["Authorization"] = `Bearer ${jwt}`;
         }

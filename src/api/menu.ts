@@ -6,6 +6,7 @@ export interface ServerMenuResponse {
   products?: unknown[];
   menu_revision?: number;
   event_requirements?: Record<string, unknown>;
+  store?: { store_id?: number | string; store_name?: string; withdrawal_mode?: string } | null;
   total_cost_eur?: number;
 }
 
@@ -13,6 +14,7 @@ export interface MenuPanelState {
   productsByStep: Record<string, Product[]>;
   menuQuantities: Record<string, number>;
   eventRequirements: EventRequirements;
+  store: { store_id: string; store_name: string } | null;
   hasMenu: boolean;
   menuRevision: number;
 }
@@ -101,10 +103,17 @@ export function menuResponseToPanelState(data: ServerMenuResponse): MenuPanelSta
       ? data.menu_revision
       : 0;
 
+  const rawStore = data.store;
+  const store =
+    rawStore && rawStore.store_id != null
+      ? { store_id: String(rawStore.store_id), store_name: String(rawStore.store_name ?? "") }
+      : null;
+
   return {
     productsByStep,
     menuQuantities,
     eventRequirements,
+    store,
     hasMenu: hasMenu || hasEvent,
     menuRevision,
   };
@@ -112,14 +121,14 @@ export function menuResponseToPanelState(data: ServerMenuResponse): MenuPanelSta
 
 /** Load the session menu from MongoDB (supports ETag / 304). */
 export async function fetchServerMenu(
-  jwt: string | null,
+  sessionId: string | null,
   options?: { ifNoneMatch?: string | null }
 ): Promise<FetchServerMenuResult> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "x-client-id": getClientId(),
   };
-  if (jwt) headers["Authorization"] = `Bearer ${jwt}`;
+  if (sessionId) headers["X-Session-Id"] = sessionId;
   if (options?.ifNoneMatch) headers["If-None-Match"] = options.ifNoneMatch;
 
   const res = await fetch(`${getApiUrl()}/menu`, { headers });

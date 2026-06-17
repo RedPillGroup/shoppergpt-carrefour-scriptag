@@ -14,7 +14,7 @@ import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
 import { ProductDetailModal } from './panel/ProductDetailModal';
 
 export function AssistantExperience() {
-  const { messages, addMessage, isLoading, setIsLoading, jwt, setJwt, selectedProduct, setSelectedProduct } = useShopperStore();
+  const { messages, addMessage, isLoading, setIsLoading, jwt, setJwt, sessionId, selectedProduct, setSelectedProduct } = useShopperStore();
   const shouldReduceMotion = useReducedMotion();
   const [input, setInput] = useState('');
   const [question, setQuestion] = useState<string | null>(null);
@@ -26,12 +26,14 @@ export function AssistantExperience() {
   const [panelSyncing, setPanelSyncing] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const jwtRef = useRef(jwt);
+  const sessionIdRef = useRef(sessionId);
   const menuRevisionRef = useRef(0);
   const menuEtagRef = useRef<string | null>(null);
   const productsByStepRef = useRef(productsByStep);
   const menuQuantitiesRef = useRef(menuQuantities);
   const panelSyncedThisTurnRef = useRef(false);
   jwtRef.current = jwt;
+  sessionIdRef.current = sessionId;
   productsByStepRef.current = productsByStep;
   menuQuantitiesRef.current = menuQuantities;
 
@@ -43,11 +45,24 @@ export function AssistantExperience() {
     if (panel.hasMenu) {
       setEventScreenEnabled(true);
     }
+    // Store selected server-side (e.g. by the assistant via manage_store) → reflect it
+    // in the store + notify the host page so its header updates (sandbox navbar / Carrefour).
+    if (panel.store && panel.store.store_id) {
+      const cur = useShopperStore.getState().store;
+      if (!cur || String(cur.store_id) !== String(panel.store.store_id)) {
+        useShopperStore.getState().setStore(panel.store);
+        window.dispatchEvent(
+          new CustomEvent("shoppergpt:change_shop", {
+            detail: { store_id: panel.store.store_id, store_name: panel.store.store_name },
+          })
+        );
+      }
+    }
   }, []);
 
   /** Authoritative panel sync from MongoDB (GET /menu + ETag). */
   const syncPanelFromServer = useCallback(async (force = false) => {
-    const token = jwtRef.current;
+    const token = sessionIdRef.current;
     if (!token) return;
     setPanelSyncing(true);
     try {
@@ -69,8 +84,8 @@ export function AssistantExperience() {
   }, [messages, isLoading, streamingText]);
 
   useEffect(() => {
-    if (jwt) void syncPanelFromServer();
-  }, [jwt, syncPanelFromServer]);
+    if (sessionId) void syncPanelFromServer();
+  }, [sessionId, syncPanelFromServer]);
 
   // Snapshot the current panel (products + user-adjusted quantities) so the
   // backend can sync manual edits before the LLM answers. Read at request time.
