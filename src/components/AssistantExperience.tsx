@@ -53,7 +53,11 @@ export function AssistantExperience() {
         useShopperStore.getState().setStore(panel.store);
         window.dispatchEvent(
           new CustomEvent("shoppergpt:change_shop", {
-            detail: { store_id: panel.store.store_id, store_name: panel.store.store_name },
+            detail: {
+              store_id: panel.store.store_id,
+              store_name: panel.store.store_name,
+              mode: panel.store.mode,
+            },
           })
         );
       }
@@ -115,6 +119,7 @@ export function AssistantExperience() {
       const needsSync =
         Boolean(meta.sync_conflict) ||
         meta.menu_changed === true ||
+        meta.store_changed === true ||
         (typeof meta.menu_revision === 'number' && meta.menu_revision > menuRevisionRef.current);
       if (needsSync) {
         panelSyncedThisTurnRef.current = true;

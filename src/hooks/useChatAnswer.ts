@@ -8,6 +8,8 @@ export interface MetaPayload {
   /** Bumped when Mongo menu state changes — front refetches GET /menu when this increases. */
   menu_revision?: number;
   menu_changed?: boolean;
+  /** True when the selected store changed this turn (e.g. assistant via manage_store). */
+  store_changed?: boolean;
   sync_conflict?: {
     sync_conflict?: boolean;
     client_revision?: number;

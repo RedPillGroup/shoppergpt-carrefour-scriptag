@@ -22,6 +22,7 @@ export interface Message {
 export interface Store {
   store_id: string;
   store_name: string;
+  mode?: string;
 }
 
 export interface SessionEvent {

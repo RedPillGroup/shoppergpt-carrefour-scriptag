@@ -6,7 +6,12 @@ export interface ServerMenuResponse {
   products?: unknown[];
   menu_revision?: number;
   event_requirements?: Record<string, unknown>;
-  store?: { store_id?: number | string; store_name?: string; withdrawal_mode?: string } | null;
+  store?: {
+    store_id?: number | string;
+    store_name?: string;
+    mode?: string;
+    withdrawal_mode?: string;
+  } | null;
   total_cost_eur?: number;
 }
 
@@ -14,7 +19,7 @@ export interface MenuPanelState {
   productsByStep: Record<string, Product[]>;
   menuQuantities: Record<string, number>;
   eventRequirements: EventRequirements;
-  store: { store_id: string; store_name: string } | null;
+  store: { store_id: string; store_name: string; mode?: string } | null;
   hasMenu: boolean;
   menuRevision: number;
 }
@@ -106,7 +111,11 @@ export function menuResponseToPanelState(data: ServerMenuResponse): MenuPanelSta
   const rawStore = data.store;
   const store =
     rawStore && rawStore.store_id != null
-      ? { store_id: String(rawStore.store_id), store_name: String(rawStore.store_name ?? "") }
+      ? {
+          store_id: String(rawStore.store_id),
+          store_name: String(rawStore.store_name ?? ""),
+          mode: rawStore.mode ?? rawStore.withdrawal_mode,
+        }
       : null;
 
   return {
