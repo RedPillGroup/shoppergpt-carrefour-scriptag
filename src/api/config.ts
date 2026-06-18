@@ -34,3 +34,4 @@ export function getClientId(): string {
 export function getInitialSessionId(): string | null {
   return _scriptData.sessionId ?? window.SHOPPERGPT_CONFIG?.sessionId ?? null;
 }
+
