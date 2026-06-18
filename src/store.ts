@@ -52,7 +52,17 @@ export const useShopperStore = create<ShopperState>((set, get) => ({
 
   setSessionId: (id) => set({ sessionId: id }),
   setJwt: (jwt) => set({ jwt }),
-  setStore: (store) => set({ store }),
+  setStore: (store) => {
+    // Persist store to localStorage so it's restored on next session
+    if (store) {
+      try {
+        localStorage.setItem("shoppergpt_store", JSON.stringify(store));
+      } catch (e) {
+        // localStorage might be unavailable in some contexts
+      }
+    }
+    set({ store });
+  },
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
   setProducts: (products) => set({ products }),
@@ -82,3 +92,19 @@ export const useShopperStore = create<ShopperState>((set, get) => ({
     }
   },
 }));
+
+/**
+ * Restore the user's last-selected store from localStorage.
+ * Call this on app init to auto-restore the store if it was previously set.
+ */
+export function restoreStoreFromStorage() {
+  try {
+    const stored = localStorage.getItem("shoppergpt_store");
+    if (stored) {
+      const store = JSON.parse(stored) as Store;
+      useShopperStore.getState().setStore(store);
+    }
+  } catch (e) {
+    // localStorage might be unavailable or contain invalid data — just skip restoration
+  }
+}

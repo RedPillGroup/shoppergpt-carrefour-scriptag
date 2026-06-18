@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AssistantExperience } from "./components/AssistantExperience";
 import { getInitialSessionId } from "./api/config";
 import { initDOMEventListeners } from "./events";
-import { useShopperStore } from "./store";
+import { useShopperStore, restoreStoreFromStorage } from "./store";
 import styles from "./styles/tailwind.css";
 import satisfyWoff2 from "./assets/fonts/Satisfy-Regular.woff2";
 
@@ -44,6 +44,10 @@ function bootstrap() {
   if (initialSessionId) {
     useShopperStore.getState().setSessionId(initialSessionId);
   }
+
+  // Restore the user's last-selected store from localStorage if available.
+  // Once they pick a store (e.g., Auteuil), it persists across sessions.
+  restoreStoreFromStorage();
 
   // Embedded chat mode: host page provides a <div id="shoppergpt-chat"> mount point
   const embeddedChatMount = document.getElementById("shoppergpt-chat");
