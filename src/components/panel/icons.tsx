@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { Coffee, Flower, LayoutGrid, PartyPopper, Wheat } from 'lucide-preact';
+import { Coffee, Flower, LayoutGrid, PartyPopper, Wheat, PackagePlus } from 'lucide-preact';
 
 interface IconProps {
   size?: number;
@@ -26,6 +26,8 @@ export function getStepIcon(step: string, size = 22): h.JSX.Element | null {
     'petit dej':    <Coffee size={size} color="currentColor" strokeWidth={1.5} />,
     'table & deco': <PartyPopper size={size} color="currentColor" strokeWidth={1.5} />,
     fleurs:         <Flower size={size} color="currentColor" strokeWidth={1.5} />,
+    'à côté':       <PackagePlus size={size} color="currentColor" strokeWidth={1.5} />,
+    'a cote':       <PackagePlus size={size} color="currentColor" strokeWidth={1.5} />,
   };
   return map[key] ?? null;
 }

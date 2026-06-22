@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { Message, Product, Store } from "./types";
-import { mockStore } from "./mockData";
 
 interface ShopperState {
   sessionId: string | null;
@@ -32,16 +31,8 @@ interface ShopperState {
 export const useShopperStore = create<ShopperState>((set, get) => ({
   sessionId: null,
   jwt: null,
-  store: mockStore,
-  messages: [
-    {
-      id: "w1",
-      role: "assistant" as const,
-      content:
-        "Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\nPour commencer... quel est l'heureux événement que vous souhaitez célébrer ?",
-      timestamp: new Date(),
-    },
-  ],
+  store: null,
+  messages: [],
   products: [],
   selectedProduct: null,
   isOpen: false,

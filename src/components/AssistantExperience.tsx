@@ -14,7 +14,7 @@ import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
 import { ProductDetailModal } from './panel/ProductDetailModal';
 
 export function AssistantExperience() {
-  const { messages, addMessage, isLoading, setIsLoading, jwt, setJwt, sessionId, selectedProduct, setSelectedProduct } = useShopperStore();
+  const { messages, addMessage, isLoading, setIsLoading, jwt, setJwt, sessionId, selectedProduct, setSelectedProduct, store } = useShopperStore();
   const shouldReduceMotion = useReducedMotion();
   const [input, setInput] = useState('');
   const [question, setQuestion] = useState<string | null>(null);
@@ -183,6 +183,20 @@ export function AssistantExperience() {
   const isStreaming = isLoading && streamingText.length > 0;
   const isWaiting = isLoading && streamingText.length === 0;
 
+  const noStoreGreeting =
+    "Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n" +
+    "Pour commencer... quel est votre code postal ? Chaque magasin Carrefour propose sa propre " +
+    "sélection traiteur — je trouverai le plus proche de chez vous pour vous composer un menu sur mesure.";
+  const storeGreeting =
+    "Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n" +
+    "Pour commencer... quel est l'heureux événement que vous souhaitez célébrer ?";
+  const initialGreeting: import('../types').Message = {
+    id: 'w1',
+    role: 'assistant',
+    content: store ? storeGreeting : noStoreGreeting,
+    timestamp: new Date(0),
+  };
+
   return (
     <div class="relative flex flex-col h-full min-h-0 text-[#1A1A2E] bg-[#FAF9F7]">
       <div class="grid flex-1 grid-rows-2 md:grid-rows-1 md:grid-cols-[38%_1fr] overflow-hidden min-h-0">
@@ -206,15 +220,24 @@ export function AssistantExperience() {
             </motion.div>
 
             <div class="shrink-0 px-3.5 pb-3 md:px-5 md:pb-4 flex flex-col gap-0.5">
+              {/* Initial greeting — rendered outside the messages array so it stays
+                  reactive to store state without polluting chat history. */}
+              <MessageBubble
+                key={initialGreeting.id + (store ? '-store' : '-nostore')}
+                message={initialGreeting}
+                showSender={true}
+                fadeInOnMount={true}
+                fadeInDelay={0.1}
+              />
               {messages.map((m, i) => (
                 <MessageBubble
                   key={m.id}
                   message={m}
                   showSender={
-                    m.role === 'assistant' && (i === 0 || messages[i - 1].role !== 'assistant')
+                    m.role === 'assistant' && i > 0 && messages[i - 1].role !== 'assistant'
                   }
-                  fadeInOnMount={i === 0 && m.role === 'assistant'}
-                  fadeInDelay={i === 0 && m.role === 'assistant' ? 0.1 : 0}
+                  fadeInOnMount={false}
+                  fadeInDelay={0}
                 />
               ))}
               {isWaiting && <TypingIndicator />}
