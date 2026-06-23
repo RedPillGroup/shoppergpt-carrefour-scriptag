@@ -23,6 +23,12 @@ export interface ChatAnswerCallbacks {
   onComplete: (fullText: string) => void;
   onError: (message: string) => void;
   onJwt?: (newJwt: string) => void;
+  /**
+   * Fired when the backend emits an early `event: phase` — sent the instant the
+   * model picks a long, blocking tool (e.g. menu composition), BEFORE it runs.
+   * Lets the UI show real staged progress instead of dead air during the wait.
+   */
+  onPhase?: (phase: string) => void;
 }
 
 /**
@@ -81,7 +87,7 @@ export function useChatAnswer(
     let accumulated = "";
 
     const run = async () => {
-      const { onToken, onMeta, onComplete, onError, onJwt } = callbacksRef.current;
+      const { onToken, onMeta, onComplete, onError, onJwt, onPhase } = callbacksRef.current;
 
       try {
         const headers: Record<string, string> = {
@@ -134,6 +140,12 @@ export function useChatAnswer(
                 onMeta(meta);
               } catch {
                 // Malformed meta — ignore
+              }
+            } else if (event === "phase") {
+              try {
+                onPhase?.(JSON.parse(data) as string);
+              } catch {
+                // Malformed phase — ignore
               }
             } else {
               accumulated += data;

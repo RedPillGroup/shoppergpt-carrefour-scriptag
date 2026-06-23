@@ -14,6 +14,16 @@ module.exports = {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
+      keyframes: {
+        // Light band sweeping across clipped text — the "thinking…" shimmer.
+        shimmer: {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
+      },
+      animation: {
+        shimmer: "shimmer 2.4s linear infinite",
+      },
     },
   },
   plugins: [],

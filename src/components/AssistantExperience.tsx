@@ -8,6 +8,7 @@ import { fetchServerMenu, menuResponseToPanelState } from '../api/menu';
 import { EditorialPanel } from './panel/EditorialPanel';
 import { MessageBubble } from './chat/MessageBubble';
 import { TypingIndicator } from './chat/TypingIndicator';
+import { ComposingIndicator } from './chat/ComposingIndicator';
 import { StreamingBubble } from './chat/StreamingBubble';
 import { ChatInputBar } from './chat/ChatInputBar';
 import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
@@ -19,6 +20,9 @@ export function AssistantExperience() {
   const [input, setInput] = useState('');
   const [question, setQuestion] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState('');
+  // Set from the backend's early `event: phase` when a long tool (compose_menu)
+  // starts — drives the staged "Je compose…" indicator. Reset each turn.
+  const [composePhase, setComposePhase] = useState<string | null>(null);
   const [eventRequirements, setEventRequirements] = useState<EventRequirements>({});
   const [eventScreenEnabled, setEventScreenEnabled] = useState(false);
   const [productsByStep, setProductsByStep] = useState<Record<string, Product[]>>({});
@@ -114,6 +118,7 @@ export function AssistantExperience() {
       setJwt(newJwt);
       jwtRef.current = newJwt;
     },
+    onPhase: phase => setComposePhase(phase),
     onToken: token => setStreamingText(prev => prev + token),
     onMeta: meta => {
       const needsSync =
@@ -134,6 +139,7 @@ export function AssistantExperience() {
         timestamp: new Date()
       });
       setStreamingText('');
+      setComposePhase(null);
       setIsLoading(false);
       setQuestion(null);
       if (!panelSyncedThisTurnRef.current) {
@@ -149,6 +155,7 @@ export function AssistantExperience() {
         timestamp: new Date()
       });
       setStreamingText('');
+      setComposePhase(null);
       setIsLoading(false);
       setQuestion(null);
     }
@@ -160,6 +167,7 @@ export function AssistantExperience() {
     addMessage({ id: Date.now().toString(), role: 'user', content: t, timestamp: new Date() });
     setInput('');
     setStreamingText('');
+    setComposePhase(null);
     setIsLoading(true);
     panelSyncedThisTurnRef.current = false;
     setQuestion(t);
@@ -240,7 +248,7 @@ export function AssistantExperience() {
                   fadeInDelay={0}
                 />
               ))}
-              {isWaiting && <TypingIndicator />}
+              {isWaiting && (composePhase ? <ComposingIndicator /> : <TypingIndicator />)}
               {isStreaming && <StreamingBubble text={streamingText.replace(/__NEWLINE__/g, '\n')} />}
             </div>
 
