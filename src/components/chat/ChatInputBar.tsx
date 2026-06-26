@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { useRef, useEffect } from 'preact/hooks';
+import { SendHorizonal } from 'lucide-preact';
 
 interface Props {
   input: string;
@@ -33,20 +34,12 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
         />
 
         <button
-          class="w-[30px] h-[30px] md:w-[34px] md:h-[34px] bg-transparent text-[#C7B287] border-0 rounded-none flex items-center justify-center cursor-pointer shrink-0 transition-all hover:text-[#B79B69] active:text-[#A78958] active:scale-[.93] disabled:text-[#9CA3AF] disabled:cursor-not-allowed"
+          class="w-[32px] h-[32px] md:w-[36px] md:h-[36px] bg-[#E2422B] border-0 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-all hover:bg-[#C73A25] active:scale-[.93] disabled:bg-[#E8A99E] disabled:cursor-not-allowed"
           onClick={onSend}
           disabled={!input.trim() || isLoading}
           title="Envoyer"
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            width="13"
-            height="13"
-            class="md:w-[15px] md:h-[15px]"
-          >
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-          </svg>
+          <SendHorizonal size={15} color="white" strokeWidth={2.2} />
         </button>
       </div>
     </div>

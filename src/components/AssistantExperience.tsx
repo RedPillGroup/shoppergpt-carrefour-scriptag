@@ -53,7 +53,7 @@ export function AssistantExperience() {
     // in the store + notify the host page so its header updates (sandbox navbar / Carrefour).
     if (panel.store && panel.store.store_id) {
       const cur = useShopperStore.getState().store;
-      if (!cur || String(cur.store_id) !== String(panel.store.store_id)) {
+      if (!cur || String(cur.store_id) !== String(panel.store.store_id) || cur.mode !== panel.store.mode) {
         useShopperStore.getState().setStore(panel.store);
         window.dispatchEvent(
           new CustomEvent("shoppergpt:change_shop", {

@@ -84,37 +84,55 @@ export function MenuBuilderPanel({
         syncing ? 'opacity-60 pointer-events-none' : ''
       }`}
     >
-      {/* ── Sticky top bar — event title + date + voir la liste ─────────────── */}
-      <div class="bg-white border-b border-[#E8ECF0] px-4 py-5 md:px-5 flex gap-3">
-        {/* Cursive event info — centred in the space beside the list button, using elegant font */}
-        <div class="flex-1 flex flex-col gap-2 min-w-0 items-center justify-center text-center">
-          <span class="text-[#C7B287] text-[15px] md:text-[18px] leading-none">
-            {eventLabel}
-          </span>
-          {dateLabel && (
-            <span class="text-[12px] md:text-[13px] text-[#B09A6E] leading-none">
-              {dateLabel}
-            </span>
-          )}
+      {/* ── Hero with image — only when no products yet ──────────────────────── */}
+      {!hasProducts && (
+        <div class="relative flex-1 overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1600&auto=format&fit=crop&q=90"
+            alt=""
+            class="absolute inset-0 w-full h-full object-cover"
+          />
+          <div class="absolute inset-0 bg-black/40" />
+          <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">
+            <div class="bg-white/90 backdrop-blur-[3px] px-6 py-2.5 rounded-full shadow-md">
+              <span class="font-['Satisfy'] text-[#C7B287] text-[20px] md:text-[24px] leading-none whitespace-nowrap">
+                {eventLabel}
+              </span>
+            </div>
+            {dateLabel && (
+              <div class="bg-white/90 backdrop-blur-[3px] px-5 py-2 rounded-full shadow-sm">
+                <span class="font-['Satisfy'] text-[#B09A6E] text-[14px] md:text-[16px] leading-none">
+                  {dateLabel}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-
-      </div>
+      )}
 
       {/* ── Scrollable product sections ──────────────────────────────────────── */}
+      {hasProducts && (
       <div
         class="flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]"
       >
-        <div class="px-4 pt-5 pb-6 md:px-6 md:pt-6">
-          {!hasProducts ? (
-            <div class="flex flex-col items-center justify-center py-16 gap-3">
-              {/* <p class="text-sm text-[#9A8C78] text-center max-w-[200px] leading-relaxed m-0">
-                {steps.length > 0
-                  ? 'Les produits pour votre menu arrivent…'
-                  : 'Les produits apparaîtront ici une fois les étapes confirmées.'}
-              </p> */}
+        {/* Event name + date chips — scrolls away with content, no image */}
+        <div class="flex flex-row items-center justify-center gap-3 px-6 py-5 flex-wrap">
+          <div class="bg-white px-6 py-2.5 rounded-2xl shadow-sm">
+            <span class="font-['Satisfy'] text-[#C7B287] text-[18px] md:text-[20px] leading-none whitespace-nowrap">
+              {eventLabel}
+            </span>
+          </div>
+          {dateLabel && (
+            <div class="bg-white px-5 py-2.5 rounded-2xl shadow-sm">
+              <span class="font-['Satisfy'] text-[#C7B287] text-[18px] md:text-[20px] leading-none whitespace-nowrap">
+                {dateLabel}
+              </span>
             </div>
-          ) : (
-            <div class="flex flex-col gap-8">
+          )}
+        </div>
+
+        <div class="px-4 pt-5 pb-6 md:px-6 md:pt-6">
+          <div class="flex flex-col gap-8">
               {steps.map(step => {
                 // Keep backend order stable, only push qty-0 suggestions to the end.
                 // This avoids cards jumping around when users tweak quantities.
@@ -163,9 +181,9 @@ export function MenuBuilderPanel({
                 );
               })}
             </div>
-          )}
         </div>
       </div>
+      )}
 
       {/* ── Bottom step tab bar — scrolls to section on click ───────────────── */}
       {steps.length > 0 && (
