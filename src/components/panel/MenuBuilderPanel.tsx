@@ -3,6 +3,8 @@ import { useRef, useMemo } from 'preact/hooks';
 import { EventRequirements, Product } from '../../types';
 import { getStepIcon } from './icons';
 import { MenuProductCard } from './MenuProductCard';
+import visu1 from '../../assets/backgrounds/visu1.webp';
+import visu2 from '../../assets/backgrounds/visu2.webp';
 
 interface Props {
   requirements: EventRequirements;
@@ -80,50 +82,43 @@ export function MenuBuilderPanel({
 
   return (
     <div
-      class={`flex-1 min-h-0 flex flex-col overflow-hidden bg-[#FAF9F7] transition-opacity duration-200 ${
+      class={`flex-1 min-h-0 flex flex-col overflow-hidden relative transition-opacity duration-200 ${
         syncing ? 'opacity-60 pointer-events-none' : ''
       }`}
     >
-      {/* ── Hero with image — only when no products yet ──────────────────────── */}
+      {/* ── Full-panel background image (visu1 first screen, visu2 with menu) ── */}
+      <img src={hasProducts ? visu2 : visu1} alt="" class="absolute inset-0 w-full h-full object-cover object-top z-0" />
+
+      {/* ── No products: chips centred over full image ────────────────────────── */}
       {!hasProducts && (
-        <div class="relative flex-1 overflow-hidden">
-          <img
-            src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1600&auto=format&fit=crop&q=90"
-            alt=""
-            class="absolute inset-0 w-full h-full object-cover"
-          />
-          <div class="absolute inset-0 bg-black/40" />
-          <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">
-            <div class="bg-white/90 backdrop-blur-[3px] px-6 py-2.5 rounded-full shadow-md">
-              <span class="font-['Satisfy'] text-[#C7B287] text-[20px] md:text-[24px] leading-none whitespace-nowrap">
-                {eventLabel}
+        <div class="relative z-10 flex-1 flex flex-col items-center justify-end gap-3 px-6 pb-8">
+          <div class="bg-white/90 backdrop-blur-[3px] px-6 py-2.5 rounded-full shadow-md">
+            <span class="font-['Satisfy'] text-[#C7B287] text-[20px] md:text-[24px] leading-none whitespace-nowrap">
+              {eventLabel}
+            </span>
+          </div>
+          {dateLabel && (
+            <div class="bg-white/90 backdrop-blur-[3px] px-5 py-2 rounded-full shadow-sm">
+              <span class="font-['Satisfy'] text-[#B09A6E] text-[14px] md:text-[16px] leading-none">
+                {dateLabel}
               </span>
             </div>
-            {dateLabel && (
-              <div class="bg-white/90 backdrop-blur-[3px] px-5 py-2 rounded-full shadow-sm">
-                <span class="font-['Satisfy'] text-[#B09A6E] text-[14px] md:text-[16px] leading-none">
-                  {dateLabel}
-                </span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
 
-      {/* ── Scrollable product sections ──────────────────────────────────────── */}
+      {/* ── With products: chips + scrollable products over the image ────────── */}
       {hasProducts && (
-      <div
-        class="flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]"
-      >
-        {/* Event name + date chips — scrolls away with content, no image */}
-        <div class="flex flex-row items-center justify-center gap-3 px-6 py-5 flex-wrap">
-          <div class="bg-white px-6 py-2.5 rounded-2xl shadow-sm">
+      <div class="relative z-10 flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]">
+        {/* Chips — scroll away */}
+        <div class="flex flex-row items-center justify-center gap-3 px-6 pt-8 pb-5 flex-wrap">
+          <div class="bg-white/90 backdrop-blur-[2px] px-6 py-2.5 rounded-2xl shadow-sm">
             <span class="font-['Satisfy'] text-[#C7B287] text-[18px] md:text-[20px] leading-none whitespace-nowrap">
               {eventLabel}
             </span>
           </div>
           {dateLabel && (
-            <div class="bg-white px-5 py-2.5 rounded-2xl shadow-sm">
+            <div class="bg-white/90 backdrop-blur-[2px] px-5 py-2.5 rounded-2xl shadow-sm">
               <span class="font-['Satisfy'] text-[#C7B287] text-[18px] md:text-[20px] leading-none whitespace-nowrap">
                 {dateLabel}
               </span>
@@ -131,7 +126,7 @@ export function MenuBuilderPanel({
           )}
         </div>
 
-        <div class="px-4 pt-5 pb-6 md:px-6 md:pt-6">
+        <div class="px-4 pt-2 pb-6 md:px-6">
           <div class="flex flex-col gap-8">
               {steps.map(step => {
                 // Keep backend order stable, only push qty-0 suggestions to the end.
@@ -152,13 +147,15 @@ export function MenuBuilderPanel({
                     }}
                     style="scroll-margin-top: 20px"
                   >
-                    {/* Cursive step heading with hairline dividers */}
+                    {/* Step heading — chip with hairline dividers */}
                     <div class="flex items-center gap-3 mb-4">
-                      <div class="flex-1 h-px bg-[#E8D9C0]" />
-                      <h2 class="font-['Satisfy'] text-[#C7B287] text-xl md:text-2xl leading-none shrink-0">
-                        {step}
-                      </h2>
-                      <div class="flex-1 h-px bg-[#E8D9C0]" />
+                      <div class="flex-1 h-px bg-[#C8B99A]/40" />
+                      <div class="bg-white px-4 py-1.5 rounded-full shrink-0 shadow-sm">
+                        <h2 class="font-['Satisfy'] text-[#C7B287] text-xl md:text-2xl leading-none m-0">
+                          {step}
+                        </h2>
+                      </div>
+                      <div class="flex-1 h-px bg-[#C8B99A]/40" />
                     </div>
 
                     {products.length === 0 ? (
@@ -187,7 +184,7 @@ export function MenuBuilderPanel({
 
       {/* ── Bottom step tab bar — scrolls to section on click ───────────────── */}
       {steps.length > 0 && (
-        <div class="shrink-0 bg-white border-t border-[#E8ECF0]">
+        <div class="relative z-10 shrink-0 bg-white border-t border-[#E8ECF0]">
           <div class="flex items-stretch overflow-x-auto [&::-webkit-scrollbar]:hidden">
             {steps.map(step => {
               const icon = getStepIcon(step, 18);
@@ -217,7 +214,7 @@ export function MenuBuilderPanel({
       )}
 
       {/* ── Stats footer ─────────────────────────────────────────────────────── */}
-      <div class="shrink-0 grid grid-cols-2 border-t border-[#E8ECF0] shadow-[0_-4px_14px_rgba(17,24,39,0.06)]">
+      <div class="relative z-10 shrink-0 grid grid-cols-2 border-t border-[#E8ECF0] shadow-[0_-4px_14px_rgba(17,24,39,0.06)]">
         <div class="bg-[#F3F1EE] px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
           <div class="flex items-baseline justify-between gap-1">
             <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
