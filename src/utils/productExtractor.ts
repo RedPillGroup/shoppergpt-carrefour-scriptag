@@ -21,5 +21,8 @@ export function buildProduct(p: Record<string, unknown>): Product | null {
     menu_step: p.menu_step ? String(p.menu_step) : undefined,
     recommended_quantity:
       p.recommended_quantity != null ? Number(p.recommended_quantity) : undefined,
+    expression_pvc: p.expression_pvc != null ? String(p.expression_pvc) : null,
+    volume: p.volume != null ? String(p.volume) : null,
+    nb_pieces: p.nb_pieces != null ? Number(p.nb_pieces) : null,
   };
 }

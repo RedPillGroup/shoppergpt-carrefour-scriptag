@@ -10,6 +10,12 @@ export interface Product {
   menu_step?: string;
   /** Pre-computed quantity suggestion from the backend (ceil(guests / persons)). */
   recommended_quantity?: number;
+  /** Carrefour unit-of-sale label, e.g. "La part (mini. 6)", "Le plateau pour 8/10 pers". */
+  expression_pvc?: string | null;
+  /** Weight + conditioning unit, e.g. "330 mL", "750 mL", "1500 g". */
+  volume?: string | null;
+  /** Number of individual pieces in one sellable unit, e.g. 6 for a pack of 6 cans. */
+  nb_pieces?: number | null;
 }
 
 export interface Message {

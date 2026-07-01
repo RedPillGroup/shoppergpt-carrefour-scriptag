@@ -34,6 +34,9 @@ interface ProductDetail {
   conseil_prepa?: string | null;
   ingredients?: string | null;
   en_savoir_plus?: string | null;
+  expression_pvc?: string | null;
+  volume?: string | null;
+  nb_pieces?: number | null;
 }
 
 interface Props {
@@ -263,6 +266,27 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
             </span>
           )}
         </div>
+
+        {/* Unit / volume / pieces */}
+        {(detail.expression_pvc || detail.volume || detail.nb_pieces != null) && (
+          <div class="flex flex-wrap gap-1.5">
+            {detail.expression_pvc && (
+              <span class="text-[10px] font-medium bg-[#F0EDE8] text-[#6B7280] px-2 py-0.5 rounded-full">
+                {detail.expression_pvc}
+              </span>
+            )}
+            {detail.volume && (
+              <span class="text-[10px] font-medium bg-[#F0EDE8] text-[#6B7280] px-2 py-0.5 rounded-full">
+                {detail.volume}
+              </span>
+            )}
+            {detail.nb_pieces != null && (
+              <span class="text-[10px] font-medium bg-[#F0EDE8] text-[#6B7280] px-2 py-0.5 rounded-full">
+                {detail.nb_pieces} pièces
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Quick info chips: Frais · France · 5 jours de préparation */}
         {chips.length > 0 && (
