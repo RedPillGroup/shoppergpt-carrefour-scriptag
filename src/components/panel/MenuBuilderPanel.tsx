@@ -23,7 +23,7 @@ const VISUAL_THEMES = [
 const BACKGROUNDS: Record<string, { before: string; after: string }> = Object.fromEntries(
   VISUAL_THEMES.map(theme => [
     theme,
-    { before: `${BACKGROUNDS_BASE_URL}/${theme}-1-v2.webp`, after: `${BACKGROUNDS_BASE_URL}/${theme}-2-v2.webp` }
+    { before: `${BACKGROUNDS_BASE_URL}/${theme}-1-v3.webp`, after: `${BACKGROUNDS_BASE_URL}/${theme}-2-v3.webp` }
   ])
 );
 
