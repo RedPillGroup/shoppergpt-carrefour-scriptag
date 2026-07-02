@@ -50,6 +50,12 @@ export interface Message {
   /** Present on the assistant message where select_store returned needs_mode —
    * renders an interactive mode-selection card (retrait/drive/livraison chips). */
   modeOptions?: ModeOptions;
+  /** True on the assistant message where a store selection was FINALIZED this turn
+   * (select_store ran and did NOT return needs_mode). Used to freeze the store/mode
+   * card that led here — deliberately per-message rather than reading the global
+   * currently-selected store, so a LATER re-ask (new find_stores card) isn't born
+   * frozen just because an earlier, unrelated selection was already resolved. */
+  storeResolved?: boolean;
 }
 
 export interface Store {

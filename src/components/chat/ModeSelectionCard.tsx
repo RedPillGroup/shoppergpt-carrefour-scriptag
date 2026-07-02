@@ -25,7 +25,7 @@ export function ModeSelectionCard({ item, onSelect, disabled = false }: Props) {
   };
 
   return (
-    <div class={`mt-2 w-full max-w-full flex flex-wrap gap-1.5 p-2 ${disabled ? 'opacity-50' : ''}`}>
+    <div class={`mt-2 w-full max-w-full flex flex-col gap-1.5 ${disabled ? 'opacity-50' : ''}`}>
       {item.modes.map(mode => {
         const isSelected = selected === mode;
         return (
@@ -34,13 +34,13 @@ export function ModeSelectionCard({ item, onSelect, disabled = false }: Props) {
             type="button"
             onClick={() => pick(mode)}
             disabled={disabled || Boolean(selected)}
-            class={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold ${
+            class={`flex items-center w-full px-3.5 py-2 rounded-full border text-left text-[12px] ${
               isSelected
-                ? 'bg-[#C7B287] text-white'
-                : 'bg-white border border-[#E8ECF0] text-[#6B7280]'
+                ? 'bg-[#C7B287] border-[#C7B287] text-white font-semibold'
+                : 'bg-white border-[#E8ECF0] text-[#6B7280]'
             } ${disabled || selected ? 'cursor-default' : 'cursor-pointer'}`}
           >
-            <span>{MODE_LABELS[mode] ?? mode}</span>
+            <span class="truncate">{MODE_LABELS[mode] ?? mode}</span>
           </button>
         );
       })}

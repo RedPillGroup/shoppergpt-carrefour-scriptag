@@ -42,6 +42,7 @@ export function AssistantExperience() {
   const pendingStepSelectionRef = useRef<string[] | null>(null);
   const storeOptionsRef = useRef<Message['storeOptions']>(undefined);
   const modeOptionsRef = useRef<Message['modeOptions']>(undefined);
+  const storeResolvedRef = useRef(false);
   jwtRef.current = jwt;
   sessionIdRef.current = sessionId;
   productsByStepRef.current = productsByStep;
@@ -151,6 +152,12 @@ export function AssistantExperience() {
       if (meta.mode_options?.name) {
         modeOptionsRef.current = meta.mode_options;
       }
+      // select_store ran this turn and did NOT come back needing a mode → the
+      // selection was actually finalized this turn (as opposed to store_changed
+      // alone, which also fires for a needs_mode round-trip).
+      if (meta.store_changed && !meta.mode_options) {
+        storeResolvedRef.current = true;
+      }
     },
     onComplete: fullText => {
       addMessage({
@@ -160,11 +167,13 @@ export function AssistantExperience() {
         timestamp: new Date(),
         stepSuggestion: stepSuggestionRef.current,
         storeOptions: storeOptionsRef.current,
-        modeOptions: modeOptionsRef.current
+        modeOptions: modeOptionsRef.current,
+        storeResolved: storeResolvedRef.current || undefined
       });
       stepSuggestionRef.current = undefined;
       storeOptionsRef.current = undefined;
       modeOptionsRef.current = undefined;
+      storeResolvedRef.current = false;
       setStreamingText('');
       setComposePhase(null);
       setIsLoading(false);
@@ -184,6 +193,7 @@ export function AssistantExperience() {
       stepSuggestionRef.current = undefined;
       storeOptionsRef.current = undefined;
       modeOptionsRef.current = undefined;
+      storeResolvedRef.current = false;
       setStreamingText('');
       setComposePhase(null);
       setIsLoading(false);
@@ -203,6 +213,7 @@ export function AssistantExperience() {
     stepSuggestionRef.current = undefined;
     storeOptionsRef.current = undefined;
     modeOptionsRef.current = undefined;
+    storeResolvedRef.current = false;
     setQuestion(t);
   }, [input, isLoading, addMessage, setIsLoading]);
 
@@ -292,11 +303,12 @@ export function AssistantExperience() {
                   }}
                   choiceCardsDisabled={
                     // Same principle as stepSelectionDisabled above: only freeze once
-                    // the flow has actually moved past this card (a newer store/mode
-                    // card superseded it, or the store is now fully selected) — not
-                    // merely because the user said something unrelated in between.
-                    messages.slice(i + 1).some(msg => msg.storeOptions || msg.modeOptions) ||
-                    Boolean(store?.mode)
+                    // the flow has actually moved past THIS card (a newer store/mode
+                    // card superseded it, or its own selection got resolved) — deliberately
+                    // NOT based on the globally currently-selected store, since that stays
+                    // true forever after the FIRST resolution and would freeze every later
+                    // re-generated card (e.g. after "je veux en choisir un autre") too.
+                    messages.slice(i + 1).some(msg => msg.storeOptions || msg.modeOptions || msg.storeResolved)
                   }
                   onSelectStore={storeName => send(storeName)}
                   onSelectMode={modeLabel => send(modeLabel)}
