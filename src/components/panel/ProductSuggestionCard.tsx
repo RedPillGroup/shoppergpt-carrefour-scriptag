@@ -32,7 +32,7 @@ export function ProductSuggestionCard({ product }: Props) {
 
   return (
     <div
-      class={`bg-white rounded-xl md:rounded-[14px] overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,.06)] border border-[#E8ECF0] transition-[transform,box-shadow] duration-200 flex flex-col hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(139,122,90,.15)] ${inCart ? 'in-cart' : ''}`}
+      class={`bg-white overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,.06)] border border-[#E8ECF0] transition-[transform,box-shadow] duration-200 flex flex-col hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(139,122,90,.15)] ${inCart ? 'in-cart' : ''}`}
     >
       <div class="relative overflow-hidden">
         <img

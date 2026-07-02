@@ -77,6 +77,9 @@ function parseEventRequirements(raw: Record<string, unknown>): EventRequirements
     next.menu_steps = steps as string[];
   }
 
+  const visualTheme = parseString(raw.visual_theme);
+  if (visualTheme !== undefined) next.visual_theme = visualTheme;
+
   return next;
 }
 

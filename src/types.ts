@@ -95,4 +95,7 @@ export interface EventRequirements {
   budget?: number;
   /** Confirmed course categories, in order. Only set after the user has validated them. */
   menu_steps?: string[];
+  /** LLM-inferred background theme (anniv, apero, bbq, buffet, gouter, mariage, picnic,
+   * tv, generique) — picks the matching visu-{theme}1/2.webp pair in MenuBuilderPanel. */
+  visual_theme?: string;
 }

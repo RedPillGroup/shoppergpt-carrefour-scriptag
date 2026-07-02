@@ -3,8 +3,29 @@ import { useRef, useMemo } from 'preact/hooks';
 import { EventRequirements, Product } from '../../types';
 import { getStepIcon } from './icons';
 import { MenuProductCard } from './MenuProductCard';
-import visu1 from '../../assets/backgrounds/visu1.webp';
-import visu2 from '../../assets/backgrounds/visu2.webp';
+
+// Hosted on a public GCS bucket rather than bundled — 18 images inlined as base64
+// would have bloated the widget's single-file bundle by ~5MB downloaded on every
+// page. Keyed by event_requirements.visual_theme (LLM-inferred, see set_event_info)
+// — "generique" is the fallback used before a theme is known or when none fits.
+const BACKGROUNDS_BASE_URL = 'https://storage.googleapis.com/carrefour-shoppergpt-backgrounds';
+const VISUAL_THEMES = [
+  'generique',
+  'anniv',
+  'apero',
+  'bbq',
+  'buffet',
+  'gouter',
+  'mariage',
+  'picnic',
+  'tv',
+] as const;
+const BACKGROUNDS: Record<string, { before: string; after: string }> = Object.fromEntries(
+  VISUAL_THEMES.map(theme => [
+    theme,
+    { before: `${BACKGROUNDS_BASE_URL}/${theme}-1-v2.webp`, after: `${BACKGROUNDS_BASE_URL}/${theme}-2-v2.webp` }
+  ])
+);
 
 interface Props {
   requirements: EventRequirements;
@@ -72,8 +93,8 @@ export function MenuBuilderPanel({
   const totalGuests = (requirements.guests_adults ?? 0) + (requirements.guests_kids ?? 0);
   const pricePerPerson = totalGuests > 0 && totalCost > 0 ? totalCost / totalGuests : undefined;
 
-
   const hasProducts = Object.keys(productsByStep).length > 0;
+  const background = BACKGROUNDS[requirements.visual_theme ?? ''] ?? BACKGROUNDS.generique;
 
   const eventLabel = requirements.event_type
     ? menuEventLabel(requirements.event_type)
@@ -86,8 +107,15 @@ export function MenuBuilderPanel({
         syncing ? 'opacity-60 pointer-events-none' : ''
       }`}
     >
-      {/* ── Full-panel background image (visu1 first screen, visu2 with menu) ── */}
-      <img src={hasProducts ? visu2 : visu1} alt="" class="absolute inset-0 w-full h-full object-cover object-top z-0" />
+      {/* ── Full-panel background image (theme "before" on first screen, "after" with menu).
+          The source images themselves are edited (see carrefour_bgs_edited/) with extra
+          plain-color canvas so the subject never reaches the zone where the event/date
+          chips render, however tall the panel is — no need to constrain the image itself. ── */}
+      <img
+        src={hasProducts ? background.after : background.before}
+        alt=""
+        class="absolute inset-0 w-full h-full object-cover object-top z-0"
+      />
 
       {/* ── No products: chips centred over full image ────────────────────────── */}
       {!hasProducts && (
@@ -109,36 +137,34 @@ export function MenuBuilderPanel({
 
       {/* ── With products: chips + scrollable products over the image ────────── */}
       {hasProducts && (
-      <div class="relative z-10 flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]">
-        {/* Chips — scroll away */}
-        <div class="flex flex-row items-center justify-center gap-3 px-6 pt-8 pb-5 flex-wrap">
-          <div class="bg-white/90 backdrop-blur-[2px] px-6 py-2.5 rounded-2xl shadow-sm">
-            <span class="font-['Satisfy'] text-[#C7B287] text-[18px] md:text-[20px] leading-none whitespace-nowrap">
-              {eventLabel}
-            </span>
-          </div>
-          {dateLabel && (
-            <div class="bg-white/90 backdrop-blur-[2px] px-5 py-2.5 rounded-2xl shadow-sm">
+        <div class="relative z-10 flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]">
+          {/* Chips — scroll away */}
+          <div class="flex flex-row items-center justify-center gap-3 px-6 pt-8 pb-5 flex-wrap">
+            <div class="bg-white/90 backdrop-blur-[2px] px-6 py-2.5 rounded-2xl shadow-sm">
               <span class="font-['Satisfy'] text-[#C7B287] text-[18px] md:text-[20px] leading-none whitespace-nowrap">
-                {dateLabel}
+                {eventLabel}
               </span>
             </div>
-          )}
-        </div>
+            {dateLabel && (
+              <div class="bg-white/90 backdrop-blur-[2px] px-5 py-2.5 rounded-2xl shadow-sm">
+                <span class="font-['Satisfy'] text-[#C7B287] text-[18px] md:text-[20px] leading-none whitespace-nowrap">
+                  {dateLabel}
+                </span>
+              </div>
+            )}
+          </div>
 
-        <div class="px-4 pt-2 pb-6 md:px-6">
-          <div class="flex flex-col gap-8">
+          <div class="px-4 pt-2 pb-6 md:px-6">
+            <div class="flex flex-col gap-8">
               {steps.map(step => {
                 // Keep backend order stable, only push qty-0 suggestions to the end.
                 // This avoids cards jumping around when users tweak quantities.
-                const products = [...(productsByStep[step] ?? [])].sort(
-                  (a, b) => {
-                    const aIsEmpty = (quantities[a.id] ?? 0) <= 0;
-                    const bIsEmpty = (quantities[b.id] ?? 0) <= 0;
-                    if (aIsEmpty === bIsEmpty) return 0;
-                    return aIsEmpty ? 1 : -1;
-                  },
-                );
+                const products = [...(productsByStep[step] ?? [])].sort((a, b) => {
+                  const aIsEmpty = (quantities[a.id] ?? 0) <= 0;
+                  const bIsEmpty = (quantities[b.id] ?? 0) <= 0;
+                  if (aIsEmpty === bIsEmpty) return 0;
+                  return aIsEmpty ? 1 : -1;
+                });
                 return (
                   <section
                     key={step}
@@ -178,8 +204,8 @@ export function MenuBuilderPanel({
                 );
               })}
             </div>
+          </div>
         </div>
-      </div>
       )}
 
       {/* ── Bottom step tab bar — scrolls to section on click ───────────────── */}

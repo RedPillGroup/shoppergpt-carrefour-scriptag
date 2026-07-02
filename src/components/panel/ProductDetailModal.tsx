@@ -165,7 +165,7 @@ export function ProductDetailModal({ productId, onClose }: Props) {
         aria-modal="true"
         aria-label={detail?.name ?? 'Détails du produit'}
         tabIndex={-1}
-        class="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-[400px] max-h-[90%] overflow-y-auto flex flex-col outline-none [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]"
+        class="relative z-10 bg-white shadow-2xl w-full max-w-[400px] max-h-[90%] overflow-y-auto flex flex-col outline-none [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]"
         onClick={e => e.stopPropagation()}
         initial={{ opacity: 0, y: 16, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -198,7 +198,7 @@ export function ProductDetailModal({ productId, onClose }: Props) {
 function SkeletonContent() {
   return (
     <div class="flex flex-col animate-pulse">
-      <div class="w-full h-[200px] bg-[#F3F1EE] rounded-t-2xl" />
+      <div class="w-full h-[200px] bg-[#F3F1EE]" />
       <div class="px-4 pt-4 pb-6 flex flex-col gap-3">
         <div class="h-4 w-3/4 bg-[#E8E4DE] rounded" />
         <div class="h-3 w-1/3 bg-[#E8E4DE] rounded" />
@@ -227,7 +227,7 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
       {/* Image — natural ratio, no crop */}
       <div class="relative shrink-0">
         <img
-          class="w-full object-contain rounded-t-2xl block bg-[#F3F1EE]"
+          class="w-full object-contain block bg-[#F3F1EE]"
           src={detail.image_url || PLACEHOLDER}
           alt={detail.name}
           loading="lazy"

@@ -33,7 +33,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange }: Props) 
 
   return (
     <div
-      class={`rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-col cursor-pointer transition-opacity duration-200 ${
+      class={`overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-col cursor-pointer transition-opacity duration-200 ${
         inMenu ? 'bg-white opacity-100' : 'bg-white opacity-40'
       }`}
       onClick={() => setSelectedProduct(product)}
