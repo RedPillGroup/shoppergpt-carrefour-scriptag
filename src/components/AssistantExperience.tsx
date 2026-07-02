@@ -40,6 +40,8 @@ export function AssistantExperience() {
   // Live selection from the interactive step-toggle card — no submit button, this
   // rides with the user's next chat message (see getClientState / sync_state).
   const pendingStepSelectionRef = useRef<string[] | null>(null);
+  const storeOptionsRef = useRef<Message['storeOptions']>(undefined);
+  const modeOptionsRef = useRef<Message['modeOptions']>(undefined);
   jwtRef.current = jwt;
   sessionIdRef.current = sessionId;
   productsByStepRef.current = productsByStep;
@@ -143,6 +145,12 @@ export function AssistantExperience() {
       if (meta.step_suggestion?.steps?.length) {
         stepSuggestionRef.current = meta.step_suggestion.steps;
       }
+      if (meta.store_options?.stores?.length) {
+        storeOptionsRef.current = meta.store_options.stores;
+      }
+      if (meta.mode_options?.name) {
+        modeOptionsRef.current = meta.mode_options;
+      }
     },
     onComplete: fullText => {
       addMessage({
@@ -150,9 +158,13 @@ export function AssistantExperience() {
         role: 'assistant',
         content: fullText,
         timestamp: new Date(),
-        stepSuggestion: stepSuggestionRef.current
+        stepSuggestion: stepSuggestionRef.current,
+        storeOptions: storeOptionsRef.current,
+        modeOptions: modeOptionsRef.current
       });
       stepSuggestionRef.current = undefined;
+      storeOptionsRef.current = undefined;
+      modeOptionsRef.current = undefined;
       setStreamingText('');
       setComposePhase(null);
       setIsLoading(false);
@@ -170,6 +182,8 @@ export function AssistantExperience() {
         timestamp: new Date()
       });
       stepSuggestionRef.current = undefined;
+      storeOptionsRef.current = undefined;
+      modeOptionsRef.current = undefined;
       setStreamingText('');
       setComposePhase(null);
       setIsLoading(false);
@@ -187,6 +201,8 @@ export function AssistantExperience() {
     setIsLoading(true);
     panelSyncedThisTurnRef.current = false;
     stepSuggestionRef.current = undefined;
+    storeOptionsRef.current = undefined;
+    modeOptionsRef.current = undefined;
     setQuestion(t);
   }, [input, isLoading, addMessage, setIsLoading]);
 
@@ -274,6 +290,16 @@ export function AssistantExperience() {
                   onStepSelectionChange={steps => {
                     pendingStepSelectionRef.current = steps;
                   }}
+                  choiceCardsDisabled={
+                    // Same principle as stepSelectionDisabled above: only freeze once
+                    // the flow has actually moved past this card (a newer store/mode
+                    // card superseded it, or the store is now fully selected) — not
+                    // merely because the user said something unrelated in between.
+                    messages.slice(i + 1).some(msg => msg.storeOptions || msg.modeOptions) ||
+                    Boolean(store?.mode)
+                  }
+                  onSelectStore={storeName => send(storeName)}
+                  onSelectMode={modeLabel => send(modeLabel)}
                 />
               ))}
               {isWaiting && (composePhase ? <ComposingIndicator /> : <TypingIndicator />)}

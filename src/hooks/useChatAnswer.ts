@@ -21,6 +21,16 @@ export interface MetaPayload {
     steps: Array<{ step: string }>;
     rationale?: string;
   };
+  /** Store candidates from find_stores — drives the interactive store-selection card. */
+  store_options?: {
+    stores: Array<{ store_id: string; name: string; address: string; distance_km: number; modes: string[] }>;
+  };
+  /** Pending mode choice from select_store's needs_mode — drives the interactive
+   * mode-selection card (retrait/drive/livraison chips). */
+  mode_options?: {
+    name: string;
+    modes: string[];
+  };
 }
 
 export interface ChatAnswerCallbacks {

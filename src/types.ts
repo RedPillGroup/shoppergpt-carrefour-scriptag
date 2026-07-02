@@ -22,6 +22,19 @@ export interface StepSuggestionItem {
   step: string;
 }
 
+export interface StoreOptionItem {
+  store_id: string;
+  name: string;
+  address: string;
+  distance_km: number;
+  modes: string[];
+}
+
+export interface ModeOptions {
+  name: string;
+  modes: string[];
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant";
@@ -30,6 +43,13 @@ export interface Message {
   /** Present on the assistant message that just ran recommend_menu_steps — renders
    * an interactive on/off step-selection card instead of/alongside the plain text. */
   stepSuggestion?: StepSuggestionItem[];
+  /** Present on the assistant message that just ran find_stores — renders an
+   * interactive store-selection card. Clicking a store sends it as a normal chat
+   * message (quick-reply style), unlike the step card there's no deferred sync. */
+  storeOptions?: StoreOptionItem[];
+  /** Present on the assistant message where select_store returned needs_mode —
+   * renders an interactive mode-selection card (retrait/drive/livraison chips). */
+  modeOptions?: ModeOptions;
 }
 
 export interface Store {

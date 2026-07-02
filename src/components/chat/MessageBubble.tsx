@@ -4,6 +4,8 @@ import remarkBreaks from 'remark-breaks';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Message } from '../../types';
 import { StepToggleCard } from './StepToggleCard';
+import { StoreSelectionCard } from './StoreSelectionCard';
+import { ModeSelectionCard } from './ModeSelectionCard';
 
 interface Props {
   message: Message;
@@ -17,6 +19,13 @@ interface Props {
    * isn't the latest message anymore) — kept visible (chat history stays readable)
    * but no longer interactive, since editing it wouldn't do anything at that point. */
   stepSelectionDisabled?: boolean;
+  /** Forwarded to StoreSelectionCard/ModeSelectionCard — a click sends the pick as a
+   * normal chat message immediately (quick-reply style, no deferred sync). */
+  onSelectStore?: (storeName: string) => void;
+  onSelectMode?: (modeLabel: string) => void;
+  /** Freezes the store/mode cards once a newer message exists — unlike the step
+   * card, a click here sends immediately, so there's no window to keep it live. */
+  choiceCardsDisabled?: boolean;
 }
 
 export function MessageBubble({
@@ -25,7 +34,10 @@ export function MessageBubble({
   fadeInOnMount = false,
   fadeInDelay = 0,
   onStepSelectionChange,
-  stepSelectionDisabled = false
+  stepSelectionDisabled = false,
+  onSelectStore,
+  onSelectMode,
+  choiceCardsDisabled = false
 }: Props) {
   const isUser = message.role === 'user';
   const shouldReduceMotion = useReducedMotion();
@@ -70,6 +82,20 @@ export function MessageBubble({
             items={message.stepSuggestion}
             onChange={onStepSelectionChange}
             disabled={stepSelectionDisabled}
+          />
+        )}
+        {!isUser && message.storeOptions && onSelectStore && (
+          <StoreSelectionCard
+            items={message.storeOptions}
+            onSelect={onSelectStore}
+            disabled={choiceCardsDisabled}
+          />
+        )}
+        {!isUser && message.modeOptions && onSelectMode && (
+          <ModeSelectionCard
+            item={message.modeOptions}
+            onSelect={onSelectMode}
+            disabled={choiceCardsDisabled}
           />
         )}
         <div
