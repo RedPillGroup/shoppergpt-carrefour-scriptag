@@ -42,7 +42,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange }: Props) 
       {/* ── Image + overlays ─────────────────────────────── */}
       <div class="relative shrink-0">
         <img
-          class={`w-full h-[150px] object-cover block transition-all duration-200 ${!inMenu ? 'grayscale' : ''}`}
+          class={`w-full aspect-square object-cover block transition-all duration-200 ${!inMenu ? 'grayscale' : ''}`}
           src={product.image || PLACEHOLDER}
           alt={product.name}
           loading="lazy"

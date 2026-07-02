@@ -18,11 +18,18 @@ export interface Product {
   nb_pieces?: number | null;
 }
 
+export interface StepSuggestionItem {
+  step: string;
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  /** Present on the assistant message that just ran recommend_menu_steps — renders
+   * an interactive on/off step-selection card instead of/alongside the plain text. */
+  stepSuggestion?: StepSuggestionItem[];
 }
 
 export interface Store {

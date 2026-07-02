@@ -212,7 +212,6 @@ function SkeletonContent() {
 function DetailContent({ detail }: { detail: ProductDetail }) {
   const [ingredientsOpen, setIngredientsOpen] = useState(false);
 
-  const hasTags = (detail.tags?.length ?? 0) > 0;
   const hasComposition = detail.composition != null && (detail.composition.pieces?.length ?? 0) > 0;
   const hasIngredients = !!detail.ingredients?.trim();
 
@@ -294,17 +293,6 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
             {chips.map(chip => (
               <span key={chip} class="text-[10px] font-medium bg-[#F0EDE8] text-[#6B7280] px-2 py-0.5 rounded-full">
                 {chip}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Tags — raw Carrefour product tags (dietary, flavour, temperature…) */}
-        {hasTags && (
-          <div class="flex flex-wrap gap-1">
-            {detail.tags!.map(tag => (
-              <span key={tag} class="text-[10px] bg-[#F4EFE5] text-[#9A8C78] px-2 py-0.5 rounded-full">
-                {tag}
               </span>
             ))}
           </div>

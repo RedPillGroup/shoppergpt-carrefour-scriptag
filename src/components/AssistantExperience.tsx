@@ -2,7 +2,7 @@ import { h } from 'preact';
 import { useRef, useEffect, useState, useCallback } from 'preact/hooks';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useShopperStore } from '../store';
-import { EventRequirements, Product } from '../types';
+import { EventRequirements, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
 import { fetchServerMenu, menuResponseToPanelState } from '../api/menu';
 import { EditorialPanel } from './panel/EditorialPanel';
@@ -36,6 +36,10 @@ export function AssistantExperience() {
   const productsByStepRef = useRef(productsByStep);
   const menuQuantitiesRef = useRef(menuQuantities);
   const panelSyncedThisTurnRef = useRef(false);
+  const stepSuggestionRef = useRef<Message['stepSuggestion']>(undefined);
+  // Live selection from the interactive step-toggle card — no submit button, this
+  // rides with the user's next chat message (see getClientState / sync_state).
+  const pendingStepSelectionRef = useRef<string[] | null>(null);
   jwtRef.current = jwt;
   sessionIdRef.current = sessionId;
   productsByStepRef.current = productsByStep;
@@ -109,7 +113,13 @@ export function AssistantExperience() {
         };
       }),
     );
-    const base = { menu_revision: menuRevisionRef.current };
+    const base: Record<string, unknown> = { menu_revision: menuRevisionRef.current };
+    if (pendingStepSelectionRef.current) {
+      base.menu_steps = pendingStepSelectionRef.current;
+      // One-shot: consumed by this request only, so a stale snapshot can't later
+      // overwrite a more recent server-side menu_steps change (e.g. via compose_menu).
+      pendingStepSelectionRef.current = null;
+    }
     return products.length > 0 ? { ...base, products } : base;
   };
 
@@ -130,14 +140,19 @@ export function AssistantExperience() {
         panelSyncedThisTurnRef.current = true;
         void syncPanelFromServer(true);
       }
+      if (meta.step_suggestion?.steps?.length) {
+        stepSuggestionRef.current = meta.step_suggestion.steps;
+      }
     },
     onComplete: fullText => {
       addMessage({
         id: Date.now().toString(),
         role: 'assistant',
         content: fullText,
-        timestamp: new Date()
+        timestamp: new Date(),
+        stepSuggestion: stepSuggestionRef.current
       });
+      stepSuggestionRef.current = undefined;
       setStreamingText('');
       setComposePhase(null);
       setIsLoading(false);
@@ -154,6 +169,7 @@ export function AssistantExperience() {
         content: `❌ Une erreur est survenue : ${msg}`,
         timestamp: new Date()
       });
+      stepSuggestionRef.current = undefined;
       setStreamingText('');
       setComposePhase(null);
       setIsLoading(false);
@@ -170,6 +186,7 @@ export function AssistantExperience() {
     setComposePhase(null);
     setIsLoading(true);
     panelSyncedThisTurnRef.current = false;
+    stepSuggestionRef.current = undefined;
     setQuestion(t);
   }, [input, isLoading, addMessage, setIsLoading]);
 
@@ -246,6 +263,17 @@ export function AssistantExperience() {
                   }
                   fadeInOnMount={false}
                   fadeInDelay={0}
+                  stepSelectionDisabled={
+                    // A newer step-toggle card supersedes this one, OR the menu has
+                    // actually been composed since — NOT merely "a newer message
+                    // exists" (the user may have asked something unrelated in the
+                    // meantime and should still be able to adjust steps afterwards).
+                    messages.slice(i + 1).some(msg => msg.stepSuggestion) ||
+                    Object.keys(productsByStep).length > 0
+                  }
+                  onStepSelectionChange={steps => {
+                    pendingStepSelectionRef.current = steps;
+                  }}
                 />
               ))}
               {isWaiting && (composePhase ? <ComposingIndicator /> : <TypingIndicator />)}

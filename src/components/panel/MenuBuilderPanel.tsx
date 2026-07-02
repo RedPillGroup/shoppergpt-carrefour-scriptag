@@ -163,7 +163,7 @@ export function MenuBuilderPanel({
                         Aucun produit disponible pour ce service.
                       </p>
                     ) : (
-                      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div class="grid grid-cols-3 md:grid-cols-4 gap-3">
                         {products.map(p => (
                           <MenuProductCard
                             key={p.id}

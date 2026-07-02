@@ -15,6 +15,12 @@ export interface MetaPayload {
     client_revision?: number;
     server_revision?: number;
   };
+  /** Advisory step suggestion from recommend_menu_steps — drives the interactive
+   * on/off step-selection card rendered under the assistant's message. */
+  step_suggestion?: {
+    steps: Array<{ step: string }>;
+    rationale?: string;
+  };
 }
 
 export interface ChatAnswerCallbacks {

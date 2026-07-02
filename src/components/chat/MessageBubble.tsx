@@ -3,19 +3,29 @@ import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Message } from '../../types';
+import { StepToggleCard } from './StepToggleCard';
 
 interface Props {
   message: Message;
   showSender?: boolean;
   fadeInOnMount?: boolean;
   fadeInDelay?: number;
+  /** Forwarded to StepToggleCard — tracks the live step selection so it rides with
+   * the user's NEXT chat message (no submit button; see getClientState). */
+  onStepSelectionChange?: (steps: string[]) => void;
+  /** Freezes the step-toggle card once the conversation has moved past it (i.e. this
+   * isn't the latest message anymore) — kept visible (chat history stays readable)
+   * but no longer interactive, since editing it wouldn't do anything at that point. */
+  stepSelectionDisabled?: boolean;
 }
 
 export function MessageBubble({
   message,
   showSender,
   fadeInOnMount = false,
-  fadeInDelay = 0
+  fadeInDelay = 0,
+  onStepSelectionChange,
+  stepSelectionDisabled = false
 }: Props) {
   const isUser = message.role === 'user';
   const shouldReduceMotion = useReducedMotion();
@@ -55,6 +65,13 @@ export function MessageBubble({
             </div>
           )}
         </div>
+        {!isUser && message.stepSuggestion && onStepSelectionChange && (
+          <StepToggleCard
+            items={message.stepSuggestion}
+            onChange={onStepSelectionChange}
+            disabled={stepSelectionDisabled}
+          />
+        )}
         <div
           class={`text-[10px] md:text-[11px] text-[#6B7280] mt-1.5 md:mt-2 px-1 ${isUser ? 'text-right' : ''}`}
         >
