@@ -83,9 +83,9 @@ export interface ChangeShopEvent {
   store_id: string;
 }
 
-export type MenuStep = 'Apéritifs' | 'Entrées' | 'Plats' | 'Plateaux' | 'Fromages' | 'Desserts' | 'Boissons' | 'Pains' | 'Petit Déj' | 'Table & Déco' | 'Fleurs' | 'À côté';
+export type MenuStep = 'Apéritifs' | 'Entrées' | 'Plats' | 'Sauces' | 'Fromages' | 'Desserts' | 'Boissons' | 'Pains' | 'Petit Déj' | 'Table & Déco' | 'Fleurs';
 
-export const ALL_MENU_STEPS: MenuStep[] = ['Apéritifs', 'Entrées', 'Plats', 'Plateaux', 'Fromages', 'Desserts', 'Boissons', 'Pains', 'Petit Déj', 'Table & Déco', 'Fleurs', 'À côté'];
+export const ALL_MENU_STEPS: MenuStep[] = ['Apéritifs', 'Entrées', 'Plats', 'Sauces', 'Fromages', 'Desserts', 'Boissons', 'Pains', 'Petit Déj', 'Table & Déco', 'Fleurs'];
 
 export interface EventRequirements {
   event_type?: string;

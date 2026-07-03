@@ -3,7 +3,7 @@ import { useState, useEffect } from 'preact/hooks';
 import { ALL_MENU_STEPS, StepSuggestionItem } from '../../types';
 
 // Never proposed spontaneously — only added if the client explicitly asks (see info.py).
-const EXCLUDED_STEPS = new Set(['À côté']);
+const EXCLUDED_STEPS = new Set(['Sauces']);
 
 interface Props {
   /** Recommended (preselected) steps from recommend_menu_steps. */
