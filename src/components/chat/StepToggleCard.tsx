@@ -4,8 +4,8 @@ import { ALL_MENU_STEPS, StepSuggestionItem } from '../../types';
 
 // Steps fully hidden from the toggle card (not even as a manual "add" option).
 // Sauces is intentionally NOT here anymore — it's now a normal toggleable step,
-// just never pre-selected by recommend_menu_steps (see info.py), same as Fleurs
-// and Table & Déco.
+// just never pre-selected by recommend_menu_steps (see info.py), same as
+// Table & Déco.
 const EXCLUDED_STEPS = new Set<string>([]);
 
 interface Props {

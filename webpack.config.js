@@ -29,7 +29,15 @@ module.exports = (env, argv) => {
           exclude: /node_modules/,
         },
         {
+          // `import x from './icon.svg?raw'` — raw markup string, used for step icons so
+          // their fill can be forced to currentColor via CSS (theming, active/inactive tabs).
+          test: /\.svg$/i,
+          resourceQuery: /raw/,
+          type: "asset/source",
+        },
+        {
           test: /\.(png|jpg|jpeg|gif|webp|svg)$/i,
+          resourceQuery: { not: [/raw/] },
           type: "asset/inline", // base64-inlines the image into the bundle — no separate file needed
         },
         {

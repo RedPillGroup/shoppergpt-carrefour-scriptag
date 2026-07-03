@@ -216,7 +216,7 @@ export function MenuBuilderPanel({
         <div class="relative z-10 shrink-0 bg-white border-t border-[#E8ECF0]">
           <div class="flex items-stretch overflow-x-auto [&::-webkit-scrollbar]:hidden">
             {steps.map(step => {
-              const icon = getStepIcon(step, 18);
+              const icon = getStepIcon(step, 20);
               if (!icon) return null;
               const hasProductsForStep = (productsByStep[step]?.length ?? 0) > 0;
               return (
