@@ -11,20 +11,22 @@ import { MenuProductCard } from './MenuProductCard';
 // when none fits. "apero" also covers the old "buffet"/cocktail dînatoire theme,
 // merged into one visual (see info.py's visual_theme enum).
 const BACKGROUNDS_BASE_URL = 'https://storage.googleapis.com/carrefour-shoppergpt-backgrounds';
-const VISUAL_THEMES = [
-  'generique',
-  'anniv',
-  'apero',
-  'bbq',
-  'gouter',
-  'mariage',
-  'picnic',
-  'tv',
-] as const;
+// Per-theme version suffix — bump just one theme's entry when only that image is
+// re-exported, so unrelated themes don't need re-uploading to pick a new name.
+const VISUAL_THEME_VERSIONS: Record<string, string> = {
+  generique: 'v4',
+  anniv: 'v4',
+  apero: 'v4',
+  bbq: 'v4',
+  gouter: 'v4',
+  mariage: 'v4',
+  picnic: 'v4',
+  tv: 'v5',
+};
 const BACKGROUNDS: Record<string, { before: string; after: string }> = Object.fromEntries(
-  VISUAL_THEMES.map(theme => [
+  Object.entries(VISUAL_THEME_VERSIONS).map(([theme, version]) => [
     theme,
-    { before: `${BACKGROUNDS_BASE_URL}/${theme}-1-v4.webp`, after: `${BACKGROUNDS_BASE_URL}/${theme}-2-v4.webp` }
+    { before: `${BACKGROUNDS_BASE_URL}/${theme}-1-${version}.webp`, after: `${BACKGROUNDS_BASE_URL}/${theme}-2-${version}.webp` }
   ])
 );
 

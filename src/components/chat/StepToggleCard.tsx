@@ -2,8 +2,11 @@ import { h } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import { ALL_MENU_STEPS, StepSuggestionItem } from '../../types';
 
-// Never proposed spontaneously — only added if the client explicitly asks (see info.py).
-const EXCLUDED_STEPS = new Set(['Sauces']);
+// Steps fully hidden from the toggle card (not even as a manual "add" option).
+// Sauces is intentionally NOT here anymore — it's now a normal toggleable step,
+// just never pre-selected by recommend_menu_steps (see info.py), same as Fleurs
+// and Table & Déco.
+const EXCLUDED_STEPS = new Set<string>([]);
 
 interface Props {
   /** Recommended (preselected) steps from recommend_menu_steps. */
