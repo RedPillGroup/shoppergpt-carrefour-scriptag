@@ -216,7 +216,7 @@ export function MenuBuilderPanel({
         <div class="relative z-10 shrink-0 bg-white border-t border-[#E8ECF0]">
           <div class="flex items-stretch overflow-x-auto [&::-webkit-scrollbar]:hidden">
             {steps.map(step => {
-              const icon = getStepIcon(step, 20);
+              const icon = getStepIcon(step, 24);
               if (!icon) return null;
               const hasProductsForStep = (productsByStep[step]?.length ?? 0) > 0;
               return (
@@ -229,7 +229,7 @@ export function MenuBuilderPanel({
                       : 'text-[#D1D5DB] bg-[#FAFAF9]'
                   }`}
                 >
-                  <span class="h-[18px] w-[18px] flex items-center justify-center shrink-0 mt-1">
+                  <span class="h-[24px] w-[24px] flex items-center justify-center shrink-0 mt-1">
                     {icon}
                   </span>
                   <span class="text-[7px] md:text-[8px] uppercase tracking-wide leading-none font-medium">
