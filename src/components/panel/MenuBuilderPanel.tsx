@@ -4,17 +4,18 @@ import { EventRequirements, Product } from '../../types';
 import { getStepIcon } from './icons';
 import { MenuProductCard } from './MenuProductCard';
 
-// Hosted on a public GCS bucket rather than bundled — 18 images inlined as base64
-// would have bloated the widget's single-file bundle by ~5MB downloaded on every
-// page. Keyed by event_requirements.visual_theme (LLM-inferred, see set_event_info)
-// — "generique" is the fallback used before a theme is known or when none fits.
+// Hosted on a public GCS bucket rather than bundled — 16 images inlined as base64
+// would have bloated the widget's single-file bundle by several MB downloaded on
+// every page. Keyed by event_requirements.visual_theme (LLM-inferred, see
+// set_event_info) — "generique" is the fallback used before a theme is known or
+// when none fits. "apero" also covers the old "buffet"/cocktail dînatoire theme,
+// merged into one visual (see info.py's visual_theme enum).
 const BACKGROUNDS_BASE_URL = 'https://storage.googleapis.com/carrefour-shoppergpt-backgrounds';
 const VISUAL_THEMES = [
   'generique',
   'anniv',
   'apero',
   'bbq',
-  'buffet',
   'gouter',
   'mariage',
   'picnic',
@@ -23,7 +24,7 @@ const VISUAL_THEMES = [
 const BACKGROUNDS: Record<string, { before: string; after: string }> = Object.fromEntries(
   VISUAL_THEMES.map(theme => [
     theme,
-    { before: `${BACKGROUNDS_BASE_URL}/${theme}-1-v3.webp`, after: `${BACKGROUNDS_BASE_URL}/${theme}-2-v3.webp` }
+    { before: `${BACKGROUNDS_BASE_URL}/${theme}-1-v4.webp`, after: `${BACKGROUNDS_BASE_URL}/${theme}-2-v4.webp` }
   ])
 );
 
