@@ -18,19 +18,19 @@ const BACKGROUNDS_BASE_URL = 'https://storage.googleapis.com/carrefour-shoppergp
 // re-exported, so unrelated themes don't need re-uploading to pick a new name.
 const VISUAL_THEME_VERSIONS: Record<string, string> = {
   generique: 'v7',
-  anniv: 'v7',
+  anniv: 'v8',
   apero: 'v7',
   bbq: 'v7',
   gouter: 'v7',
   mariage: 'v7',
-  picnic: 'v7',
+  picnic: 'v8',
   tv: 'v7',
   amoureux: 'v7',
   bapteme: 'v7',
   brunch: 'v7',
   paques: 'v7',
   noel: 'v7',
-  buffet: 'v7',
+  buffet: 'v8',
 };
 const BACKGROUNDS: Record<string, { before: string; after: string }> = Object.fromEntries(
   Object.entries(VISUAL_THEME_VERSIONS).map(([theme, version]) => [
