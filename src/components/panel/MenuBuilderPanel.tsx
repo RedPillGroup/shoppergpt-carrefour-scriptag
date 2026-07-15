@@ -7,12 +7,12 @@ import { MenuProductCard } from './MenuProductCard';
 import { ShoppingListModal } from './ShoppingListModal';
 import cartIcon from '../../assets/icons/cart.svg?raw';
 
-// Hosted on a public GCS bucket rather than bundled — 16 images inlined as base64
+// Hosted on a public GCS bucket rather than bundled — 16+ images inlined as base64
 // would have bloated the widget's single-file bundle by several MB downloaded on
 // every page. Keyed by event_requirements.visual_theme (LLM-inferred, see
 // set_event_info) — "generique" is the fallback used before a theme is known or
-// when none fits. "apero" also covers the old "buffet"/cocktail dînatoire theme,
-// merged into one visual (see info.py's visual_theme enum).
+// when none fits. "buffet" has its own visual, distinct from "apero" (see
+// info.py's visual_theme enum).
 const BACKGROUNDS_BASE_URL = 'https://storage.googleapis.com/carrefour-shoppergpt-backgrounds';
 // Per-theme version suffix — bump just one theme's entry when only that image is
 // re-exported, so unrelated themes don't need re-uploading to pick a new name.
@@ -30,6 +30,7 @@ const VISUAL_THEME_VERSIONS: Record<string, string> = {
   brunch: 'v7',
   paques: 'v7',
   noel: 'v7',
+  buffet: 'v7',
 };
 const BACKGROUNDS: Record<string, { before: string; after: string }> = Object.fromEntries(
   Object.entries(VISUAL_THEME_VERSIONS).map(([theme, version]) => [
