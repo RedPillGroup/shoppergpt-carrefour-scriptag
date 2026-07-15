@@ -30,7 +30,7 @@ const VISUAL_THEME_VERSIONS: Record<string, string> = {
   brunch: 'v7',
   paques: 'v7',
   noel: 'v7',
-  buffet: 'v8',
+  buffet: 'v9',
 };
 const BACKGROUNDS: Record<string, { before: string; after: string }> = Object.fromEntries(
   Object.entries(VISUAL_THEME_VERSIONS).map(([theme, version]) => [
