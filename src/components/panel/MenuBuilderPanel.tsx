@@ -14,14 +14,18 @@ const BACKGROUNDS_BASE_URL = 'https://storage.googleapis.com/carrefour-shoppergp
 // Per-theme version suffix — bump just one theme's entry when only that image is
 // re-exported, so unrelated themes don't need re-uploading to pick a new name.
 const VISUAL_THEME_VERSIONS: Record<string, string> = {
-  generique: 'v4',
-  anniv: 'v4',
-  apero: 'v4',
-  bbq: 'v4',
-  gouter: 'v4',
-  mariage: 'v4',
-  picnic: 'v4',
-  tv: 'v5',
+  generique: 'v6',
+  anniv: 'v6',
+  apero: 'v6',
+  bbq: 'v6',
+  gouter: 'v6',
+  mariage: 'v6',
+  picnic: 'v6',
+  tv: 'v6',
+  amoureux: 'v6',
+  bapteme: 'v6',
+  brunch: 'v6',
+  paques: 'v6',
 };
 const BACKGROUNDS: Record<string, { before: string; after: string }> = Object.fromEntries(
   Object.entries(VISUAL_THEME_VERSIONS).map(([theme, version]) => [
