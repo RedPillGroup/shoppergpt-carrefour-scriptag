@@ -1,8 +1,11 @@
-import { h } from 'preact';
-import { useRef, useMemo } from 'preact/hooks';
+import { h, Fragment } from 'preact';
+import { useRef, useMemo, useState } from 'preact/hooks';
+import { AnimatePresence } from 'framer-motion';
 import { EventRequirements, Product } from '../../types';
 import { getStepIcon } from './icons';
 import { MenuProductCard } from './MenuProductCard';
+import { ShoppingListModal } from './ShoppingListModal';
+import cartIcon from '../../assets/icons/cart.svg?raw';
 
 // Hosted on a public GCS bucket rather than bundled — 16 images inlined as base64
 // would have bloated the widget's single-file bundle by several MB downloaded on
@@ -14,18 +17,19 @@ const BACKGROUNDS_BASE_URL = 'https://storage.googleapis.com/carrefour-shoppergp
 // Per-theme version suffix — bump just one theme's entry when only that image is
 // re-exported, so unrelated themes don't need re-uploading to pick a new name.
 const VISUAL_THEME_VERSIONS: Record<string, string> = {
-  generique: 'v6',
-  anniv: 'v6',
-  apero: 'v6',
-  bbq: 'v6',
-  gouter: 'v6',
-  mariage: 'v6',
-  picnic: 'v6',
-  tv: 'v6',
-  amoureux: 'v6',
-  bapteme: 'v6',
-  brunch: 'v6',
-  paques: 'v6',
+  generique: 'v7',
+  anniv: 'v7',
+  apero: 'v7',
+  bbq: 'v7',
+  gouter: 'v7',
+  mariage: 'v7',
+  picnic: 'v7',
+  tv: 'v7',
+  amoureux: 'v7',
+  bapteme: 'v7',
+  brunch: 'v7',
+  paques: 'v7',
+  noel: 'v7',
 };
 const BACKGROUNDS: Record<string, { before: string; after: string }> = Object.fromEntries(
   Object.entries(VISUAL_THEME_VERSIONS).map(([theme, version]) => [
@@ -68,6 +72,8 @@ export function MenuBuilderPanel({
   onQuantityChange,
   syncing = false
 }: Props) {
+  const [shoppingListOpen, setShoppingListOpen] = useState(false);
+
   // Confirmed steps drive tab bar order + section order
   const steps: string[] = useMemo(() => {
     const confirmed = requirements.menu_steps ?? [];
@@ -180,15 +186,13 @@ export function MenuBuilderPanel({
                     }}
                     style="scroll-margin-top: 20px"
                   >
-                    {/* Step heading — chip with hairline dividers */}
-                    <div class="flex items-center gap-3 mb-4">
-                      <div class="flex-1 h-px bg-[#C8B99A]/40" />
+                    {/* Step heading — chip, no dividers */}
+                    <div class="flex items-center justify-center mb-4">
                       <div class="bg-white px-4 py-1.5 rounded-full shrink-0 shadow-sm">
                         <h2 class="font-['Satisfy'] text-[#C7B287] text-xl md:text-2xl leading-none m-0">
                           {step}
                         </h2>
                       </div>
-                      <div class="flex-1 h-px bg-[#C8B99A]/40" />
                     </div>
 
                     {products.length === 0 ? (
@@ -267,25 +271,71 @@ export function MenuBuilderPanel({
           </div>
         </div>
 
-        <div class="bg-[#C7B287] text-white px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
-          <div class="flex items-baseline justify-between gap-1">
-            <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
-              Coût total
-            </span>
-            <span class="text-[9px] md:text-[10px] text-white tabular-nums font-semibold">
-              {totalCost > 0 ? fmtEur(totalCost) : '—'}
-            </span>
+        <div class="bg-[#C7B287] text-white px-3 py-2.5 md:px-4 md:py-3 flex items-center justify-between gap-2">
+          <div class="flex flex-col gap-1.5 min-w-0">
+            <div class="flex items-baseline justify-between gap-1">
+              <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
+                Coût total
+              </span>
+              <span class="text-[9px] md:text-[10px] text-white tabular-nums font-semibold">
+                {totalCost > 0 ? fmtEur(totalCost) : '—'}
+              </span>
+            </div>
+            <div class="flex items-baseline justify-between gap-1">
+              <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
+                Prix/pers.
+              </span>
+              <span class="text-[9px] md:text-[10px] text-white tabular-nums font-semibold">
+                {pricePerPerson !== undefined ? fmtEur(pricePerPerson) : '—'}
+              </span>
+            </div>
           </div>
-          <div class="flex items-baseline justify-between gap-1">
-            <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
-              Prix/pers.
-            </span>
-            <span class="text-[9px] md:text-[10px] text-white tabular-nums font-semibold">
-              {pricePerPerson !== undefined ? fmtEur(pricePerPerson) : '—'}
-            </span>
-          </div>
+
+          {/* Ajouter au panier — opens the shopping-list recap modal.
+              Two distinct buttons (not one toggling its content): a plain round
+              icon-only button below `md` (no room next to the price stats — mirrors
+              the basket-icon circle in the mobile mockup), and a fixed-size text CTA
+              at `md`+ using the exact desktop spec (142×32, white fill, #AAAAAA
+              1px border, 30px radius). Icon and label never show at the same time. */}
+          {hasProducts && (
+            <Fragment>
+              <button
+                onClick={() => setShoppingListOpen(true)}
+                aria-label="Ajouter au panier"
+                class="md:hidden shrink-0 p-1 rounded-full bg-white flex items-center justify-center border-0 cursor-pointer shadow-sm transition-colors hover:bg-[#F7F2E6]"
+              >
+                <span
+                  class="inline-flex w-[18px] h-[18px] shrink-0 text-[#8D7A4E] [&_svg]:block [&_svg]:w-full [&_svg]:h-full [&_path]:fill-current"
+                  dangerouslySetInnerHTML={{ __html: cartIcon }}
+                />
+              </button>
+              <button
+                onClick={() => setShoppingListOpen(true)}
+                class="hidden md:flex shrink-0 items-center justify-center cursor-pointer bg-white hover:bg-[#F7F2E6] transition-colors"
+                style="width:142px; height:32px; border-radius:30px; border:1px solid #AAAAAA; padding:3px 7px;"
+              >
+                <span class="text-[10px] font-bold uppercase tracking-wide text-[#8D7A4E] whitespace-nowrap">
+                  Ajouter au panier
+                </span>
+              </button>
+            </Fragment>
+          )}
         </div>
       </div>
+
+      {/* ── Shopping list recap modal ────────────────────────────────────────── */}
+      <AnimatePresence>
+        {shoppingListOpen && (
+          <ShoppingListModal
+            productsByStep={productsByStep}
+            quantities={quantities}
+            steps={steps}
+            totalGuests={totalGuests}
+            onClose={() => setShoppingListOpen(false)}
+            onValidate={() => setShoppingListOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

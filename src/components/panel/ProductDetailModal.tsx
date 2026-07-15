@@ -250,7 +250,7 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
         {/* Price + persons */}
         <div class="flex items-baseline gap-2 flex-wrap">
           {detail.price_eur != null && (
-            <span class="text-[16px] font-bold text-[#C7B287]">
+            <span class="text-[16px] font-bold text-[#E2422B]">
               {detail.price_eur.toFixed(2).replace('.', ',')} €
             </span>
           )}

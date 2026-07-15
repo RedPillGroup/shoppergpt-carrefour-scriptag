@@ -140,21 +140,12 @@ export function MenuProductCard({ product, quantity, onQuantityChange }: Props) 
 
       {/* ── Content ─────────────────────────────────────── */}
       <div class="px-2.5 pt-2 pb-3 flex flex-col gap-0.5">
-        <div class="text-[13px] md:text-[14px] font-bold text-[#C7B287]">
+        <div class="text-[13px] md:text-[14px] font-bold text-[#E2422B]">
           {product.price.toFixed(2).replace('.', ',')} €
         </div>
         <div class="text-[10px] md:text-[11px] text-[#6B7280] leading-snug line-clamp-2">
           {product.name}
         </div>
-        {(product.expression_pvc || product.volume || (product.persons != null && product.persons >= 1)) && (
-          <div class="text-[9px] text-[#B0A898] leading-snug">
-            {[
-              product.expression_pvc,
-              product.volume,
-              product.persons != null ? `${product.persons} pers.` : null,
-            ].filter(Boolean).join(' · ')}
-          </div>
-        )}
       </div>
     </div>
   );
