@@ -7,6 +7,11 @@ interface Props {
   product: Product;
   quantity: number;
   onQuantityChange: (delta: number) => void;
+  /** Row layout (image left, price/name right) instead of the default card
+   * (image top). Used for the mobile horizontal-scroll product strip only —
+   * see MenuBuilderPanel, which renders this alongside the normal grid and
+   * lets CSS pick one per breakpoint. */
+  horizontal?: boolean;
 }
 
 const PLACEHOLDER =
@@ -14,7 +19,7 @@ const PLACEHOLDER =
 
 const MAX_QTY = 99;
 
-export function MenuProductCard({ product, quantity, onQuantityChange }: Props) {
+export function MenuProductCard({ product, quantity, onQuantityChange, horizontal = false }: Props) {
   const inMenu = quantity > 0;
   const setSelectedProduct = useShopperStore(s => s.setSelectedProduct);
 
@@ -29,6 +34,117 @@ export function MenuProductCard({ product, quantity, onQuantityChange }: Props) 
       onQuantityChange(clamped - quantity);
     }
     setEditing(false);
+  }
+
+  if (horizontal) {
+    return (
+      <div
+        class={`h-full overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-row cursor-pointer transition-opacity duration-200 ${
+          inMenu ? 'bg-white opacity-100' : 'bg-white opacity-40'
+        }`}
+        onClick={() => setSelectedProduct(product)}
+      >
+        {/* ── Image + overlays — fixed-width column, but full card height (not
+            aspect-square) so the row can grow tall enough for a 3-line name
+            without clipping it. object-cover still crops the photo cleanly. ── */}
+        <div class="relative shrink-0 w-[110px] h-full">
+          <img
+            class={`w-full h-full object-cover block transition-all duration-200 ${!inMenu ? 'grayscale' : ''}`}
+            src={product.image || PLACEHOLDER}
+            alt={product.name}
+            loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
+          />
+
+          <button
+            class={`absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow transition-all duration-200 ${
+              inMenu ? 'bg-[#16a34a] opacity-100 scale-100' : 'bg-[#9CA3AF] opacity-80 scale-100'
+            }`}
+            onClick={e => {
+              e.stopPropagation();
+              onQuantityChange(inMenu ? -quantity : 1);
+            }}
+          >
+            {inMenu ? (
+              <svg width="9" height="9" viewBox="0 0 11 11" fill="none">
+                <path d="M2 5.5l2.5 2.5L9 2.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            ) : (
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                <path d="M2 2l6 6M8 2l-6 6" stroke="white" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+            )}
+          </button>
+
+          {/* Straddles the image/content seam — anchored to this column's own
+              right edge (left-full) then pulled back by half its own width
+              (-translate-x-1/2), same trick as elsewhere: no need to know the
+              exact pixel boundary, it just centers on wherever this column ends. */}
+          <div
+            class="absolute top-[70%] left-full -translate-x-1/2 -translate-y-1/2 z-10 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-1"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => onQuantityChange(-1)}
+              disabled={quantity === 0}
+              class={`w-7 h-7 rounded-full flex items-center justify-center text-[17px] font-bold transition-colors ${
+                quantity > 0 ? 'text-[#C7B287] hover:bg-[#F4EFE5]' : 'text-[#D1D5DB] cursor-not-allowed'
+              }`}
+            >
+              −
+            </button>
+            {editing ? (
+              <input
+                class="min-w-[28px] w-[28px] text-center text-[14px] font-bold tabular-nums text-[#C7B287] border-none outline-none bg-transparent"
+                type="number"
+                min={0}
+                max={MAX_QTY}
+                value={inputVal}
+                onInput={e => setInputVal((e.target as HTMLInputElement).value)}
+                onBlur={e => commitEdit((e.target as HTMLInputElement).value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') commitEdit((e.target as HTMLInputElement).value);
+                  if (e.key === 'Escape') setEditing(false);
+                }}
+                autoFocus
+              />
+            ) : (
+              <span
+                class={`min-w-[24px] text-center text-[14px] font-bold tabular-nums cursor-text ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
+                onClick={e => {
+                  e.stopPropagation();
+                  setInputVal(String(quantity));
+                  setEditing(true);
+                }}
+              >
+                {quantity}
+              </span>
+            )}
+            <button
+              onClick={() => onQuantityChange(+1)}
+              disabled={quantity >= MAX_QTY}
+              class={`w-7 h-7 rounded-full flex items-center justify-center text-[17px] font-bold transition-colors ${
+                quantity < MAX_QTY ? 'text-[#C7B287] hover:bg-[#F4EFE5]' : 'text-[#D1D5DB] cursor-not-allowed'
+              }`}
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        {/* ── Content — price + name, right of the image. Top-aligned (not
+            centered) so it sits near the image's top edge, leaving the lower
+            portion free for the stepper straddling the seam above. ────────── */}
+        <div class="flex-1 min-w-0 flex flex-col justify-start gap-1 px-3 pt-3 pb-2">
+          <div class="text-[14px] font-bold text-[#E2422B]">
+            {product.price.toFixed(2).replace('.', ',')} €
+          </div>
+          <div class="text-[12px] text-[#3D3529] leading-snug line-clamp-3">
+            {product.name}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

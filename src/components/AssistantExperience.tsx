@@ -315,7 +315,7 @@ export function AssistantExperience() {
   };
 
   return (
-    <div class="relative flex flex-col h-full min-h-0 text-[#1A1A2E] bg-[#FAF9F7]">
+    <div class="relative flex flex-col h-full min-h-0 bg-[#FAF9F7]">
       <div class="flex flex-col md:grid flex-1 md:grid-rows-1 md:grid-cols-[38%_1fr] overflow-hidden min-h-0">
         <div
           class="relative flex order-3 md:order-none md:col-start-1 flex-col bg-white border-b md:border-b-0 md:border-r border-[#E8ECF0] min-h-0 transition-[flex-basis] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
@@ -328,7 +328,7 @@ export function AssistantExperience() {
             // ChatInputBar (shrink-0) still forces itself to its full intrinsic
             // height, keeping the input + mic reachable. Both are plain lengths
             // (not 'auto'/a flexGrow toggle), so the transition interpolates smoothly.
-            flexBasis: mobilePanelExpanded ? '64px' : '50%',
+            flexBasis: mobilePanelExpanded ? '64px' : '60%',
           }}
         >
           {/* Mobile-only "expand" trigger — sits at the chat pane's own top edge
@@ -387,7 +387,7 @@ export function AssistantExperience() {
                       : { duration: 0.42, ease: [0.16, 1, 0.3, 1], delay: 0.02 }
                   }
                 >
-                  <p class="m-0 py-10 md:py-9 font-normal text-[#C7B287] text-base md:text-lg leading-[1.45]">
+                  <p class="m-0 pt-3 pb-5 md:py-10 font-normal text-[#C7B287] text-base md:text-lg leading-[1.45]">
                     Bonjour et bienvenue, je suis{' '}
                     <span class="font-['Satisfy'] font-normal text-[#C7B287] text-base md:text-xl">Cathia</span> votre agent
                     intelligent traiteur. Que puis-je faire pour vous&nbsp;?

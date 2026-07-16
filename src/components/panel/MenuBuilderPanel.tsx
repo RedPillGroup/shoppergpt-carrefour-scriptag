@@ -217,7 +217,7 @@ export function MenuBuilderPanel({
                 <span class="h-[26px] w-[26px] flex items-center justify-center shrink-0 [&_svg]:h-full [&_svg]:w-full">
                   {getStepIcon(steps[currentMobileIndex], 26)}
                 </span>
-                <span class="font-semibold uppercase tracking-wide text-[13px] text-[#3D3529] leading-none pt-2">
+                <span class="font-semibold uppercase tracking-wide text-[13px] text-[##878787] leading-none pt-2">
                   {steps[currentMobileIndex]}
                 </span>
               </div>
@@ -242,11 +242,13 @@ export function MenuBuilderPanel({
               stacked (same as desktop), which is generally tall enough that
               centering would just look wrong, so it's suppressed then. */}
           <div
-            class={`flex-1 min-h-0 flex flex-col px-4 pb-6 md:px-6 md:justify-start ${
-              mobileExpanded ? 'pt-8' : 'pt-2 justify-center'
-            }`}
+            class={`flex-1 min-h-0 flex flex-col px-4 md:px-6 ${mobileExpanded ? 'pt-8' : 'pt-2'}`}
           >
-            <div class="flex flex-col gap-8">
+            {/* Collapsed mobile: stretches to fill the available height, so the
+                single visible section's horizontal card strip below can in turn
+                fill IT (flex-1 all the way down) instead of relying on a fixed
+                px height. Expanded/desktop: normal block flow, unaffected. */}
+            <div class={`flex flex-col gap-8 ${!mobileExpanded ? 'flex-1 min-h-0 md:flex-none md:min-h-0' : ''}`}>
               {steps.map((step, stepIdx) => {
                 // Keep backend order stable, only push qty-0 suggestions to the end.
                 // This avoids cards jumping around when users tweak quantities.
@@ -264,9 +266,18 @@ export function MenuBuilderPanel({
                     }}
                     style="scroll-margin-top: 20px"
                     // Mobile (collapsed): only the step matching the sticky top
-                    // bar's current index is shown — one step at a time. Mobile
-                    // (expanded) and desktop always show every step stacked.
-                    class={mobileExpanded || stepIdx === currentMobileIndex ? '' : 'hidden md:block'}
+                    // bar's current index is shown — one step at a time, and that
+                    // section stretches to fill the available height (flex-1) so
+                    // its card strip can in turn fill IT, no fixed px height
+                    // needed. Mobile (expanded) and desktop always show every
+                    // step stacked as plain blocks (unaffected either way).
+                    class={
+                      mobileExpanded
+                        ? ''
+                        : stepIdx === currentMobileIndex
+                          ? 'flex-1 min-h-0 flex flex-col md:flex-none md:min-h-0 md:block'
+                          : 'hidden md:block'
+                    }
                   >
                     {/* Step heading chip — hidden in the collapsed mobile view
                         (its step name lives in the sticky top bar instead), but
@@ -283,12 +294,10 @@ export function MenuBuilderPanel({
                       <p class="text-center text-[11px] text-[#CBCBCB] py-4 m-0">
                         Aucun produit disponible pour ce service.
                       </p>
-                    ) : (
-                      // flex-wrap + justify-center (not a 3/4-col grid) so a partial
-                      // row — e.g. 1 or 2 products in a step — centers as a group
-                      // instead of starting flush left with dead empty columns
-                      // trailing to the right (grid reserves those track widths
-                      // even when unused).
+                    ) : mobileExpanded ? (
+                      // Expanded mobile: same grid as desktop (flex-wrap + justify-center,
+                      // not a rigid 3/4-col grid, so a partial row centers as a group
+                      // instead of starting flush left with dead trailing columns).
                       <div class="flex flex-wrap justify-center gap-3">
                         {products.map(p => (
                           <div key={p.id} class="flex-[0_0_calc(33.333%-8px)] md:flex-[0_0_calc(25%-9px)]">
@@ -300,6 +309,46 @@ export function MenuBuilderPanel({
                           </div>
                         ))}
                       </div>
+                    ) : (
+                      // Collapsed: mobile scrolls this step's products horizontally
+                      // (one mostly-full-width card at a time, row layout — see
+                      // MenuProductCard's `horizontal` prop), desktop keeps the usual
+                      // grid. Both are rendered; CSS picks one per breakpoint since
+                      // `mobileExpanded` alone can't tell "mobile, collapsed" apart
+                      // from "desktop" — it's false in both cases.
+                      <Fragment>
+                        {/* flex-1 + min-h-0: fills the section's available height
+                            (the section itself stretches via the class above) —
+                            no fixed px height. py-4 keeps it clear of the sticky
+                            step bar above and the footer below instead of
+                            touching them. Each card is h-full of that padded
+                            box, so the image column grows tall enough for a
+                            3-line name without clipping it (see MenuProductCard's
+                            horizontal branch). */}
+                        <div class="flex md:hidden flex-1 min-h-0 py-4 overflow-x-auto gap-3 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden -mx-4 px-4">
+                          {products.map(p => (
+                            <div key={p.id} class="w-[250px] h-full shrink-0 snap-center">
+                              <MenuProductCard
+                                product={p}
+                                quantity={quantities[p.id] ?? 0}
+                                onQuantityChange={delta => onQuantityChange(p.id, delta)}
+                                horizontal
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div class="hidden md:flex flex-wrap justify-center gap-3">
+                          {products.map(p => (
+                            <div key={p.id} class="md:flex-[0_0_calc(25%-9px)]">
+                              <MenuProductCard
+                                product={p}
+                                quantity={quantities[p.id] ?? 0}
+                                onQuantityChange={delta => onQuantityChange(p.id, delta)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </Fragment>
                     )}
                   </section>
                 );
@@ -312,7 +361,7 @@ export function MenuBuilderPanel({
       {/* ── Bottom step tab bar — scrolls to section on click. Hidden on mobile,
           replaced by the prev/next arrows flanking each step's heading chip. ── */}
       {steps.length > 0 && (
-        <div class="hidden md:block relative z-10 shrink-0 bg-white border-t border-[#E8ECF0]">
+        <div class="hidden md:block relative z-10 shrink-0 mt-4 bg-white border-t border-[#E8ECF0]">
           <div class="flex items-stretch overflow-x-auto [&::-webkit-scrollbar]:hidden">
             {steps.map(step => {
               const icon = getStepIcon(step, 24);
@@ -362,18 +411,18 @@ export function MenuBuilderPanel({
       <div class="relative z-10 shrink-0 grid grid-cols-2 shadow-[0_-4px_14px_rgba(17,24,39,0.06)]">
         <div class="bg-[#F3F1EE] px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
           <div class="flex items-baseline gap-1">
-            <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
+            <span class="text-[10px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
               Convives
             </span>
-            <span class="text-[9px] md:text-[10px] text-[#8D7A4E] tabular-nums">
+            <span class="text-[10px] md:text-[10px] text-[#8D7A4E] tabular-nums">
               {requirements.guests_adults ?? '—'} adultes · {requirements.guests_kids ?? '—'} enf.
             </span>
           </div>
           <div class="flex items-baseline gap-1">
-            <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
+            <span class="text-[10px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
               Budget
             </span>
-            <span class="text-[9px] md:text-[10px] text-[#8D7A4E] tabular-nums">
+            <span class="text-[10px] md:text-[10px] text-[#8D7A4E] tabular-nums">
               {requirements.budget !== undefined ? fmtEur(requirements.budget) : '—'}
             </span>
           </div>
@@ -382,18 +431,18 @@ export function MenuBuilderPanel({
         <div class="bg-[#C7B287] text-white px-3 py-2.5 md:px-4 md:py-3 flex items-center justify-between gap-2">
           <div class="flex flex-col gap-1.5 min-w-0">
             <div class="flex items-baseline justify-between gap-1">
-              <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
+              <span class="text-[10px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
                 Coût total
               </span>
-              <span class="text-[9px] md:text-[10px] text-white tabular-nums font-semibold">
+              <span class="text-[10px] md:text-[10px] text-white tabular-nums font-semibold">
                 {totalCost > 0 ? fmtEur(totalCost) : '—'}
               </span>
             </div>
             <div class="flex items-baseline justify-between gap-1">
-              <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
+              <span class="text-[10px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
                 Prix/pers.
               </span>
-              <span class="text-[9px] md:text-[10px] text-white tabular-nums font-semibold">
+              <span class="text-[10px] md:text-[10px] text-white tabular-nums font-semibold">
                 {pricePerPerson !== undefined ? fmtEur(pricePerPerson) : '—'}
               </span>
             </div>
