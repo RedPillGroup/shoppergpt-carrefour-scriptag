@@ -301,6 +301,7 @@ export function AssistantExperience() {
                   onStepSelectionChange={steps => {
                     pendingStepSelectionRef.current = steps;
                   }}
+                  onValidateSteps={() => send('Ces étapes me conviennent, vous pouvez composer le menu.')}
                   choiceCardsDisabled={
                     // Same principle as stepSelectionDisabled above: only freeze once
                     // the flow has actually moved past THIS card (a newer store/mode

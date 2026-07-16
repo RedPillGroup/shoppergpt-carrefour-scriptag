@@ -18,11 +18,15 @@ interface Props {
   /** Freezes the card once the conversation has moved on — kept visible (chat
    * history stays readable) but no longer interactive. */
   disabled?: boolean;
+  /** "Valider" button — sends the current selection immediately as a chat message
+   * instead of waiting for the user to type something. Hidden once disabled, same
+   * as the "add a step" chips below. */
+  onValidate?: () => void;
 }
 
 const ALL_TOGGLEABLE_STEPS = ALL_MENU_STEPS.filter(s => !EXCLUDED_STEPS.has(s));
 
-export function StepToggleCard({ items, onChange, disabled = false }: Props) {
+export function StepToggleCard({ items, onChange, disabled = false, onValidate }: Props) {
   const recommended = new Set(items.map(i => i.step));
   const [enabled, setEnabled] = useState<Record<string, boolean>>(
     () => Object.fromEntries(ALL_TOGGLEABLE_STEPS.map(s => [s, recommended.has(s)]))
@@ -59,6 +63,19 @@ export function StepToggleCard({ items, onChange, disabled = false }: Props) {
           </button>
         ))}
       </div>
+
+      {!disabled && onValidate && (
+        <div class="px-2">
+          <button
+            type="button"
+            onClick={onValidate}
+            disabled={onSteps.length === 0}
+            class="inline-flex items-center px-4 py-1.5 rounded-full text-[12px] font-semibold text-white bg-[#C7B287] cursor-pointer hover:bg-[#B39F72] disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Valider
+          </button>
+        </div>
+      )}
 
       {!disabled && offSteps.length > 0 && (
         <div class="mt-1 flex flex-col gap-1">

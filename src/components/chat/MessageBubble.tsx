@@ -19,6 +19,9 @@ interface Props {
    * isn't the latest message anymore) — kept visible (chat history stays readable)
    * but no longer interactive, since editing it wouldn't do anything at that point. */
   stepSelectionDisabled?: boolean;
+  /** "Valider" button on the step-toggle card — sends the current selection as a
+   * chat message right away instead of waiting for the user to type something. */
+  onValidateSteps?: () => void;
   /** Forwarded to StoreSelectionCard/ModeSelectionCard — a click sends the pick as a
    * normal chat message immediately (quick-reply style, no deferred sync). */
   onSelectStore?: (storeName: string) => void;
@@ -35,6 +38,7 @@ export function MessageBubble({
   fadeInDelay = 0,
   onStepSelectionChange,
   stepSelectionDisabled = false,
+  onValidateSteps,
   onSelectStore,
   onSelectMode,
   choiceCardsDisabled = false
@@ -82,6 +86,7 @@ export function MessageBubble({
             items={message.stepSuggestion}
             onChange={onStepSelectionChange}
             disabled={stepSelectionDisabled}
+            onValidate={onValidateSteps}
           />
         )}
         {!isUser && message.storeOptions && onSelectStore && (

@@ -129,9 +129,7 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
         title={recording ? 'Arrêter la dictée' : 'Dictée vocale'}
       >
         <span
-          class={`inline-flex w-[16px] h-[22px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full ${
-            recording ? '[&_path]:fill-current' : ''
-          }`}
+          class="inline-flex w-[16px] h-[22px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
           dangerouslySetInnerHTML={{ __html: micIcon }}
         />
       </button>
