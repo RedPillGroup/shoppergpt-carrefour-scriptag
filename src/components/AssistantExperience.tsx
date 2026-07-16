@@ -279,6 +279,10 @@ export function AssistantExperience() {
     storeOptionsRef.current = undefined;
     modeOptionsRef.current = undefined;
     storeResolvedRef.current = false;
+    // Mobile: sending a message means the user wants to keep chatting — retract
+    // the expanded panel so the chat (and their own message) is visible again,
+    // instead of leaving them staring at the still-expanded product view.
+    setMobilePanelExpanded(false);
     setQuestion(t);
   }, [input, isLoading, addMessage, setIsLoading]);
 

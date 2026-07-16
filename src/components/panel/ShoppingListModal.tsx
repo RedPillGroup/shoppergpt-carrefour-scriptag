@@ -216,20 +216,21 @@ export function ShoppingListModal({
           )}
         </div>
 
-        {/* Footer — total + confirm */}
-        <div class="shrink-0 bg-[#C7B287] px-5 py-4 flex flex-col items-center gap-3">
+        {/* Footer — total + confirm. Smaller on mobile (less padding, smaller
+            price/button) — the md: sizes below restore the original desktop scale. */}
+        <div class="shrink-0 bg-[#C7B287] px-4 py-2.5 md:px-5 md:py-4 flex flex-col items-center gap-1.5 md:gap-3">
           <div class="w-full flex items-center justify-between gap-2">
-            <span class="text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6]">
+            <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6]">
               Coût total
             </span>
-            <span class="text-[22px] font-bold text-white tabular-nums">
+            <span class="text-[17px] md:text-[22px] font-bold text-white tabular-nums">
               {fmtEur(totalCost)}
             </span>
           </div>
           <button
             onClick={onValidate}
             disabled={rows.length === 0}
-            class="h-9 px-6 rounded-full bg-white text-[#8D7A4E] text-[11px] font-bold uppercase tracking-wide border-0 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="h-8 md:h-9 px-5 md:px-6 rounded-full bg-white text-[#8D7A4E] text-[10px] md:text-[11px] font-bold uppercase tracking-wide border-0 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Valider ma liste de courses
           </button>
