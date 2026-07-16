@@ -39,11 +39,16 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
   if (horizontal) {
     return (
       <div
-        class={`h-full overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-row cursor-pointer transition-opacity duration-200 ${
-          inMenu ? 'bg-white opacity-100' : 'bg-white opacity-40'
-        }`}
+        class="relative h-full overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-row cursor-pointer bg-white"
         onClick={() => setSelectedProduct(product)}
       >
+        {/* Everything except the toggle button lives in this one dimmable
+            wrapper — a single opacity on the whole card reads as "grayed out"
+            as one surface, rather than the image/text fading separately. The
+            toggle button is pulled OUT as its own sibling below, absolutely
+            positioned over the same spot, so it stays at full clarity and
+            obviously still tappable. */}
+        <div class={`flex flex-row flex-1 min-w-0 h-full transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}>
         {/* ── Image + overlays — fixed-width column, but full card height (not
             aspect-square) so the row can grow tall enough for a 3-line name
             without clipping it. object-cover still crops the photo cleanly. ── */}
@@ -55,26 +60,6 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             loading="lazy"
             onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
           />
-
-          <button
-            class={`absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow transition-all duration-200 ${
-              inMenu ? 'bg-[#16a34a] opacity-100 scale-100' : 'bg-[#9CA3AF] opacity-80 scale-100'
-            }`}
-            onClick={e => {
-              e.stopPropagation();
-              onQuantityChange(inMenu ? -quantity : 1);
-            }}
-          >
-            {inMenu ? (
-              <svg width="9" height="9" viewBox="0 0 11 11" fill="none">
-                <path d="M2 5.5l2.5 2.5L9 2.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            ) : (
-              <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
-                <path d="M2 2l6 6M8 2l-6 6" stroke="white" stroke-width="1.6" stroke-linecap="round" />
-              </svg>
-            )}
-          </button>
 
           {/* Straddles the image/content seam — anchored to this column's own
               right edge (left-full) then pulled back by half its own width
@@ -143,129 +128,155 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             {product.name}
           </div>
         </div>
+        </div>
+
+        {/* Toggle button — top-right of the image column, outside the dimmed
+            wrapper above (see comment there). Selected: white circle + green
+            ring + green check. Unselected: a plain grey-ringed empty circle
+            at full opacity (no X) — signals "not picked, but still clearly
+            tappable to add". Positioned by hand (left, not right) since it
+            belongs over the fixed-width image column, not the card's far
+            right edge. */}
+        <button
+          class={`absolute top-1.5 left-[120px] w-6 h-6 rounded-full flex items-center justify-center shadow border-2 transition-all duration-200 ${
+            inMenu ? 'bg-white border-[#B2CF0C]' : 'bg-white border-[#D9D9D9]'
+          }`}
+          onClick={e => {
+            e.stopPropagation();
+            onQuantityChange(inMenu ? -quantity : 1);
+          }}
+        >
+          {inMenu && (
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+              <path d="M2 5.5l2.5 2.5L9 2.5" stroke="#B2CF0C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          )}
+        </button>
       </div>
     );
   }
 
   return (
     <div
-      class={`overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-col cursor-pointer transition-opacity duration-200 ${
-        inMenu ? 'bg-white opacity-100' : 'bg-white opacity-40'
-      }`}
+      class="relative overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-col cursor-pointer bg-white"
       onClick={() => setSelectedProduct(product)}
     >
+      {/* Everything except the toggle button lives in this one dimmable
+          wrapper — a single opacity on the whole card (image, stepper,
+          price, name) reads as "grayed out" as one surface, rather than
+          several separately-faded pieces. The toggle button is pulled OUT
+          as its own sibling below, absolutely positioned over the same
+          top-right spot, so it's the one thing that stays at full clarity
+          and obviously still tappable. */}
+      <div class={`flex flex-col flex-1 transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}>
+        <div class="relative shrink-0">
+          <img
+            class={`w-full aspect-square object-cover block transition-all duration-200 ${!inMenu ? 'grayscale' : ''}`}
+            src={product.image || PLACEHOLDER}
+            alt={product.name}
+            loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
+          />
 
-      {/* ── Image + overlays ─────────────────────────────── */}
-      <div class="relative shrink-0">
-        <img
-          class={`w-full aspect-square object-cover block transition-all duration-200 ${!inMenu ? 'grayscale' : ''}`}
-          src={product.image || PLACEHOLDER}
-          alt={product.name}
-          loading="lazy"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
-        />
-
-        {/* Toggle button — top-right: checkmark when inMenu, grey X when qty=0 */}
-        <button
-          class={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow transition-all duration-200 ${
-            inMenu
-              ? 'bg-[#16a34a] opacity-100 scale-100'
-              : 'bg-[#9CA3AF] opacity-80 scale-100'
-          }`}
-          onClick={e => {
-            e.stopPropagation();
-            if (inMenu) {
-              // Gray out: set qty to 0
-              onQuantityChange(-quantity);
-            } else {
-              // Re-enable: restore to 1
-              onQuantityChange(1);
-            }
-          }}
-        >
-          {inMenu ? (
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <path d="M2 5.5l2.5 2.5L9 2.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          ) : (
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M2 2l6 6M8 2l-6 6" stroke="white" stroke-width="1.6" stroke-linecap="round" />
-            </svg>
-          )}
-        </button>
-
-        {/* Quantity pill — anchored at image bottom, centred */}
-        <div
-          class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-0.5 gap-0"
-          onClick={e => e.stopPropagation()}
-        >
-          <button
-            onClick={() => onQuantityChange(-1)}
-            disabled={quantity === 0}
-            class={`w-7 h-7 rounded-full flex items-center justify-center text-base font-bold transition-colors ${
-              quantity > 0
-                ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
-                : 'text-[#D1D5DB] cursor-not-allowed'
-            }`}
+          {/* Quantity pill — anchored at image bottom, centred */}
+          <div
+            class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-0.5 gap-0"
+            onClick={e => e.stopPropagation()}
           >
-            −
-          </button>
-
-          {/* Qty: click to edit inline */}
-          {editing ? (
-            <input
-              class="min-w-[32px] w-[32px] text-center text-[13px] font-bold tabular-nums text-[#C7B287] border-none outline-none bg-transparent"
-              type="number"
-              min={0}
-              max={MAX_QTY}
-              value={inputVal}
-              onInput={e => setInputVal((e.target as HTMLInputElement).value)}
-              onBlur={e => commitEdit((e.target as HTMLInputElement).value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') commitEdit((e.target as HTMLInputElement).value);
-                if (e.key === 'Escape') setEditing(false);
-              }}
-              autoFocus
-            />
-          ) : (
-            <span
-              class={`min-w-[24px] text-center text-[13px] font-bold tabular-nums cursor-text ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
-              onClick={e => {
-                e.stopPropagation();
-                setInputVal(String(quantity));
-                setEditing(true);
-              }}
+            <button
+              onClick={() => onQuantityChange(-1)}
+              disabled={quantity === 0}
+              class={`w-7 h-7 rounded-full flex items-center justify-center text-base font-bold transition-colors ${
+                quantity > 0
+                  ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
+                  : 'text-[#D1D5DB] cursor-not-allowed'
+              }`}
             >
-              {quantity}
-            </span>
-          )}
+              −
+            </button>
 
-          <button
-            onClick={() => onQuantityChange(+1)}
-            disabled={quantity >= MAX_QTY}
-            class={`w-7 h-7 rounded-full flex items-center justify-center text-base font-bold transition-colors ${
-              quantity < MAX_QTY
-                ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
-                : 'text-[#D1D5DB] cursor-not-allowed'
-            }`}
-          >
-            +
-          </button>
+            {/* Qty: click to edit inline */}
+            {editing ? (
+              <input
+                class="min-w-[32px] w-[32px] text-center text-[13px] font-bold tabular-nums text-[#C7B287] border-none outline-none bg-transparent"
+                type="number"
+                min={0}
+                max={MAX_QTY}
+                value={inputVal}
+                onInput={e => setInputVal((e.target as HTMLInputElement).value)}
+                onBlur={e => commitEdit((e.target as HTMLInputElement).value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') commitEdit((e.target as HTMLInputElement).value);
+                  if (e.key === 'Escape') setEditing(false);
+                }}
+                autoFocus
+              />
+            ) : (
+              <span
+                class={`min-w-[24px] text-center text-[13px] font-bold tabular-nums cursor-text ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
+                onClick={e => {
+                  e.stopPropagation();
+                  setInputVal(String(quantity));
+                  setEditing(true);
+                }}
+              >
+                {quantity}
+              </span>
+            )}
+
+            <button
+              onClick={() => onQuantityChange(+1)}
+              disabled={quantity >= MAX_QTY}
+              class={`w-7 h-7 rounded-full flex items-center justify-center text-base font-bold transition-colors ${
+                quantity < MAX_QTY
+                  ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
+                  : 'text-[#D1D5DB] cursor-not-allowed'
+              }`}
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        {/* ── Content ─────────────────────────────────────── */}
+        <div class="px-2.5 pt-2 pb-3 flex flex-col gap-0.5">
+          <div class="text-[13px] md:text-[14px] font-bold text-[#E2422B]">
+            {product.price.toFixed(2).replace('.', ',')} €
+          </div>
+          {/* min-h reserves space for 2 lines (leading-snug ≈ 1.375 × font-size)
+              even when the name only wraps to 1 — otherwise cards with short vs
+              long names end up different heights in the same row. */}
+          <div class="text-[12px] md:text-[13px] text-[#6B7280] leading-snug line-clamp-2 min-h-[2.75em]">
+            {product.name}
+          </div>
         </div>
       </div>
 
-      {/* ── Content ─────────────────────────────────────── */}
-      <div class="px-2.5 pt-2 pb-3 flex flex-col gap-0.5">
-        <div class="text-[13px] md:text-[14px] font-bold text-[#E2422B]">
-          {product.price.toFixed(2).replace('.', ',')} €
-        </div>
-        {/* min-h reserves space for 2 lines (leading-snug ≈ 1.375 × font-size)
-            even when the name only wraps to 1 — otherwise cards with short vs
-            long names end up different heights in the same row. */}
-        <div class="text-[12px] md:text-[13px] text-[#6B7280] leading-snug line-clamp-2 min-h-[2.75em]">
-          {product.name}
-        </div>
-      </div>
+      {/* Toggle button — top-right, outside the dimmed wrapper above (see
+          comment there). Selected: white circle + green ring + green check.
+          Unselected: a plain grey-ringed empty circle at full opacity (no X) —
+          signals "not picked, but still clearly tappable to add". */}
+      <button
+        class={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow border-2 transition-all duration-200 ${
+          inMenu ? 'bg-white border-[#B2CF0C]' : 'bg-white border-[#D9D9D9]'
+        }`}
+        onClick={e => {
+          e.stopPropagation();
+          if (inMenu) {
+            // Gray out: set qty to 0
+            onQuantityChange(-quantity);
+          } else {
+            // Re-enable: restore to 1
+            onQuantityChange(1);
+          }
+        }}
+      >
+        {inMenu && (
+          <svg width="13" height="13" viewBox="0 0 11 11" fill="none">
+            <path d="M2 5.5l2.5 2.5L9 2.5" stroke="#B2CF0C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        )}
+      </button>
     </div>
   );
 }

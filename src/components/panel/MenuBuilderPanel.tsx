@@ -284,7 +284,7 @@ export function MenuBuilderPanel({
                         shown once expanded — same as desktop. */}
                     <div class={`${mobileExpanded ? 'flex' : 'hidden md:flex'} items-center justify-center mb-4`}>
                       <div class="bg-white px-4 py-1.5 rounded-full shrink-0 shadow-sm">
-                        <h2 class="font-['Satisfy'] text-[#C7B287] text-xl md:text-2xl leading-none m-0">
+                        <h2 class="font-['Satisfy'] text-[#C7B287] text-2xl leading-none m-0">
                           {step}
                         </h2>
                       </div>
@@ -423,7 +423,7 @@ export function MenuBuilderPanel({
             <span class="md:hidden text-[11px] text-[#8D7A4E] tabular-nums font-semibold">
               {totalGuests || '—'}
             </span>
-            <span class="hidden md:inline text-[11px] text-[#8D7A4E] tabular-nums">
+            <span class="hidden md:inline text-[11px] text-[#8D7A4E] tabular-nums font-semibold">
               {requirements.guests_adults ?? '—'} adultes · {requirements.guests_kids ?? '—'} enf.
             </span>
           </div>
