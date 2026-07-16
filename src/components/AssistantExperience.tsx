@@ -332,7 +332,7 @@ export function AssistantExperience() {
             // ChatInputBar (shrink-0) still forces itself to its full intrinsic
             // height, keeping the input + mic reachable. Both are plain lengths
             // (not 'auto'/a flexGrow toggle), so the transition interpolates smoothly.
-            flexBasis: mobilePanelExpanded ? '64px' : '50%',
+            flexBasis: mobilePanelExpanded ? '64px' : '60%',
           }}
         >
           {/* Mobile-only "expand" trigger — sits at the chat pane's own top edge
