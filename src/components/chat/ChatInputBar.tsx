@@ -95,7 +95,11 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
       <div class="flex-1 rounded-3xl min-h-9 md:min-h-10 px-1.5 py-1 flex items-center gap-1 border border-black/50">
         <textarea
           ref={textareaRef}
-          class="flex-1 bg-transparent border-0 py-1.5 px-2.5 md:px-3 text-[13px] md:text-[13.5px] text-[#1A1A2E] resize-none outline-none leading-[1.4] max-h-[90px] min-h-0 overflow-y-auto placeholder:text-[#B0A898]"
+          // text-[16px]: iOS Safari auto-zooms the whole page on focus for any
+          // input/textarea with a computed font-size under 16px — this is the
+          // minimum that avoids it, not a design choice. md: reverts to the
+          // smaller size since that zoom-on-focus behavior is mobile-only.
+          class="flex-1 bg-transparent border-0 py-1.5 px-2.5 md:px-3 text-[16px] md:text-[13.5px] text-[#1A1A2E] resize-none outline-none leading-[1.4] max-h-[90px] min-h-0 overflow-y-auto placeholder:text-[#B0A898]"
           rows={1}
           placeholder={transcribing ? 'Transcription en cours…' : 'Je voudrais...'}
           value={input}

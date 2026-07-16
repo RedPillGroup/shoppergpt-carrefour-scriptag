@@ -203,7 +203,7 @@ export function MenuBuilderPanel({
               is expanded — expanded mobile shows every step stacked, same as
               desktop, so one-step-at-a-time paging no longer applies. */}
           {steps.length > 0 && !mobileExpanded && (
-            <div class="md:hidden shrink-0 sticky top-0 z-20 flex items-center justify-between bg-[#FFF] px-1 py-2.5">
+            <div class="md:hidden shrink-0 sticky top-0 z-20 flex items-center justify-between bg-[#FFF]/60 px-1 py-2.5">
               <button
                 type="button"
                 onClick={() => currentMobileIndex > 0 && goToMobileStep(currentMobileIndex - 1)}
