@@ -461,6 +461,11 @@ export function AssistantExperience() {
             onInputChange={setInput}
             onSend={() => send()}
             onKeyDown={handleKey}
+            // Mobile: focusing the input to type is the same intent as sending
+            // one — retract an expanded panel now rather than waiting for
+            // send(), so there's more visible chat height once the iOS
+            // keyboard (+ its accessory bar) eats a big chunk of the screen.
+            onFocus={() => setMobilePanelExpanded(false)}
           />
         </div>
 
