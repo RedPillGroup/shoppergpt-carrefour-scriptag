@@ -13,6 +13,7 @@ import { StreamingBubble } from './chat/StreamingBubble';
 import { ChatInputBar } from './chat/ChatInputBar';
 import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
 import { ProductDetailModal } from './panel/ProductDetailModal';
+import downIcon from '../assets/icons/down.svg?raw';
 
 export function AssistantExperience() {
   const { messages, addMessage, isLoading, setIsLoading, jwt, setJwt, sessionId, selectedProduct, setSelectedProduct, store } = useShopperStore();
@@ -28,6 +29,11 @@ export function AssistantExperience() {
   const [productsByStep, setProductsByStep] = useState<Record<string, Product[]>>({});
   const [menuQuantities, setMenuQuantities] = useState<Record<string, number>>({});
   const [panelSyncing, setPanelSyncing] = useState(false);
+  // Mobile-only: the product/menu panel sits on top and the chat below (reversed
+  // from desktop's side-by-side layout — see the drag-handle chevron between them).
+  // Collapsed (default) gives the chat most of the height; expanded flips the ratio
+  // so the panel can show a full menu without the user scrolling a tiny viewport.
+  const [mobilePanelExpanded, setMobilePanelExpanded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const jwtRef = useRef(jwt);
   const sessionIdRef = useRef(sessionId);
@@ -251,27 +257,91 @@ export function AssistantExperience() {
 
   return (
     <div class="relative flex flex-col h-full min-h-0 text-[#1A1A2E] bg-[#FAF9F7]">
-      <div class="grid flex-1 grid-rows-2 md:grid-rows-1 md:grid-cols-[38%_1fr] overflow-hidden min-h-0">
-        <div class="row-start-1 md:row-start-auto md:col-start-1 flex flex-col bg-white border-b md:border-b-0 md:border-r border-[#E8ECF0] min-h-0">
-          <div class="flex-1 overflow-y-auto min-h-0 flex flex-col [scroll-behavior:smooth] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]">
-            <motion.div
-              class="shrink-0 px-5 py-6 md:px-8 md:py-9"
-              initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.998 }}
-              animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-              transition={
-                shouldReduceMotion
-                  ? undefined
-                  : { duration: 0.42, ease: [0.16, 1, 0.3, 1], delay: 0.02 }
-              }
-            >
-              <p class="m-0 font-normal text-[#C7B287] text-base md:text-lg leading-[1.45]">
-                Bonjour et bienvenue, je suis{' '}
-                <span class="font-['Satisfy'] font-normal text-[#C7B287] text-base md:text-xl">Cathia</span> votre agent
-                intelligent traiteur. Que puis-je faire pour vous&nbsp;?
-              </p>
-            </motion.div>
+      <div class="flex flex-col md:grid flex-1 md:grid-rows-1 md:grid-cols-[38%_1fr] overflow-hidden min-h-0">
+        <div
+          class="relative flex order-3 md:order-none md:col-start-1 flex-col bg-white border-b md:border-b-0 md:border-r border-[#E8ECF0] min-h-0 transition-[flex-basis] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          style={{
+            flexGrow: 0,
+            flexShrink: 0,
+            // Collapsed: chat takes the bulk of the height (a %, in sync with the
+            // panel's complementary flexGrow below). Expanded: shrunk to a fixed px
+            // height too small for the message list, so it visually disappears —
+            // ChatInputBar (shrink-0) still forces itself to its full intrinsic
+            // height, keeping the input + mic reachable. Both are plain lengths
+            // (not 'auto'/a flexGrow toggle), so the transition interpolates smoothly.
+            flexBasis: mobilePanelExpanded ? '64px' : '62%',
+          }}
+        >
+          {/* Mobile-only "expand" trigger — sits at the chat pane's own top edge
+              (the seam with the panel above), extending down into the chat pane's
+              own bounds only, so it never needs to reach over into the panel's
+              stacking context. The "retract" handle for the expanded state lives
+              inside MenuBuilderPanel instead (see its mobileExpanded/onRetractMobile
+              props) — that direction needs to sit within the PANEL's own bounds,
+              which this chat-pane child can't safely do (fighting the panel
+              footer's z-10 for stacking is what caused it to render underneath).
+              Hidden on desktop and once the panel is already expanded (the panel
+              itself takes over showing the retract handle then). */}
+          {eventScreenEnabled && !mobilePanelExpanded && (
+            <button
+              type="button"
+              class="hidden max-md:flex absolute top-0 left-1/2 z-10 cursor-pointer"
+              onClick={() => setMobilePanelExpanded(true)}
+              aria-label="Agrandir le menu"
+              aria-expanded={false}
+              dangerouslySetInnerHTML={{ __html: downIcon }}
+            />
+          )}
 
-            <div class="shrink-0 px-3.5 pb-3 md:px-5 md:pb-4 flex flex-col gap-0.5">
+          <div
+            class={`flex flex-1 overflow-y-auto min-h-0 flex-col [scroll-behavior:smooth] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db] ${
+              // A margin (not padding) — this shifts the scrollable box's own top
+              // edge down below the drag handle's visible half, so its own
+              // overflow clipping keeps EVERY message (not just the first one)
+              // from ever scrolling behind the handle. Padding alone only
+              // guarded the very first message; anything scrolled up from
+              // further down the list had no such protection. Desktop doesn't
+              // render the handle at all, so no offset needed there. Skipped
+              // while expanded: this pane is squeezed down to just fit
+              // ChatInputBar then (see flexBasis '64px' above) — adding 32px of
+              // margin on top of that pushed the whole pane taller than intended,
+              // leaving a sliver of chat visible instead of it being fully hidden
+              // behind the panel, and shoving the input bar down with it.
+              eventScreenEnabled && !mobilePanelExpanded ? 'mt-8 md:mt-0' : ''
+            }`}
+          >
+            {/* Standalone header greeting — separate from the initialGreeting
+                MessageBubble below. Only makes sense before the conversation has
+                actually started, so it animates out once the user sends anything
+                (AnimatePresence handles the exit; a plain `&&` would just yank it
+                away with no transition). */}
+            <AnimatePresence initial={false}>
+              {messages.length === 0 && (
+                <motion.div
+                  class="shrink-0 overflow-hidden px-5 md:px-8"
+                  initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.998 }}
+                  animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1, height: 'auto' }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0, height: 0 }}
+                  transition={
+                    shouldReduceMotion
+                      ? undefined
+                      : { duration: 0.42, ease: [0.16, 1, 0.3, 1], delay: 0.02 }
+                  }
+                >
+                  <p class="m-0 py-10 md:py-9 font-normal text-[#C7B287] text-base md:text-lg leading-[1.45]">
+                    Bonjour et bienvenue, je suis{' '}
+                    <span class="font-['Satisfy'] font-normal text-[#C7B287] text-base md:text-xl">Cathia</span> votre agent
+                    intelligent traiteur. Que puis-je faire pour vous&nbsp;?
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div
+              class={`shrink-0 px-3.5 pb-3 md:px-5 md:pb-4 flex flex-col gap-0.5 ${
+                messages.length === 0 ? '' : 'pt-4 md:pt-6'
+              }`}
+            >
               {/* Initial greeting — rendered outside the messages array so it stays
                   reactive to store state without polluting chat history. */}
               <MessageBubble
@@ -331,7 +401,10 @@ export function AssistantExperience() {
           />
         </div>
 
-        <div class="row-start-2 md:row-start-auto md:col-start-2 flex flex-col overflow-hidden min-h-0">
+        <div
+          class="order-1 md:order-none md:col-start-2 flex flex-col overflow-hidden min-h-0"
+          style={{ flexGrow: 1, flexShrink: 1, flexBasis: 0 }}
+        >
           {eventScreenEnabled ? (
             <MenuBuilderPanel
               requirements={eventRequirements}
@@ -339,6 +412,8 @@ export function AssistantExperience() {
               quantities={menuQuantities}
               onQuantityChange={handleQuantityChange}
               syncing={panelSyncing}
+              mobileExpanded={mobilePanelExpanded}
+              onRetractMobile={() => setMobilePanelExpanded(false)}
             />
           ) : (
             <EditorialPanel onSelect={q => send(q)} />

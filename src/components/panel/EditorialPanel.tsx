@@ -71,7 +71,11 @@ function HeroCarousel({ onSelect }: Props) {
   const next = (e: MouseEvent) => { e.stopPropagation(); emblaApiRef.current?.scrollNext(); };
 
   return (
-    <div class="relative basis-1/2 md:basis-[55%] overflow-hidden">
+    // Mobile: the slider fills the whole panel (event tiles hidden below, see
+    // EditorialGrid) — title sits top-left directly on the photo, arrows sit low
+    // and inset, no dark gradient/dots. Desktop keeps the original bottom-anchored
+    // title + centered arrows + gradient + dots, unchanged.
+    <div class="relative flex-1 md:basis-[55%] overflow-hidden">
       <div class="h-full overflow-hidden" ref={viewportRef}>
         <div class="flex h-full">
           {HERO_SLIDES.map((slide, i) => (
@@ -85,8 +89,14 @@ function HeroCarousel({ onSelect }: Props) {
                 src={slide.img}
                 alt=""
               />
-              <div class="absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,.22)] via-[rgba(0,0,0,.38)] to-[rgba(0,0,0,.72)]" />
-              <div class="absolute bottom-0 left-0 right-0 px-4 py-4 md:px-7 md:py-6">
+              {/* Desktop: shadow confined to the bottom third (fades to fully
+                  transparent by mid-height), so the rest of the photo stays bright
+                  instead of being washed out top-to-bottom. */}
+              <div class="absolute inset-0 md:bg-[linear-gradient(to_top,rgba(0,0,0,.72)_0%,rgba(0,0,0,0)_50%)]" />
+              {/* Mobile-only top shadow — keeps the title legible against the photo
+                  right at the panel's top edge, without the full desktop gradient. */}
+              <div class="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[rgba(0,0,0,.35)] to-transparent md:hidden" />
+              <div class="absolute top-5 left-4 right-14 md:top-auto md:bottom-0 md:left-0 md:right-0 md:px-7 md:py-6">
                 <p class="m-0 font-['Satisfy'] font-normal text-[24px] md:text-[clamp(26px,3vw,40px)] text-white leading-[1.2] md:leading-[1.25] whitespace-pre-line [text-shadow:0_2px_12px_rgba(0,0,0,.3)]">
                   {slide.title}
                 </p>
@@ -95,9 +105,9 @@ function HeroCarousel({ onSelect }: Props) {
           ))}
         </div>
       </div>
-      <button class="absolute top-1/2 -translate-y-1/2 left-2.5 md:left-3.5 w-8 h-8 md:w-9 md:h-9 rounded-full border-0 bg-white text-[#333] text-[18px] md:text-[20px] leading-none flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,.2)] z-[2] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,.28)]" onClick={prev}>‹</button>
-      <button class="absolute top-1/2 -translate-y-1/2 right-2.5 md:right-3.5 w-8 h-8 md:w-9 md:h-9 rounded-full border-0 bg-white text-[#333] text-[18px] md:text-[20px] leading-none flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,.2)] z-[2] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,.28)]" onClick={next}>›</button>
-      <div class="absolute bottom-2.5 md:bottom-3.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-[2]">
+      <button class="absolute top-[82%] md:top-1/2 -translate-y-1/2 left-3 md:left-3.5 w-8 h-8 md:w-9 md:h-9 rounded-full border-0 bg-white text-[#333] text-[18px] md:text-[20px] leading-none flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,.2)] z-[2] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,.28)]" onClick={prev}>‹</button>
+      <button class="absolute top-[82%] md:top-1/2 -translate-y-1/2 right-3 md:right-3.5 w-8 h-8 md:w-9 md:h-9 rounded-full border-0 bg-white text-[#333] text-[18px] md:text-[20px] leading-none flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,.2)] z-[2] cursor-pointer hover:shadow-[0_4px_16px_rgba(0,0,0,.28)]" onClick={next}>›</button>
+      <div class="hidden md:flex absolute bottom-3.5 left-1/2 -translate-x-1/2 gap-1.5 z-[2]">
         {HERO_SLIDES.map((_, i) => (
           <button
             key={i}
@@ -111,8 +121,9 @@ function HeroCarousel({ onSelect }: Props) {
 }
 
 function EditorialGrid({ onSelect }: Props) {
+  // Hidden on mobile — the hero slider fills the whole panel there instead.
   return (
-    <div class="flex-1 flex flex-col overflow-hidden p-3 gap-2.5 min-h-0">
+    <div class="hidden md:flex md:flex-1 flex-col overflow-hidden p-3 gap-2.5 min-h-0">
       <div class="flex-1 grid grid-cols-2 gap-2.5 min-h-0">
         {EVENTS_TILES.map((tile, i) => (
           <EventEditorialTile key={i} tile={tile} onSelect={onSelect} />

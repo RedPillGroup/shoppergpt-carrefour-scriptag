@@ -6,6 +6,7 @@ import { getStepIcon } from './icons';
 import { MenuProductCard } from './MenuProductCard';
 import { ShoppingListModal } from './ShoppingListModal';
 import cartIcon from '../../assets/icons/cart.svg?raw';
+import upIcon from '../../assets/icons/up.svg?raw';
 
 // Hosted on a public GCS bucket rather than bundled — 16+ images inlined as base64
 // would have bloated the widget's single-file bundle by several MB downloaded on
@@ -46,6 +47,14 @@ interface Props {
   onQuantityChange: (productId: string, delta: number) => void;
   /** True while GET /menu is refreshing after a menu-changing turn. */
   syncing?: boolean;
+  /** Mobile-only "retract" handle — rendered as a direct child of this panel
+   * (not a sibling's descendant) so it never has to fight the footer bar's own
+   * z-10 for stacking: as the last child here, it simply paints after it. Only
+   * shown while the panel is expanded (see AssistantExperience); the "expand"
+   * trigger itself lives in the chat pane below, since that direction only
+   * needs to sit within the chat pane's own bounds. */
+  mobileExpanded?: boolean;
+  onRetractMobile?: () => void;
 }
 
 /** Format a number as "1 234,56 €" (French locale). */
@@ -71,7 +80,9 @@ export function MenuBuilderPanel({
   productsByStep,
   quantities,
   onQuantityChange,
-  syncing = false
+  syncing = false,
+  mobileExpanded = false,
+  onRetractMobile
 }: Props) {
   const [shoppingListOpen, setShoppingListOpen] = useState(false);
 
@@ -133,7 +144,7 @@ export function MenuBuilderPanel({
 
       {/* ── No products: chips centred over full image ────────────────────────── */}
       {!hasProducts && (
-        <div class="relative z-10 flex-1 flex flex-col items-center justify-end gap-3 px-6 pb-8">
+        <div class="relative z-10 flex-1 flex flex-col items-center justify-center gap-3 px-6">
           <div class="bg-white/90 backdrop-blur-[3px] px-6 py-2.5 rounded-full shadow-md">
             <span class="font-['Satisfy'] text-[#C7B287] text-[20px] md:text-[24px] leading-none whitespace-nowrap">
               {eventLabel}
@@ -251,8 +262,25 @@ export function MenuBuilderPanel({
         </div>
       )}
 
+      {/* Mobile-only "retract" handle — a plain sibling sitting right before the
+          footer in the HTML (not nested inside it, not pulled out via absolute
+          positioning). `relative z-20` keeps it in normal flow while still
+          reliably painting above the footer below (which is `position:relative`
+          + `z-10`). No padding/margin of its own — takes up exactly its own
+          icon size, no extra space reserved before the footer. */}
+      {mobileExpanded && onRetractMobile && (
+        <button
+          type="button"
+          class="hidden max-md:flex relative z-20 shrink-0 mx-auto p-0 cursor-pointer"
+          onClick={onRetractMobile}
+          aria-label="Réduire le menu"
+          aria-expanded="true"
+          dangerouslySetInnerHTML={{ __html: upIcon }}
+        />
+      )}
+
       {/* ── Stats footer ─────────────────────────────────────────────────────── */}
-      <div class="relative z-10 shrink-0 grid grid-cols-2 border-t border-[#E8ECF0] shadow-[0_-4px_14px_rgba(17,24,39,0.06)]">
+      <div class="relative z-10 shrink-0 grid grid-cols-2 shadow-[0_-4px_14px_rgba(17,24,39,0.06)]">
         <div class="bg-[#F3F1EE] px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
           <div class="flex items-baseline gap-1">
             <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
