@@ -105,6 +105,15 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
           value={input}
           onInput={e => onInputChange((e.target as HTMLTextAreaElement).value)}
           onKeyDown={onKeyDown}
+          // This is a chat prompt, not a form field — discourages iOS's
+          // AutoFill suggestion icons (passwords/payment/addresses) from
+          // showing over the keyboard. Doesn't remove Safari's "Done"/arrows
+          // accessory bar itself (that's OS chrome, not addressable from a
+          // web page at all), but it's the one part we can influence.
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellcheck={false}
         />
 
         <button
