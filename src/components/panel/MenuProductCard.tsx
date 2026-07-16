@@ -262,7 +262,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
         {/* min-h reserves space for 2 lines (leading-snug ≈ 1.375 × font-size)
             even when the name only wraps to 1 — otherwise cards with short vs
             long names end up different heights in the same row. */}
-        <div class="text-[10px] md:text-[11px] text-[#6B7280] leading-snug line-clamp-2 min-h-[2.75em]">
+        <div class="text-[12px] md:text-[13px] text-[#6B7280] leading-snug line-clamp-2 min-h-[2.75em]">
           {product.name}
         </div>
       </div>

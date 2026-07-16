@@ -300,7 +300,7 @@ export function MenuBuilderPanel({
                       // instead of starting flush left with dead trailing columns).
                       <div class="flex flex-wrap justify-center gap-3">
                         {products.map(p => (
-                          <div key={p.id} class="flex-[0_0_calc(33.333%-8px)] md:flex-[0_0_calc(25%-9px)]">
+                          <div key={p.id} class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]">
                             <MenuProductCard
                               product={p}
                               quantity={quantities[p.id] ?? 0}
