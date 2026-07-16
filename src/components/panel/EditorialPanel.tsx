@@ -81,7 +81,7 @@ function HeroCarousel({ onSelect }: Props) {
               onClick={() => onSelect(slide.query)}
             >
               <img
-                class="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.02]"
+                class="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
                 src={slide.img}
                 alt=""
               />

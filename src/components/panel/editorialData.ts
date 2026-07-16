@@ -20,19 +20,34 @@ export interface EventTile {
 
 export const HERO_SLIDES: HeroSlide[] = [
   {
-    img: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1400&q=85&fit=crop",
-    title: "Repas de mariage",
+    img: `${EDITORIAL_BASE_URL}/mariage-1-v7.webp`,
+    title: "Repas de mariage,\nou pacs",
     query: "Je prépare un repas pour un mariage ou un PACS",
   },
   {
-    img: "https://images.unsplash.com/photo-1555244162-803834f70033?w=1400&q=85&fit=crop",
-    title: "Buffet pour la\nfête des voisins",
-    query: "Je prépare un buffet pour la fête des voisins",
+    img: `${EDITORIAL_BASE_URL}/apero-1-v7.webp`,
+    title: "Pots de\ndépart",
+    query: "Je prépare un pot de départ",
   },
   {
-    img: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=1400&q=85&fit=crop&crop=center",
-    title: "Fête des mères,\nun repas d'exception",
-    query: "Je prépare un repas pour la fête des mères",
+    img: `${EDITORIAL_BASE_URL}/buffet-1-v10.webp`,
+    title: "Cocktails\ndînatoires",
+    query: "Je prépare un cocktail dînatoire",
+  },
+  {
+    img: `${EDITORIAL_BASE_URL}/bapteme-1-v7.webp`,
+    title: "Repas de\nbaptême",
+    query: "Je prépare un repas pour un baptême",
+  },
+  {
+    img: `${EDITORIAL_BASE_URL}/gouter-1-v7.webp`,
+    title: "Goûters\nd'enfants",
+    query: "Je prépare un goûter d'anniversaire pour enfant",
+  },
+  {
+    img: `${EDITORIAL_BASE_URL}/anniv-1-v8.webp`,
+    title: "Anniversaires\nà fêter",
+    query: "Je prépare un anniversaire",
   },
 ];
 
