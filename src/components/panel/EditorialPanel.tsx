@@ -1,7 +1,7 @@
 import { h } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import EmblaCarousel, { EmblaCarouselType } from "embla-carousel";
-import { PRODUCT_TILES, EVENTS_TILES, HERO_SLIDES } from "./editorialData";
+import { EVENTS_TILES, HERO_SLIDES } from "./editorialData";
 
 interface Props {
   onSelect: (query: string) => void;
@@ -111,40 +111,13 @@ function HeroCarousel({ onSelect }: Props) {
 }
 
 function EditorialGrid({ onSelect }: Props) {
-  const leftEvent = EVENTS_TILES[0];
-  const rightEvent = EVENTS_TILES[1];
-
   return (
-    <div class="flex-1 grid grid-cols-2 gap-3 overflow-hidden p-3">
-      <div class="grid grid-rows-2 gap-2.5 min-h-0">
-        {leftEvent && <EventEditorialTile tile={leftEvent} onSelect={onSelect} />}
-        <div class="grid grid-cols-2 gap-2.5 min-h-0">
-          {PRODUCT_TILES.slice(0, 2).map((product, i) => (
-            <div
-              key={i}
-              class="relative overflow-hidden cursor-pointer border border-[rgba(255,255,255,.15)] group min-h-0"
-              onClick={() => onSelect(product.query)}
-            >
-              <img
-                class="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                src={product.img}
-                alt=""
-                loading="lazy"
-              />
-              <div class="absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,.14)] via-[rgba(0,0,0,.3)] to-[rgba(0,0,0,.7)]" />
-              <div class="absolute bottom-0 left-0 right-0 px-2 py-1.5 md:px-2.5 md:py-2 flex flex-col">
-                <span class="text-[11px] md:text-[15px] font-400 text-white leading-none [text-shadow:0_2px_8px_rgba(0,0,0,.35)]">
-                  {product.price}
-                </span>
-                <p class="m-0 mt-0.5 text-[8px] md:text-[11px] text-white leading-[1.2] whitespace-pre-line [text-shadow:0_2px_8px_rgba(0,0,0,.35)]">
-                  {product.name}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div class="flex-1 flex flex-col overflow-hidden p-3 gap-2.5 min-h-0">
+      <div class="flex-1 grid grid-cols-2 gap-2.5 min-h-0">
+        {EVENTS_TILES.map((tile, i) => (
+          <EventEditorialTile key={i} tile={tile} onSelect={onSelect} />
+        ))}
       </div>
-      {rightEvent && <EventEditorialTile tile={rightEvent} onSelect={onSelect} />}
     </div>
   );
 }

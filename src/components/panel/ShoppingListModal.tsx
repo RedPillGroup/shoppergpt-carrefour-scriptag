@@ -197,7 +197,7 @@ export function ShoppingListModal({
                   )}
                   <ul class="m-0 p-0 list-none flex flex-col gap-2">
                     {items.map(item => (
-                      <li key={item.id} class="flex items-start gap-3">
+                      <li key={item.id} class="flex items-center gap-3">
                         <span class="text-[12px] font-semibold text-[#1A1A2E] shrink-0">
                           {item.qty} X
                         </span>
@@ -218,7 +218,7 @@ export function ShoppingListModal({
 
         {/* Footer — total + confirm */}
         <div class="shrink-0 bg-[#C7B287] px-5 py-4 flex flex-col items-center gap-3">
-          <div class="w-full flex items-baseline justify-between gap-2">
+          <div class="w-full flex items-center justify-between gap-2">
             <span class="text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6]">
               Coût total
             </span>

@@ -1,3 +1,10 @@
+// Hosted on the same public GCS bucket as MenuBuilderPanel's backgrounds rather than
+// bundled — these are full-size editorial photos; inlining them as base64 would have
+// bloated the widget's single-file bundle by ~600KB downloaded on every page load.
+const EDITORIAL_BASE_URL = 'https://storage.googleapis.com/carrefour-shoppergpt-backgrounds';
+const grillades = `${EDITORIAL_BASE_URL}/editorial-grillades-v1.webp`;
+const plateauSupporters = `${EDITORIAL_BASE_URL}/editorial-plateau-supporters-v1.webp`;
+
 export interface HeroSlide {
   img: string;
   title: string;
@@ -8,13 +15,6 @@ export interface EventTile {
   img: string;
   badge: string;
   title: string;
-  query: string;
-}
-
-export interface ProductTile {
-  img: string;
-  price: string;
-  name: string;
   query: string;
 }
 
@@ -38,30 +38,15 @@ export const HERO_SLIDES: HeroSlide[] = [
 
 export const EVENTS_TILES: EventTile[] = [
   {
-    img: "https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=700&q=80&fit=crop",
-    badge: "C'EST BIENTÔT",
-    title: "Le repas de\nfête des mères",
-    query: "Aidez-moi pour le repas de fête des mères",
-  },
-  {
-    img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=700&q=80&fit=crop",
+    img: grillades,
     badge: "SUGGESTION DU MOMENT",
-    title: "Buffet pour la fête des voisins",
-    query: "Montrez-moi vos suggestions de buffet pour la fête des voisins",
-  },
-];
-
-export const PRODUCT_TILES: ProductTile[] = [
-  {
-    img: "https://images.unsplash.com/photo-1671180401158-8d9d060d4966?q=80&w=1141&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    price: "39,99 €",
-    name: "Instant Apéro pour 6",
-    query: "Montre moi les produits Apéro"
+    title: "A vos grillades\nprofitez",
+    query: "Je prépare un barbecue, montrez-moi vos suggestions de grillades",
   },
   {
-    img: "https://images.unsplash.com/photo-1676300185026-81a05335809f?q=80&w=1226&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    price: "8,99 €",
-    name: "8 mini burgers",
-    query: "Montre moi les mini burgers disponible"
-  }
+    img: plateauSupporters,
+    badge: "100% CONVIVIAL",
+    title: "Le plateau des\nsupporters",
+    query: "Montrez-moi vos suggestions de plateaux apéro pour regarder un match",
+  },
 ];

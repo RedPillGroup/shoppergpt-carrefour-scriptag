@@ -254,15 +254,15 @@ export function MenuBuilderPanel({
       {/* ── Stats footer ─────────────────────────────────────────────────────── */}
       <div class="relative z-10 shrink-0 grid grid-cols-2 border-t border-[#E8ECF0] shadow-[0_-4px_14px_rgba(17,24,39,0.06)]">
         <div class="bg-[#F3F1EE] px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
-          <div class="flex items-baseline justify-between gap-1">
+          <div class="flex items-baseline gap-1">
             <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
               Convives
             </span>
-            <span class="text-[9px] md:text-[10px] text-[#8D7A4E] text-right tabular-nums">
+            <span class="text-[9px] md:text-[10px] text-[#8D7A4E] tabular-nums">
               {requirements.guests_adults ?? '—'} adultes · {requirements.guests_kids ?? '—'} enf.
             </span>
           </div>
-          <div class="flex items-baseline justify-between gap-1">
+          <div class="flex items-baseline gap-1">
             <span class="text-[9px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
               Budget
             </span>
@@ -294,16 +294,16 @@ export function MenuBuilderPanel({
 
           {/* Ajouter au panier — opens the shopping-list recap modal.
               Two distinct buttons (not one toggling its content): a plain round
-              icon-only button below `md` (no room next to the price stats — mirrors
+              icon-only button below 1000px (no room next to the price stats — mirrors
               the basket-icon circle in the mobile mockup), and a fixed-size text CTA
-              at `md`+ using the exact desktop spec (142×32, white fill, #AAAAAA
+              at 1000px+ using the exact desktop spec (142×32, white fill, #AAAAAA
               1px border, 30px radius). Icon and label never show at the same time. */}
           {hasProducts && (
             <Fragment>
               <button
                 onClick={() => setShoppingListOpen(true)}
                 aria-label="Ajouter au panier"
-                class="md:hidden shrink-0 p-1 rounded-full bg-white flex items-center justify-center border-0 cursor-pointer shadow-sm transition-colors hover:bg-[#F7F2E6]"
+                class="min-[1000px]:hidden shrink-0 p-1 rounded-full bg-white flex items-center justify-center border-0 cursor-pointer shadow-sm transition-colors hover:bg-[#F7F2E6]"
               >
                 <span
                   class="inline-flex w-[18px] h-[18px] shrink-0 text-[#8D7A4E] [&_svg]:block [&_svg]:w-full [&_svg]:h-full [&_path]:fill-current"
@@ -312,7 +312,7 @@ export function MenuBuilderPanel({
               </button>
               <button
                 onClick={() => setShoppingListOpen(true)}
-                class="hidden md:flex shrink-0 items-center justify-center cursor-pointer bg-white hover:bg-[#F7F2E6] transition-colors"
+                class="hidden min-[1000px]:flex shrink-0 items-center justify-center cursor-pointer bg-white hover:bg-[#F7F2E6] transition-colors"
                 style="width:142px; height:32px; border-radius:30px; border:1px solid #AAAAAA; padding:3px 7px;"
               >
                 <span class="text-[10px] font-bold uppercase tracking-wide text-[#8D7A4E] whitespace-nowrap">
