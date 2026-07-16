@@ -322,12 +322,16 @@ export function MenuBuilderPanel({
                             no fixed px height. py-4 keeps it clear of the sticky
                             step bar above and the footer below instead of
                             touching them. Each card is h-full of that padded
-                            box, so the image column grows tall enough for a
-                            3-line name without clipping it (see MenuProductCard's
-                            horizontal branch). */}
-                        <div class="flex md:hidden flex-1 min-h-0 py-4 overflow-x-auto gap-3 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden -mx-4 px-4">
+                            box (capped at max-h-[200px] — without the sandbox's
+                            navbar/footer around it, e.g. on a short embedded
+                            viewport, this area can end up with way more height
+                            than a single product card should ever need), so the
+                            image column grows tall enough for a 3-line name
+                            without clipping it (see MenuProductCard's horizontal
+                            branch). */}
+                        <div class="flex md:hidden items-center flex-1 min-h-0 py-4 overflow-x-auto gap-3 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden -mx-4 px-4">
                           {products.map(p => (
-                            <div key={p.id} class="w-[300px] h-full shrink-0 snap-center">
+                            <div key={p.id} class="w-[300px] h-full max-h-[200px] max-w-[300px] shrink-0 snap-center">
                               <MenuProductCard
                                 product={p}
                                 quantity={quantities[p.id] ?? 0}

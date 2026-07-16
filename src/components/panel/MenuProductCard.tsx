@@ -120,7 +120,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
         {/* ── Content — price + name, right of the image. Top-aligned (not
             centered) so it sits near the image's top edge, leaving the lower
             portion free for the stepper straddling the seam above. ────────── */}
-        <div class="flex-1 min-w-0 flex flex-col justify-start gap-1 px-3 pt-10 pb-2">
+        <div class="flex-1 min-w-0 flex flex-col justify-start gap-1 px-3 pt-8 pb-2">
           <div class="text-[14px] font-bold text-[#E2422B]">
             {product.price.toFixed(2).replace('.', ',')} €
           </div>
