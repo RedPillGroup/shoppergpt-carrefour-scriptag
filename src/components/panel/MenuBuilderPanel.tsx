@@ -407,42 +407,51 @@ export function MenuBuilderPanel({
         />
       )}
 
-      {/* ── Stats footer ─────────────────────────────────────────────────────── */}
-      <div class="relative z-10 shrink-0 grid grid-cols-2 shadow-[0_-4px_14px_rgba(17,24,39,0.06)]">
-        <div class="bg-[#F3F1EE] px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
+      {/* ── Stats footer — mobile: narrower white side (40/60 instead of 50/50),
+          "Convives" collapsed to just a total headcount, "Prix/pers." dropped
+          entirely (only "Coût total" shown). Desktop keeps the full detail via
+          md: overrides, unaffected. ─────────────────────────────────────────── */}
+      <div class="relative z-10 shrink-0 flex md:grid md:grid-cols-2 shadow-[0_-4px_14px_rgba(17,24,39,0.06)]">
+        {/* Mobile: sized to its own content + padding (shrink-0), not a fixed
+            track — the gold side (flex-1) soaks up whatever's left. Desktop
+            reverts to an even grid-cols-2 split via md:. */}
+        <div class="shrink-0 md:shrink md:flex-none bg-[#F3F1EE] px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
           <div class="flex items-baseline gap-2">
-            <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
+            <span class="text-[11px] md:text-[11px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
               Convives
             </span>
-            <span class="text-[10px] md:text-[11px] text-[#8D7A4E] tabular-nums">
+            <span class="md:hidden text-[11px] text-[#8D7A4E] tabular-nums font-semibold">
+              {totalGuests || '—'}
+            </span>
+            <span class="hidden md:inline text-[11px] text-[#8D7A4E] tabular-nums">
               {requirements.guests_adults ?? '—'} adultes · {requirements.guests_kids ?? '—'} enf.
             </span>
           </div>
           <div class="flex items-baseline gap-2">
-            <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
+            <span class="text-[11px] md:text-[11px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
               Budget
             </span>
-            <span class="text-[10px] md:text-[11px] text-[#8D7A4E] tabular-nums">
+            <span class="text-[11px] md:text-[11px] text-[#8D7A4E] tabular-nums font-semibold">
               {requirements.budget !== undefined ? fmtEur(requirements.budget) : '—'}
             </span>
           </div>
         </div>
 
-        <div class="bg-[#C7B287] text-white px-3 py-2.5 md:px-4 md:py-3 flex items-center justify-between gap-2">
+        <div class="flex-1 min-w-0 md:flex-none bg-[#C7B287] text-white px-3 py-2.5 md:px-4 md:py-3 flex items-center justify-between gap-2">
           <div class="flex flex-col gap-1.5 min-w-0">
             <div class="flex items-baseline justify-between gap-2">
-              <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
+              <span class="text-[11px] md:text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
                 Coût total
               </span>
-              <span class="text-[10px] md:text-[11px] text-white tabular-nums font-semibold">
+              <span class="text-[12px] md:text-[11px] text-white tabular-nums font-semibold">
                 {totalCost > 0 ? fmtEur(totalCost) : '—'}
               </span>
             </div>
-            <div class="flex items-baseline justify-between gap-2">
-              <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
+            <div class="hidden md:flex items-baseline justify-between gap-2">
+              <span class="text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
                 Prix/pers.
               </span>
-              <span class="text-[10px] md:text-[11px] text-white tabular-nums font-semibold">
+              <span class="text-[11px] text-white tabular-nums font-semibold">
                 {pricePerPerson !== undefined ? fmtEur(pricePerPerson) : '—'}
               </span>
             </div>
@@ -456,13 +465,15 @@ export function MenuBuilderPanel({
               1px border, 30px radius). Icon and label never show at the same time. */}
           {hasProducts && (
             <Fragment>
+              {/* cart.svg now bakes in its own white circle background, so this
+                  is just the icon itself — no extra button chrome/wrapper. */}
               <button
                 onClick={() => setShoppingListOpen(true)}
                 aria-label="Ajouter au panier"
-                class="min-[1000px]:hidden shrink-0 p-1 rounded-full bg-white flex items-center justify-center border-0 cursor-pointer shadow-sm transition-colors hover:bg-[#F7F2E6]"
+                class="min-[1000px]:hidden shrink-0 flex items-center justify-center border-0 bg-transparent p-0 cursor-pointer transition-opacity hover:opacity-90"
               >
                 <span
-                  class="inline-flex w-[18px] h-[18px] shrink-0 text-[#8D7A4E] [&_svg]:block [&_svg]:w-full [&_svg]:h-full [&_path]:fill-current"
+                  class="inline-flex w-[36px] h-[36px] shrink-0 [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
                   dangerouslySetInnerHTML={{ __html: cartIcon }}
                 />
               </button>
