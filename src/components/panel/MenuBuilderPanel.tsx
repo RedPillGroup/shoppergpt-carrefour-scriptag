@@ -410,19 +410,19 @@ export function MenuBuilderPanel({
       {/* ── Stats footer ─────────────────────────────────────────────────────── */}
       <div class="relative z-10 shrink-0 grid grid-cols-2 shadow-[0_-4px_14px_rgba(17,24,39,0.06)]">
         <div class="bg-[#F3F1EE] px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
-          <div class="flex items-baseline gap-1">
-            <span class="text-[10px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
+          <div class="flex items-baseline gap-2">
+            <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
               Convives
             </span>
-            <span class="text-[10px] md:text-[10px] text-[#8D7A4E] tabular-nums">
+            <span class="text-[10px] md:text-[11px] text-[#8D7A4E] tabular-nums">
               {requirements.guests_adults ?? '—'} adultes · {requirements.guests_kids ?? '—'} enf.
             </span>
           </div>
-          <div class="flex items-baseline gap-1">
-            <span class="text-[10px] md:text-[10px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
+          <div class="flex items-baseline gap-2">
+            <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
               Budget
             </span>
-            <span class="text-[10px] md:text-[10px] text-[#8D7A4E] tabular-nums">
+            <span class="text-[10px] md:text-[11px] text-[#8D7A4E] tabular-nums">
               {requirements.budget !== undefined ? fmtEur(requirements.budget) : '—'}
             </span>
           </div>
@@ -430,19 +430,19 @@ export function MenuBuilderPanel({
 
         <div class="bg-[#C7B287] text-white px-3 py-2.5 md:px-4 md:py-3 flex items-center justify-between gap-2">
           <div class="flex flex-col gap-1.5 min-w-0">
-            <div class="flex items-baseline justify-between gap-1">
-              <span class="text-[10px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
+            <div class="flex items-baseline justify-between gap-2">
+              <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
                 Coût total
               </span>
-              <span class="text-[10px] md:text-[10px] text-white tabular-nums font-semibold">
+              <span class="text-[10px] md:text-[11px] text-white tabular-nums font-semibold">
                 {totalCost > 0 ? fmtEur(totalCost) : '—'}
               </span>
             </div>
-            <div class="flex items-baseline justify-between gap-1">
-              <span class="text-[10px] md:text-[10px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
+            <div class="flex items-baseline justify-between gap-2">
+              <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
                 Prix/pers.
               </span>
-              <span class="text-[10px] md:text-[10px] text-white tabular-nums font-semibold">
+              <span class="text-[10px] md:text-[11px] text-white tabular-nums font-semibold">
                 {pricePerPerson !== undefined ? fmtEur(pricePerPerson) : '—'}
               </span>
             </div>
