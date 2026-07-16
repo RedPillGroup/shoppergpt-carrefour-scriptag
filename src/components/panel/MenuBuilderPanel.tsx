@@ -92,11 +92,22 @@ export function MenuBuilderPanel({
     return confirmed.length > 0 ? confirmed : Object.keys(productsByStep);
   }, [requirements.menu_steps, productsByStep]);
 
-  // Refs for smooth scroll-to on tab click
+  // Refs for smooth scroll-to on tab click (desktop bottom tab bar)
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const scrollToStep = (step: string) => {
     sectionRefs.current[step]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Mobile-only: one step shown at a time, paged via the sticky top bar's
+  // arrows (see below) instead of the bottom icon tab bar (desktop keeps all
+  // steps stacked + that tab bar, unaffected). Clamped in case `steps` shrinks.
+  const [mobileStepIndex, setMobileStepIndex] = useState(0);
+  const currentMobileIndex = Math.min(mobileStepIndex, Math.max(steps.length - 1, 0));
+  const productsScrollRef = useRef<HTMLDivElement | null>(null);
+  const goToMobileStep = (index: number) => {
+    setMobileStepIndex(index);
+    productsScrollRef.current?.scrollTo({ top: 0 });
   };
 
   // ── derived stats ─────────────────────────────────────────────────────────
@@ -162,9 +173,14 @@ export function MenuBuilderPanel({
 
       {/* ── With products: chips + scrollable products over the image ────────── */}
       {hasProducts && (
-        <div class="relative z-10 flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]">
-          {/* Chips — scroll away */}
-          <div class="flex flex-row items-center justify-center gap-3 px-6 pt-8 pb-5 flex-wrap">
+        <div
+          ref={productsScrollRef}
+          class="relative z-10 flex-1 flex flex-col overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]"
+        >
+          {/* Chips — scroll away. Hidden on mobile once products exist: the
+              sticky step bar right below already carries the current context,
+              and there's no room for both. Desktop keeps them, unaffected. */}
+          <div class="hidden md:flex shrink-0 flex-row items-center justify-center gap-3 px-6 pt-8 pb-5 flex-wrap">
             <div class="bg-white/90 backdrop-blur-[2px] px-6 py-2.5 rounded-2xl shadow-sm">
               <span class="font-['Satisfy'] text-[#C7B287] text-[18px] md:text-[20px] leading-none whitespace-nowrap">
                 {eventLabel}
@@ -179,9 +195,59 @@ export function MenuBuilderPanel({
             )}
           </div>
 
-          <div class="px-4 pt-2 pb-6 md:px-6">
+          {/* Mobile-only sticky step nav — a real top bar (not a per-section chip),
+              stays pinned while the products below scroll. Replaces the bottom
+              icon tab bar entirely on mobile (see that bar further down, now
+              `hidden md:block`); desktop keeps browsing via that tab bar instead,
+              with all steps stacked below as before. Also hidden once the panel
+              is expanded — expanded mobile shows every step stacked, same as
+              desktop, so one-step-at-a-time paging no longer applies. */}
+          {steps.length > 0 && !mobileExpanded && (
+            <div class="md:hidden shrink-0 sticky top-0 z-20 flex items-center justify-between bg-[#FFF] px-1 py-2.5">
+              <button
+                type="button"
+                onClick={() => currentMobileIndex > 0 && goToMobileStep(currentMobileIndex - 1)}
+                disabled={currentMobileIndex === 0}
+                aria-label="Étape précédente"
+                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent text-[#B0A898] text-[18px] leading-none disabled:opacity-30 cursor-pointer disabled:cursor-default"
+              >
+                ‹
+              </button>
+              <div class="flex items-center gap-2">
+                <span class="h-[26px] w-[26px] flex items-center justify-center shrink-0 [&_svg]:h-full [&_svg]:w-full">
+                  {getStepIcon(steps[currentMobileIndex], 26)}
+                </span>
+                <span class="font-semibold uppercase tracking-wide text-[13px] text-[#3D3529] leading-none pt-2">
+                  {steps[currentMobileIndex]}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => currentMobileIndex < steps.length - 1 && goToMobileStep(currentMobileIndex + 1)}
+                disabled={currentMobileIndex === steps.length - 1}
+                aria-label="Étape suivante"
+                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent text-[#B0A898] text-[18px] leading-none disabled:opacity-30 cursor-pointer disabled:cursor-default"
+              >
+                ›
+              </button>
+            </div>
+          )}
+
+          {/* flex-1 + justify-center: when a step's product row is shorter than
+              the available panel height (e.g. just 1-2 cards), it centers
+              vertically in the leftover space instead of sitting flush at the
+              top with dead space below. min-h-0 lets it shrink back below its
+              content size once there's enough to actually scroll. Only applies
+              to the one-step-at-a-time mobile view — expanded shows every step
+              stacked (same as desktop), which is generally tall enough that
+              centering would just look wrong, so it's suppressed then. */}
+          <div
+            class={`flex-1 min-h-0 flex flex-col px-4 pb-6 md:px-6 md:justify-start ${
+              mobileExpanded ? 'pt-8' : 'pt-2 justify-center'
+            }`}
+          >
             <div class="flex flex-col gap-8">
-              {steps.map(step => {
+              {steps.map((step, stepIdx) => {
                 // Keep backend order stable, only push qty-0 suggestions to the end.
                 // This avoids cards jumping around when users tweak quantities.
                 const products = [...(productsByStep[step] ?? [])].sort((a, b) => {
@@ -197,9 +263,15 @@ export function MenuBuilderPanel({
                       sectionRefs.current[step] = el as HTMLElement | null;
                     }}
                     style="scroll-margin-top: 20px"
+                    // Mobile (collapsed): only the step matching the sticky top
+                    // bar's current index is shown — one step at a time. Mobile
+                    // (expanded) and desktop always show every step stacked.
+                    class={mobileExpanded || stepIdx === currentMobileIndex ? '' : 'hidden md:block'}
                   >
-                    {/* Step heading — chip, no dividers */}
-                    <div class="flex items-center justify-center mb-4">
+                    {/* Step heading chip — hidden in the collapsed mobile view
+                        (its step name lives in the sticky top bar instead), but
+                        shown once expanded — same as desktop. */}
+                    <div class={`${mobileExpanded ? 'flex' : 'hidden md:flex'} items-center justify-center mb-4`}>
                       <div class="bg-white px-4 py-1.5 rounded-full shrink-0 shadow-sm">
                         <h2 class="font-['Satisfy'] text-[#C7B287] text-xl md:text-2xl leading-none m-0">
                           {step}
@@ -212,14 +284,20 @@ export function MenuBuilderPanel({
                         Aucun produit disponible pour ce service.
                       </p>
                     ) : (
-                      <div class="grid grid-cols-3 md:grid-cols-4 gap-3">
+                      // flex-wrap + justify-center (not a 3/4-col grid) so a partial
+                      // row — e.g. 1 or 2 products in a step — centers as a group
+                      // instead of starting flush left with dead empty columns
+                      // trailing to the right (grid reserves those track widths
+                      // even when unused).
+                      <div class="flex flex-wrap justify-center gap-3">
                         {products.map(p => (
-                          <MenuProductCard
-                            key={p.id}
-                            product={p}
-                            quantity={quantities[p.id] ?? 0}
-                            onQuantityChange={delta => onQuantityChange(p.id, delta)}
-                          />
+                          <div key={p.id} class="flex-[0_0_calc(33.333%-8px)] md:flex-[0_0_calc(25%-9px)]">
+                            <MenuProductCard
+                              product={p}
+                              quantity={quantities[p.id] ?? 0}
+                              onQuantityChange={delta => onQuantityChange(p.id, delta)}
+                            />
+                          </div>
                         ))}
                       </div>
                     )}
@@ -231,9 +309,10 @@ export function MenuBuilderPanel({
         </div>
       )}
 
-      {/* ── Bottom step tab bar — scrolls to section on click ───────────────── */}
+      {/* ── Bottom step tab bar — scrolls to section on click. Hidden on mobile,
+          replaced by the prev/next arrows flanking each step's heading chip. ── */}
       {steps.length > 0 && (
-        <div class="relative z-10 shrink-0 bg-white border-t border-[#E8ECF0]">
+        <div class="hidden md:block relative z-10 shrink-0 bg-white border-t border-[#E8ECF0]">
           <div class="flex items-stretch overflow-x-auto [&::-webkit-scrollbar]:hidden">
             {steps.map(step => {
               const icon = getStepIcon(step, 24);

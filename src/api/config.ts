@@ -4,6 +4,8 @@ declare global {
       apiUrl?: string;
       clientId?: string;
       sessionId?: string;
+      /** Dev/testing only — see getMockScreen(). */
+      mockScreen?: string;
     };
   }
 }
@@ -33,5 +35,17 @@ export function getClientId(): string {
  */
 export function getInitialSessionId(): string | null {
   return _scriptData.sessionId ?? window.SHOPPERGPT_CONFIG?.sessionId ?? null;
+}
+
+/**
+ * Dev/testing only — `data-mock-screen="event"` or `"products"` on the script
+ * tag skips straight to that MenuBuilderPanel screen with canned data, so you
+ * don't have to re-chat through the whole flow on every reload to check a
+ * layout tweak. Never set in production embeds. See AssistantExperience's
+ * mock-seeding effect for what each value populates.
+ */
+export function getMockScreen(): 'event' | 'products' | null {
+  const raw = _scriptData.mockScreen ?? window.SHOPPERGPT_CONFIG?.mockScreen;
+  return raw === 'event' || raw === 'products' ? raw : null;
 }
 

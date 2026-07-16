@@ -143,7 +143,10 @@ export function MenuProductCard({ product, quantity, onQuantityChange }: Props) 
         <div class="text-[13px] md:text-[14px] font-bold text-[#E2422B]">
           {product.price.toFixed(2).replace('.', ',')} €
         </div>
-        <div class="text-[10px] md:text-[11px] text-[#6B7280] leading-snug line-clamp-2">
+        {/* min-h reserves space for 2 lines (leading-snug ≈ 1.375 × font-size)
+            even when the name only wraps to 1 — otherwise cards with short vs
+            long names end up different heights in the same row. */}
+        <div class="text-[10px] md:text-[11px] text-[#6B7280] leading-snug line-clamp-2 min-h-[2.75em]">
           {product.name}
         </div>
       </div>

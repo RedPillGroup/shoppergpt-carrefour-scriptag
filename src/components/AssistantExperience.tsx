@@ -5,6 +5,7 @@ import { useShopperStore } from '../store';
 import { EventRequirements, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
 import { fetchServerMenu, menuResponseToPanelState } from '../api/menu';
+import { getMockScreen } from '../api/config';
 import { EditorialPanel } from './panel/EditorialPanel';
 import { MessageBubble } from './chat/MessageBubble';
 import { TypingIndicator } from './chat/TypingIndicator';
@@ -105,8 +106,66 @@ export function AssistantExperience() {
   }, [messages, isLoading, streamingText]);
 
   useEffect(() => {
-    if (sessionId) void syncPanelFromServer();
+    // Skip the real GET /menu sync in mock mode — it would immediately
+    // overwrite the canned data below with the (empty) actual server state.
+    if (sessionId && !getMockScreen()) void syncPanelFromServer();
   }, [sessionId, syncPanelFromServer]);
+
+  // Dev/testing only — jump straight to a MenuBuilderPanel screen with canned
+  // data via data-mock-screen="event"|"products" on the script tag, instead of
+  // re-chatting through postcode → event → compose on every reload. Never set
+  // in production embeds (see getMockScreen).
+  useEffect(() => {
+    const mock = getMockScreen();
+    if (!mock) return;
+
+    setEventRequirements({
+      event_type: 'anniversaire',
+      event_date: '27 août 2026',
+      guests_adults: 10,
+      guests_kids: 0,
+      budget: 200,
+      visual_theme: 'anniv',
+      menu_steps: ['Apéritifs', 'Plats', 'Fromages', 'Desserts', 'Boissons', 'Pains'],
+    });
+    setEventScreenEnabled(true);
+
+    if (mock === 'products') {
+      const mk = (id: string, name: string, price: number, step: string): Product => ({
+        id,
+        name,
+        price,
+        persons: 4,
+        image: '',
+        menu_step: step,
+      });
+      setProductsByStep({
+        'Apéritifs': [
+          mk('mock-1', '6 Verrines tartare de tomates et thon', 7.95, 'Apéritifs'),
+          mk('mock-2', '4 verrines noix de Saint-Jacques et tartare basilic', 4.99, 'Apéritifs'),
+        ],
+        'Plats': [
+          mk('mock-3', 'Filet de Bœuf Wellington en croûte', 32.9, 'Plats'),
+          mk('mock-4', 'Gratin dauphinois', 3.0, 'Plats'),
+        ],
+        'Fromages': [mk('mock-5', 'Plateau de 4 fromages', 10.9, 'Fromages')],
+        'Desserts': [mk('mock-6', 'Tarte aux fraises', 9.99, 'Desserts')],
+        'Boissons': [mk('mock-7', 'Macarons framboises', 12.5, 'Boissons')],
+        'Pains': [mk('mock-8', 'Macarons', 19.0, 'Pains')],
+      });
+      setMenuQuantities({
+        'mock-1': 6,
+        'mock-2': 0,
+        'mock-3': 2,
+        'mock-4': 10,
+        'mock-5': 1,
+        'mock-6': 2,
+        'mock-7': 0,
+        'mock-8': 0
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Snapshot the current panel (products + user-adjusted quantities) so the
   // backend can sync manual edits before the LLM answers. Read at request time.
@@ -269,7 +328,7 @@ export function AssistantExperience() {
             // ChatInputBar (shrink-0) still forces itself to its full intrinsic
             // height, keeping the input + mic reachable. Both are plain lengths
             // (not 'auto'/a flexGrow toggle), so the transition interpolates smoothly.
-            flexBasis: mobilePanelExpanded ? '64px' : '62%',
+            flexBasis: mobilePanelExpanded ? '64px' : '50%',
           }}
         >
           {/* Mobile-only "expand" trigger — sits at the chat pane's own top edge
