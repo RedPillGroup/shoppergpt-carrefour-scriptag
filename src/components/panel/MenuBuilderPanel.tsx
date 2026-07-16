@@ -327,7 +327,7 @@ export function MenuBuilderPanel({
                             horizontal branch). */}
                         <div class="flex md:hidden flex-1 min-h-0 py-4 overflow-x-auto gap-3 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden -mx-4 px-4">
                           {products.map(p => (
-                            <div key={p.id} class="w-[250px] h-full shrink-0 snap-center">
+                            <div key={p.id} class="w-[300px] h-full shrink-0 snap-center">
                               <MenuProductCard
                                 product={p}
                                 quantity={quantities[p.id] ?? 0}

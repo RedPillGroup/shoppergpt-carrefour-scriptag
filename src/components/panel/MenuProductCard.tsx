@@ -47,7 +47,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
         {/* ── Image + overlays — fixed-width column, but full card height (not
             aspect-square) so the row can grow tall enough for a 3-line name
             without clipping it. object-cover still crops the photo cleanly. ── */}
-        <div class="relative shrink-0 w-[110px] h-full">
+        <div class="relative shrink-0 w-[150px] h-full">
           <img
             class={`w-full h-full object-cover block transition-all duration-200 ${!inMenu ? 'grayscale' : ''}`}
             src={product.image || PLACEHOLDER}
@@ -81,7 +81,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
               (-translate-x-1/2), same trick as elsewhere: no need to know the
               exact pixel boundary, it just centers on wherever this column ends. */}
           <div
-            class="absolute top-[70%] left-full -translate-x-1/2 -translate-y-1/2 z-10 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-1"
+            class="absolute top-[85%] left-full -translate-x-1/2 -translate-y-1/2 z-10 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-1"
             onClick={e => e.stopPropagation()}
           >
             <button
