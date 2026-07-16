@@ -31,6 +31,12 @@ export function StepToggleCard({ items, onChange, disabled = false, onValidate }
   const [enabled, setEnabled] = useState<Record<string, boolean>>(
     () => Object.fromEntries(ALL_TOGGLEABLE_STEPS.map(s => [s, recommended.has(s)]))
   );
+  // Freezes the card the instant "Valider" is clicked — the parent's `disabled` prop
+  // only flips once the composed menu actually comes back (or a newer step card
+  // appears), which lags behind the click by the whole compose_menu round-trip.
+  // This local flag gives the same immediate feedback as clicking a store/mode pick.
+  const [validated, setValidated] = useState(false);
+  const frozen = disabled || validated;
 
   const onSteps = ALL_TOGGLEABLE_STEPS.filter(s => enabled[s]);
   const offSteps = ALL_TOGGLEABLE_STEPS.filter(s => !enabled[s]);
@@ -41,21 +47,27 @@ export function StepToggleCard({ items, onChange, disabled = false, onValidate }
   }, [enabled]);
 
   const toggle = (step: string) => {
-    if (disabled) return;
+    if (frozen) return;
     setEnabled(prev => ({ ...prev, [step]: !prev[step] }));
+  };
+
+  const handleValidate = () => {
+    if (!onValidate) return;
+    setValidated(true);
+    onValidate();
   };
 
   return (
     <div class="mt-2 w-full max-w-full flex flex-col gap-1.5">
-      <div class={`flex flex-wrap gap-1.5 p-2 ${disabled ? 'opacity-50' : ''}`}>
+      <div class={`flex flex-wrap gap-1.5 p-2 ${frozen ? 'opacity-50' : ''}`}>
         {onSteps.map(step => (
           <button
             key={step}
             type="button"
             onClick={() => toggle(step)}
-            disabled={disabled}
+            disabled={frozen}
             class={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold text-white bg-[#C7B287] ${
-              disabled ? 'cursor-default' : 'cursor-pointer'
+              frozen ? 'cursor-default' : 'cursor-pointer'
             }`}
           >
             <span>{step}</span>
@@ -64,20 +76,20 @@ export function StepToggleCard({ items, onChange, disabled = false, onValidate }
         ))}
       </div>
 
-      {!disabled && onValidate && (
-        <div class="px-2">
+      {!frozen && onValidate && (
+        <div class="px-2 flex">
           <button
             type="button"
-            onClick={onValidate}
+            onClick={handleValidate}
             disabled={onSteps.length === 0}
-            class="inline-flex items-center px-4 py-1.5 rounded-full text-[12px] font-semibold text-white bg-[#C7B287] cursor-pointer hover:bg-[#B39F72] disabled:opacity-40 disabled:cursor-not-allowed"
+            class="inline-flex items-center justify-center gap-1.5 p-2 px-4 rounded-xl font-semibold text-[12px] text-white bg-[#2E2E2E] cursor-pointer hover:bg-[#1A1A1A] active:scale-[.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Valider
+            <span>Valider la sélection</span>
           </button>
         </div>
       )}
 
-      {!disabled && offSteps.length > 0 && (
+      {!frozen && offSteps.length > 0 && (
         <div class="mt-1 flex flex-col gap-1">
           <span class="text-[11px] text-[#6B7280]">Et si vous souhaitez vous pouvez ajouter :</span>
           <div class="flex flex-wrap gap-1.5 p-2">
