@@ -414,9 +414,9 @@ export function AssistantExperience() {
                       : { duration: 0.42, ease: [0.16, 1, 0.3, 1], delay: 0.02 }
                   }
                 >
-                  <p class="m-0 pt-3 pb-5 md:py-10 font-normal text-[#C7B287] text-base md:text-lg leading-[1.45]">
+                  <p class="m-0 pt-3 pb-5 md:py-10 font-normal text-[#C7B287] text-base md:text-2xl leading-[1.45]">
                     Bonjour et bienvenue, je suis{' '}
-                    <span class="font-['Satisfy'] font-normal text-[#C7B287] text-[24px] md:text-2xl mr-[1px]">Cathia</span> votre agent
+                    <span class="font-['Satisfy'] font-normal text-[#C7B287] text-[24px] md:text-3xl mr-[1px]">Cathia</span> votre agent
                     intelligent traiteur. Que puis-je faire pour vous&nbsp;?
                   </p>
                 </motion.div>
