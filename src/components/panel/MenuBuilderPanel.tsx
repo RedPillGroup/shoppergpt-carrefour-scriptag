@@ -78,8 +78,8 @@ function PriceBig({ value }: { value: number }) {
     .split(',');
   return (
     <span class="tabular-nums font-[500] text-white whitespace-nowrap">
-      <span class="text-[20px] leading-none">{intPart}</span>
-      <span class="text-[14px] leading-none">,{decPart} €</span>
+      <span class="text-[17px] md:text-[20px] leading-none">{intPart}</span>
+      <span class="text-[12px] md:text-[14px] leading-none">,{decPart} €</span>
     </span>
   );
 }
@@ -192,7 +192,7 @@ export function MenuBuilderPanel({
 
   return (
     <div
-      class={`flex-1 min-h-0 flex flex-col overflow-hidden relative transition-opacity duration-200 ${
+      class={`flex-1 min-h-[350px] flex flex-col overflow-hidden relative transition-opacity duration-200 ${
         syncing ? 'opacity-60 pointer-events-none' : ''
       }`}
     >

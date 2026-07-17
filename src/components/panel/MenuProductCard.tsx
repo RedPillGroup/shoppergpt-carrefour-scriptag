@@ -49,10 +49,10 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             is a further sibling outside both, so it stays fully clear too. */}
         <div class="overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] bg-white flex flex-row flex-1 min-w-0 h-full">
         <div class={`flex flex-row flex-1 min-w-0 h-full transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}>
-        {/* ── Image + overlays — fixed-width column, but full card height (not
-            aspect-square) so the row can grow tall enough for a 3-line name
-            without clipping it. object-cover still crops the photo cleanly. ── */}
-        <div class="relative shrink-0 w-[150px] h-full">
+        {/* ── Image + overlays — aspect-square, width derived from height (no
+            fixed px) so it's always a true square. object-cover still crops
+            the photo cleanly. ── */}
+        <div class="relative shrink-0 h-full aspect-square">
           <img
             class="w-full h-full object-cover block"
             src={product.image || PLACEHOLDER}
@@ -98,10 +98,10 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
           </div>
         </div>
 
-        {/* ── Content — price + name, right of the image. Top-aligned (not
-            centered) so it sits near the image's top edge, leaving the lower
-            portion free for the stepper straddling the seam above. ────────── */}
-        <div class="flex-1 min-w-0 flex flex-col justify-start gap-1 px-3 pt-8 pb-2">
+        {/* ── Content — price + name, right of the image, sitting near the top
+            (just a small pt-3 for breathing room, no big pb pushing them down
+            from the bottom). ────────── */}
+        <div class="flex-1 min-w-0 flex flex-col justify-start gap-1 px-3 pt-3 pb-2">
           <PriceBig value={product.price} size="lg" />
           <div class="text-[12px] font-[400] leading-snug line-clamp-3">
             {product.name}
