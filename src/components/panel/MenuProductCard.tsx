@@ -28,12 +28,13 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
         class="relative h-full flex flex-row cursor-pointer"
         onClick={() => setSelectedProduct(product)}
       >
-        {/* The whole visual card (bg, shadow, image, content) lives in this one
-            dimmable wrapper — opacity on the outer relative div above would also
-            dim the toggle button (opacity affects the full subtree, it can't be
-            excluded per-child), so instead the button is pulled OUT as a sibling
-            of THIS wrapper, not a descendant of it, and stays at full clarity. */}
-        <div class={`overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] bg-white flex flex-row flex-1 min-w-0 h-full transition-opacity duration-200 ${!inMenu ? 'opacity-60' : ''}`}>
+        {/* bg-white here stays at FULL opacity always — it's what stops the
+            page's own background (a photo, on this panel) from showing through
+            once the card dims. Only the image/content inside is dimmed (see the
+            wrapper just below), not this background layer. The toggle button
+            is a further sibling outside both, so it stays fully clear too. */}
+        <div class="overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] bg-white flex flex-row flex-1 min-w-0 h-full">
+        <div class={`flex flex-row flex-1 min-w-0 h-full transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}>
         {/* ── Image + overlays — fixed-width column, but full card height (not
             aspect-square) so the row can grow tall enough for a 3-line name
             without clipping it. object-cover still crops the photo cleanly. ── */}
@@ -95,18 +96,14 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
           </div>
         </div>
         </div>
+        </div>
 
         {/* Toggle button — top-right of the image column, outside the dimmed
-            wrapper above (see comment there). Selected: white circle + green
-            ring + green check. Unselected: a plain grey-ringed empty circle
-            at full opacity (no X) — signals "not picked, but still clearly
-            tappable to add". Positioned by hand (left, not right) since it
-            belongs over the fixed-width image column, not the card's far
-            right edge. */}
+            wrapper above (see comment there). Ring stays green either way (still
+            clearly tappable, not "greyed out" like the rest of a disabled card) —
+            only the checkmark itself is what actually shows selected vs not. */}
         <button
-          class={`absolute top-1.5 left-[120px] w-6 h-6 rounded-full flex items-center justify-center shadow border-2 transition-all duration-200 ${
-            inMenu ? 'bg-white border-[#B2CF0C]' : 'bg-white border-[#D9D9D9]'
-          }`}
+          class="absolute top-1.5 left-[120px] w-6 h-6 rounded-full flex items-center justify-center shadow border-2 bg-white border-[#B2CF0C] transition-all duration-200"
           onClick={e => {
             e.stopPropagation();
             onQuantityChange(inMenu ? -quantity : 1);
@@ -127,13 +124,14 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
       class="relative flex flex-col cursor-pointer"
       onClick={() => setSelectedProduct(product)}
     >
-      {/* The whole visual card (bg, shadow, image, stepper, price, name) lives
-          in this one dimmable wrapper — opacity on the outer relative div above
-          would also dim the toggle button (opacity affects the full subtree, it
-          can't be excluded per-child), so instead the button is pulled OUT as a
-          sibling of THIS wrapper, not a descendant of it, and stays at full
-          clarity and obviously still tappable. */}
-      <div class={`overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] bg-white flex flex-col flex-1 transition-opacity duration-200 ${!inMenu ? 'opacity-60' : ''}`}>
+      {/* bg-white here stays at FULL opacity always — it's what stops the
+          page's own background (a photo, on this panel) from showing through
+          once the card dims. Only the image/stepper/price/name inside is
+          dimmed (see the wrapper just below), not this background layer. The
+          toggle button is a further sibling outside both, so it stays fully
+          clear too. */}
+      <div class="overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] bg-white flex flex-col flex-1">
+      <div class={`flex flex-col flex-1 transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}>
         <div class="relative shrink-0">
           <img
             class={`w-full aspect-square object-cover block transition-all duration-200 ${!inMenu ? 'grayscale' : ''}`}
@@ -192,19 +190,18 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
               even when the name only wraps to 1 — otherwise cards with short vs
               long names end up different heights in the same row. */}
           <div class="text-[11px] md:text-[11px] leading-snug line-clamp-2 min-h-[2.75em] font-[400]">
-            {product.name} 
+            {product.name}
           </div>
         </div>
       </div>
+      </div>
 
       {/* Toggle button — top-right, outside the dimmed wrapper above (see
-          comment there). Selected: white circle + green ring + green check.
-          Unselected: a plain grey-ringed empty circle at full opacity (no X) —
-          signals "not picked, but still clearly tappable to add". */}
+          comment there). Ring stays green either way (still clearly tappable,
+          not "greyed out" like the rest of a disabled card) — only the
+          checkmark itself is what actually shows selected vs not. */}
       <button
-        class={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow border-2 transition-all duration-200 ${
-          inMenu ? 'bg-white border-[#B2CF0C]' : 'bg-white border-[#D9D9D9]'
-        }`}
+        class="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow border-2 bg-white border-[#B2CF0C] transition-all duration-200"
         onClick={e => {
           e.stopPropagation();
           if (inMenu) {
