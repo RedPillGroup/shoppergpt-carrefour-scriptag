@@ -18,12 +18,41 @@ interface Props {
   onBlur?: () => void;
 }
 
-/** Pick the first MediaRecorder mime type the browser actually supports. */
-function pickMimeType(): string | undefined {
-  const prefs = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+/** Every MediaRecorder mime type worth trying, most-preferred first. Safari/iOS
+ * never supports the webm ones at all (no codec for it), and — a known WebKit
+ * quirk — `isTypeSupported('audio/mp4')` can report true while the MediaRecorder
+ * constructor still throws for that exact (codec-less) string, only accepting
+ * the fully codec-qualified form. So the codec-qualified mp4 variant is tried
+ * BEFORE the bare one, and startRecording (below) still retries with no
+ * mimeType at all if every candidate throws at construction time. */
+function candidateMimeTypes(): string[] {
+  const prefs = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4;codecs=mp4a.40.2',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+  ];
   const MR = typeof MediaRecorder !== 'undefined' ? MediaRecorder : undefined;
-  if (!MR?.isTypeSupported) return undefined;
-  return prefs.find(t => MR.isTypeSupported(t));
+  if (!MR?.isTypeSupported) return [];
+  return prefs.filter(t => MR.isTypeSupported(t));
+}
+
+/** Construct a MediaRecorder, trying each supported mimeType in turn and
+ * finally no mimeType at all (browser default) — isTypeSupported() saying yes
+ * doesn't guarantee the constructor will actually accept that exact string
+ * (see candidateMimeTypes' comment), so this is the real safety net. */
+function createRecorder(stream: MediaStream): MediaRecorder {
+  const candidates = [...candidateMimeTypes(), undefined];
+  let lastErr: unknown;
+  for (const mimeType of candidates) {
+    try {
+      return new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr ?? new Error('MediaRecorder unavailable');
 }
 
 // Silence auto-stop tuning. SILENCE_MS of continuous quiet ends the recording
@@ -78,6 +107,11 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  // Surfaces mic/recording failures that used to be console-only (silent from
+  // the user's POV — tapping the mic just appeared to do nothing). Clears
+  // itself a few seconds later or as soon as the user taps the mic again.
+  const [micError, setMicError] = useState<string | null>(null);
+  const micErrorTimeoutRef = useRef<number | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   // Keep the latest input in a ref so the recorder's async stop handler appends
@@ -117,6 +151,7 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
     return () => {
       recorderRef.current?.stream.getTracks().forEach(t => t.stop());
       stopSilenceWatch();
+      if (micErrorTimeoutRef.current != null) window.clearTimeout(micErrorTimeoutRef.current);
     };
   }, [stopSilenceWatch]);
 
@@ -158,43 +193,77 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
     silenceRafRef.current = requestAnimationFrame(tick);
   }, []);
 
+  const showMicError = useCallback((message: string) => {
+    setMicError(message);
+    if (micErrorTimeoutRef.current != null) window.clearTimeout(micErrorTimeoutRef.current);
+    micErrorTimeoutRef.current = window.setTimeout(() => setMicError(null), 4000);
+  }, []);
+
   const startRecording = useCallback(async () => {
+    setMicError(null);
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = pickMimeType();
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      chunksRef.current = [];
-
-      recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      recorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
-        stopSilenceWatch();
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
-        if (blob.size === 0) return;
-        setTranscribing(true);
-        try {
-          const text = await transcribeAudio(blob);
-          if (text) {
-            const current = inputRef.current;
-            onInputChange(current ? `${current} ${text}` : text);
-          }
-        } catch (err) {
-          console.error('[shoppergpt] transcription failed', err);
-        } finally {
-          setTranscribing(false);
-        }
-      };
-
-      recorder.start();
-      recorderRef.current = recorder;
-      recordingStartedAtRef.current = performance.now();
-      setRecording(true);
-      playStart();
-      startSilenceWatch(stream);
+      if (!navigator.mediaDevices?.getUserMedia) {
+        // Most common cause on iOS: no secure context (plain HTTP) or an
+        // in-app webview (Instagram/TikTok/etc.) that blocks getUserMedia
+        // outright — neither is fixable from in-page code, so say so plainly
+        // instead of just doing nothing.
+        showMicError('Micro indisponible sur ce navigateur');
+        return;
+      }
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err) {
       console.error('[shoppergpt] microphone access denied', err);
+      showMicError('Accès au micro refusé');
+      return;
     }
-  }, [onInputChange, playStart, startSilenceWatch, stopSilenceWatch]);
+
+    let recorder: MediaRecorder;
+    try {
+      recorder = createRecorder(stream);
+    } catch (err) {
+      // Constructing the recorder failed for every candidate mimeType (see
+      // createRecorder) — release the mic we just acquired instead of leaving
+      // it open with nothing using it.
+      console.error('[shoppergpt] MediaRecorder unavailable', err);
+      stream.getTracks().forEach(t => t.stop());
+      showMicError('Enregistrement audio indisponible');
+      return;
+    }
+
+    chunksRef.current = [];
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    recorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      stopSilenceWatch();
+      const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+      if (blob.size === 0) return;
+      setTranscribing(true);
+      try {
+        const text = await transcribeAudio(blob);
+        if (text) {
+          const current = inputRef.current;
+          onInputChange(current ? `${current} ${text}` : text);
+        } else {
+          // Empty transcript for a clip that clearly wasn't instant/silent —
+          // surface it instead of leaving the user wondering why nothing typed.
+          showMicError('Rien entendu, réessayez');
+        }
+      } catch (err) {
+        console.error('[shoppergpt] transcription failed', err);
+        showMicError('Transcription indisponible');
+      } finally {
+        setTranscribing(false);
+      }
+    };
+
+    recorder.start();
+    recorderRef.current = recorder;
+    recordingStartedAtRef.current = performance.now();
+    setRecording(true);
+    playStart();
+    startSilenceWatch(stream);
+  }, [onInputChange, playStart, showMicError, startSilenceWatch, stopSilenceWatch]);
 
   const stopRecording = useCallback(() => {
     if (!recorderRef.current) return;
@@ -253,21 +322,31 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
 
       {/* Voice input — toggle record; on stop the clip is transcribed and appended
           to the input. Red pulse while recording, dimmed while transcribing. */}
-      <button
-        class={`shrink-0 w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-          recording ? 'text-[#E2422B] animate-pulse' : 'text-[#878787] hover:opacity-70'
-        }`}
-        onClick={toggleRecording}
-        disabled={transcribing || isLoading}
-        aria-label={recording ? 'Arrêter la dictée' : 'Dictée vocale'}
-        aria-pressed={recording}
-        title={recording ? 'Arrêter la dictée' : 'Dictée vocale'}
-      >
-        <span
-          class="inline-flex w-[16px] h-[22px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
-          dangerouslySetInnerHTML={{ __html: micIcon }}
-        />
-      </button>
+      <div class="relative shrink-0">
+        {/* Mic/recording failures used to be console-only — a silent no-op from
+            the user's POV. This surfaces them as a small bubble above the
+            button instead, auto-clearing after 4s (see showMicError). */}
+        {micError && (
+          <div class="absolute bottom-full right-0 mb-2 w-max max-w-[180px] bg-[#1A1A2E] text-white text-[11px] leading-snug rounded-lg px-2.5 py-1.5 shadow-lg pointer-events-none">
+            {micError}
+          </div>
+        )}
+        <button
+          class={`w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+            recording ? 'text-[#E2422B] animate-pulse' : 'text-[#878787] hover:opacity-70'
+          }`}
+          onClick={toggleRecording}
+          disabled={transcribing || isLoading}
+          aria-label={recording ? 'Arrêter la dictée' : 'Dictée vocale'}
+          aria-pressed={recording}
+          title={recording ? 'Arrêter la dictée' : 'Dictée vocale'}
+        >
+          <span
+            class="inline-flex w-[16px] h-[22px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
+            dangerouslySetInnerHTML={{ __html: micIcon }}
+          />
+        </button>
+      </div>
     </div>
   );
 }
