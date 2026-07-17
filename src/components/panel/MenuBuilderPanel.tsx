@@ -242,45 +242,45 @@ export function MenuBuilderPanel({
               desktop, so one-step-at-a-time paging no longer applies. */}
           {steps.length > 0 && !mobileExpanded && (
             <div
-              class="md:hidden shrink-0 sticky top-0 z-20 flex items-center justify-between bg-[#FFF]/60 px-1 py-2.5"
+              class="md:hidden shrink-0 sticky top-0 z-20 flex items-center justify-between bg-[#FFF]/90 px-10 py-2.5"
               onWheel={handleStepBarWheel}
               onTouchStart={handleStepBarTouchStart}
               onTouchEnd={handleStepBarTouchEnd}
             >
-              <button
-                type="button"
-                onClick={() => currentMobileIndex > 0 && goToMobileStep(currentMobileIndex - 1)}
-                disabled={currentMobileIndex === 0}
-                aria-label="Étape précédente"
-                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
-              >
-                <span
-                  class="inline-flex w-[10px] h-[12px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
-                  dangerouslySetInnerHTML={{ __html: leftIcon }}
-                />
-              </button>
-              <div class="flex items-center gap-2">
-                <span class="h-[26px] w-[26px] flex items-center justify-center shrink-0 [&_svg]:h-full [&_svg]:w-full">
-                  {getStepIcon(steps[currentMobileIndex], 26)}
-                </span>
-                <span class="font-semibold uppercase tracking-wide text-[13px] text-[##878787] leading-none pt-2">
-                  {steps[currentMobileIndex]}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  currentMobileIndex < steps.length - 1 && goToMobileStep(currentMobileIndex + 1)
-                }
-                disabled={currentMobileIndex === steps.length - 1}
-                aria-label="Étape suivante"
-                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
-              >
-                <span
-                  class="inline-flex w-[10px] h-[12px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
-                  dangerouslySetInnerHTML={{ __html: rightIcon }}
-                />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => currentMobileIndex > 0 && goToMobileStep(currentMobileIndex - 1)}
+                  disabled={currentMobileIndex === 0}
+                  aria-label="Étape précédente"
+                  class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
+                >
+                  <span
+                    class="inline-flex w-[18px] h-[18px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
+                    dangerouslySetInnerHTML={{ __html: leftIcon }}
+                  />
+                </button>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="h-[26px] w-[26px] flex items-center justify-center shrink-0 [&_svg]:h-full [&_svg]:w-full">
+                    {getStepIcon(steps[currentMobileIndex], 26)}
+                  </span>
+                  <span class="font-semibold uppercase tracking-wide text-[13px] text-[##878787] leading-none pt-2">
+                    {steps[currentMobileIndex]}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    currentMobileIndex < steps.length - 1 && goToMobileStep(currentMobileIndex + 1)
+                  }
+                  disabled={currentMobileIndex === steps.length - 1}
+                  aria-label="Étape suivante"
+                  class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
+                >
+                  <span
+                    class="inline-flex w-[18px] h-[18px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
+                    dangerouslySetInnerHTML={{ __html: rightIcon }}
+                  />
+                </button>
             </div>
           )}
 
