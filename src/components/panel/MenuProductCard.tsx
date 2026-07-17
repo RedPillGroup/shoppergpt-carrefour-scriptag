@@ -111,22 +111,30 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
         </div>
 
         {/* Toggle button — top-right of the image column, outside the dimmed
-            wrapper above (see comment there). Ring stays green either way (still
-            clearly tappable, not "greyed out" like the rest of a disabled card) —
-            only the checkmark itself is what actually shows selected vs not. */}
-        <button
-          class="absolute top-1.5 left-[120px] w-6 h-6 rounded-full flex items-center justify-center shadow border-2 bg-white border-[#B2CF0C] transition-all duration-200"
-          onClick={e => {
-            e.stopPropagation();
-            onQuantityChange(inMenu ? -quantity : 1);
-          }}
-        >
-          {inMenu && (
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <path d="M2 5.5l2.5 2.5L9 2.5" stroke="#B2CF0C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          )}
-        </button>
+            wrapper above (see comment there). This sizing wrapper (h-full
+            aspect-square, positioned at the card's own top-0 left-0 — same
+            spot the image column occupies as the row's first child) exactly
+            overlays the image regardless of its dynamic width, so the badge
+            anchors to ITS real top-right corner instead of a hardcoded px
+            value that assumed a fixed image width. Ring stays green either
+            way (still clearly tappable, not "greyed out" like the rest of a
+            disabled card) — only the checkmark itself is what actually shows
+            selected vs not. */}
+        <div class="absolute top-0 left-0 h-full aspect-square pointer-events-none">
+          <button
+            class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center shadow border-2 bg-white border-[#B2CF0C] transition-all duration-200 pointer-events-auto"
+            onClick={e => {
+              e.stopPropagation();
+              onQuantityChange(inMenu ? -quantity : 1);
+            }}
+          >
+            {inMenu && (
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                <path d="M2 5.5l2.5 2.5L9 2.5" stroke="#B2CF0C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
     );
   }

@@ -495,14 +495,18 @@ export function MenuBuilderPanel({
         {/* Mobile: sized to its own content + padding (shrink-0), not a fixed
             track — the gold side (flex-1) soaks up whatever's left. Desktop
             reverts to an even grid-cols-2 split via md:. */}
-        <div class="shrink-0 md:shrink md:flex-none bg-[#FFF] px-3 py-2.5 md:px-4 md:py-3 flex flex-col justify-center gap-1.5">
-          {/* h-7 + items-center on both rows here, matching the gold side's row
-              height exactly — that's what actually keeps the two columns'
+        <div class="shrink-0 md:shrink md:flex-none bg-[#FFF] px-3 py-1 md:px-4 md:py-3 flex flex-col justify-center gap-0 md:gap-1.5">
+          {/* h-5/h-7 + items-center on both rows here, matching the gold side's
+              row height exactly — that's what actually keeps the two columns'
               label-to-label rhythm in sync, not just an equal `gap` value (see
               the gold side's comment: its price text is much taller than an
               11px label, so equal gaps alone still produced uneven-looking
-              spacing since each ROW's own height differed between columns). */}
-          <div class="flex items-center h-7 gap-2">
+              spacing since each ROW's own height differed between columns).
+              Only md: needs the taller h-7 — desktop is the only place both
+              sides show 2 rows each (mobile hides Prix/pers., so the gold
+              side is a single row there); forcing h-7 on mobile too just made
+              the WHOLE bar noticeably taller than it needs to be there. */}
+          <div class="flex items-center h-5 md:h-7 gap-2">
             <span class="text-[11px] md:text-[11px] font-[500] uppercase tracking-wide text-[#878787] shrink-0">
               Convives
             </span>
@@ -514,7 +518,7 @@ export function MenuBuilderPanel({
               <span class="text-[#C8B288]">{requirements.guests_kids ?? '—'}</span> enf.
             </span>
           </div>
-          <div class="flex items-center h-7 gap-2">
+          <div class="flex items-center h-5 md:h-7 gap-2">
             <span class="text-[11px] md:text-[11px] font-[500] uppercase tracking-wide text-[#878787] shrink-0">
               Budget
             </span>
@@ -524,19 +528,20 @@ export function MenuBuilderPanel({
           </div>
         </div>
 
-        <div class="flex-1 min-w-0 md:flex-none bg-[#C8B288] text-white px-3 py-2.5 md:px-4 md:py-3 flex items-center justify-between gap-2">
+        <div class="flex-1 min-w-0 md:flex-none bg-[#C8B288] text-white px-3 py-1 md:px-4 md:py-3 flex items-center justify-between gap-2">
           {/* w-[78px] on both labels (not justify-between) — a fixed label
               column keeps the two prices' numbers starting at the same x
               regardless of "Coût total" vs "Prix/pers." having different
               lengths; justify-between let the shorter label's value creep
-              left, misaligning the two rows. h-7 + items-center on each row
-              (instead of items-baseline) — PriceBig's big 26px number has a
+              left, misaligning the two rows. h-5/h-7 + items-center on each
+              row (instead of items-baseline) — PriceBig's big number has a
               much taller line box than the small label text, so the same
-              gap-1.5 between rows still LOOKED bigger here than on the
+              gap between rows still LOOKED bigger here than on the
               Convives/Budget side; fixing both rows to the same height makes
-              the visual rhythm between rows match the other column's. */}
-          <div class="flex flex-col gap-1.5 min-w-0">
-            <div class="flex items-center h-7 gap-2">
+              the visual rhythm between rows match the other column's. Only
+              md: needs h-7 — mobile hides Prix/pers. entirely (single row). */}
+          <div class="flex flex-col gap-0 md:gap-1.5 min-w-0">
+            <div class="flex items-center h-5 md:h-7 gap-2">
               <span class="w-[78px] text-[11px] md:text-[11px] font-[500] uppercase text-white shrink-0">
                 Coût total
               </span>
