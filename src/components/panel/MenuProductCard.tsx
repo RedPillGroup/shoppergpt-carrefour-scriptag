@@ -18,6 +18,20 @@ const PLACEHOLDER =
 
 const MAX_QTY = 99;
 
+/** Big-integer / small-decimals price display, matching the stats footer's
+ * treatment — the whole-number part reads much larger than the ",XX €" tail. */
+function PriceBig({ value, size }: { value: number; size: 'sm' | 'lg' }) {
+  const [intPart, decPart] = value.toFixed(2).replace('.', ',').split(',');
+  const intClass = size === 'lg' ? 'text-[20px] md:text-[22px]' : 'text-[18px]';
+  const decClass = size === 'lg' ? 'text-[12px] md:text-[13px]' : 'text-[11px]';
+  return (
+    <span class="tabular-nums font-[600] text-[#E2422B] whitespace-nowrap">
+      <span class={`${intClass} leading-none`}>{intPart}</span>
+      <span class={`${decClass} leading-none`}>,{decPart} €</span>
+    </span>
+  );
+}
+
 export function MenuProductCard({ product, quantity, onQuantityChange, horizontal = false }: Props) {
   const inMenu = quantity > 0;
   const setSelectedProduct = useShopperStore(s => s.setSelectedProduct);
@@ -88,9 +102,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             centered) so it sits near the image's top edge, leaving the lower
             portion free for the stepper straddling the seam above. ────────── */}
         <div class="flex-1 min-w-0 flex flex-col justify-start gap-1 px-3 pt-8 pb-2">
-          <div class="text-[16px] font-[400] text-[#E2422B]">
-            {product.price.toFixed(2).replace('.', ',')} €
-          </div>
+          <PriceBig value={product.price} size="lg" />
           <div class="text-[12px] font-[400] leading-snug line-clamp-3">
             {product.name}
           </div>
@@ -183,9 +195,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
 
         {/* ── Content ─────────────────────────────────────── */}
         <div class="px-2.5 pt-2 pb-3 flex flex-col gap-0.5">
-          <div class="text-[14px] md:text-[15px] font-[400] text-[#E2422B]">
-            {product.price.toFixed(2).replace('.', ',')} €
-          </div>
+          <PriceBig value={product.price} size="sm" />
           {/* min-h reserves space for 2 lines (leading-snug ≈ 1.375 × font-size)
               even when the name only wraps to 1 — otherwise cards with short vs
               long names end up different heights in the same row. */}

@@ -328,7 +328,15 @@ export function AssistantExperience() {
     <div class="relative flex flex-col h-full min-h-0 bg-[#FAF9F7]">
       <div class="flex flex-col md:grid flex-1 md:grid-rows-1 md:grid-cols-[38%_1fr] overflow-hidden min-h-0">
         <div
-          class="relative flex order-3 md:order-none md:col-start-1 flex-col bg-white md:border-r border-[#E8ECF0] min-h-0 transition-[flex-basis] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          class={`relative flex order-3 md:order-none md:col-start-1 flex-col bg-white md:border-r border-[#E8ECF0] min-h-0 transition-[flex-basis] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            // The seam shadow needs to run the full width of the pane (it's the
+            // boundary with the panel above), not just sit localized around the
+            // small chevron handle — an inset shadow on this whole container's
+            // top edge does that, instead of a per-icon drop-shadow.
+            eventScreenEnabled && !mobilePanelExpanded
+              ? 'max-md:shadow-[inset_0_6px_8px_-6px_rgba(0,0,0,.15)]'
+              : ''
+          }`}
           style={{
             flexGrow: 0,
             flexShrink: 0,
@@ -357,7 +365,13 @@ export function AssistantExperience() {
           {eventScreenEnabled && !mobilePanelExpanded && (
             <button
               type="button"
-              class="hidden max-md:flex absolute top-0 left-1/2 z-10 cursor-pointer"
+              // -translate-x-1/2: left-1/2 alone only puts this button's OWN left
+              // edge at the pane's horizontal center, not the button itself — it
+              // was sitting shifted right by half its own width. The seam shadow
+              // itself now lives on the whole pane container (see its class
+              // above) instead of a per-icon drop-shadow, so it reads as one
+              // continuous line rather than a shadow local to just this handle.
+              class="hidden max-md:flex absolute top-0 left-1/2 -translate-x-1/2 z-10 cursor-pointer"
               onClick={() => setMobilePanelExpanded(true)}
               aria-label="Agrandir le menu"
               aria-expanded={false}

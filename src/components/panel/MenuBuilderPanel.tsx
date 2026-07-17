@@ -69,6 +69,21 @@ function fmtEur(value: number): string {
   );
 }
 
+/** Big-integer / small-decimals price display (desktop gold stats bar) — the
+ * whole-number part reads at a much larger size than the ",XX €" tail, e.g.
+ * "113" large next to a small ",50 €", instead of one uniform font size. */
+function PriceBig({ value }: { value: number }) {
+  const [intPart, decPart] = value
+    .toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    .split(',');
+  return (
+    <span class="tabular-nums font-[500] text-white whitespace-nowrap">
+      <span class="text-[20px] leading-none">{intPart}</span>
+      <span class="text-[14px] leading-none">,{decPart} €</span>
+    </span>
+  );
+}
+
 /** "Menu d'anniversaire" vs "Menu de soirée" (élision before vowel / mute h). */
 function menuEventLabel(eventType: string): string {
   const t = eventType.trim();
@@ -338,7 +353,7 @@ export function MenuBuilderPanel({
                     <div
                       class={`${mobileExpanded ? 'flex' : 'hidden md:flex'} items-center justify-center mb-4`}
                     >
-                      <div class="bg-white px-4 py-1.5 rounded-full shrink-0 shadow-sm">
+                      <div class="bg-white p-6 py-2 rounded-full shrink-0 shadow-sm">
                         <h2 class="font-['Satisfy'] text-[#C7B287] text-2xl leading-none m-0">
                           {step}
                         </h2>
@@ -480,7 +495,7 @@ export function MenuBuilderPanel({
         {/* Mobile: sized to its own content + padding (shrink-0), not a fixed
             track — the gold side (flex-1) soaks up whatever's left. Desktop
             reverts to an even grid-cols-2 split via md:. */}
-        <div class="shrink-0 md:shrink md:flex-none bg-[#FFF] px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
+        <div class="shrink-0 md:shrink md:flex-none bg-[#FFF] px-3 py-2.5 md:px-4 md:py-3 flex flex-col justify-center gap-1.5">
           <div class="flex items-baseline gap-2">
             <span class="text-[11px] md:text-[11px] font-[500] uppercase tracking-wide text-[#878787] shrink-0">
               Convives
@@ -504,20 +519,30 @@ export function MenuBuilderPanel({
         </div>
 
         <div class="flex-1 min-w-0 md:flex-none bg-[#C8B288] text-white px-3 py-2.5 md:px-4 md:py-3 flex items-center justify-between gap-2">
+          {/* w-[78px] on both labels (not justify-between) — a fixed label
+              column keeps the two prices' numbers starting at the same x
+              regardless of "Coût total" vs "Prix/pers." having different
+              lengths; justify-between let the shorter label's value creep
+              left, misaligning the two rows. h-7 + items-center on each row
+              (instead of items-baseline) — PriceBig's big 26px number has a
+              much taller line box than the small label text, so the same
+              gap-1.5 between rows still LOOKED bigger here than on the
+              Convives/Budget side; fixing both rows to the same height makes
+              the visual rhythm between rows match the other column's. */}
           <div class="flex flex-col gap-1.5 min-w-0">
-            <div class="flex items-baseline justify-between gap-2">
-              <span class="text-[11px] md:text-[11px] font-[500] uppercase text-white shrink-0">
+            <div class="flex items-center h-7 gap-2">
+              <span class="w-[78px] text-[11px] md:text-[11px] font-[500] uppercase text-white shrink-0">
                 Coût total
               </span>
-              <span class="text-[13px] text-white tabular-nums font-[500]">
-                {totalCost > 0 ? fmtEur(totalCost) : '—'}
-              </span>
+              {totalCost > 0 ? <PriceBig value={totalCost} /> : <span class="text-white">—</span>}
             </div>
-            <div class="hidden md:flex items-baseline justify-between gap-2">
-              <span class="text-[11px] font-[500] uppercase text-white shrink-0">Prix/pers.</span>
-              <span class="text-[13px] text-white tabular-nums font-[500]">
-                {pricePerPerson !== undefined ? fmtEur(pricePerPerson) : '—'}
-              </span>
+            <div class="hidden md:flex items-center h-7 gap-2">
+              <span class="w-[78px] text-[11px] font-[500] uppercase text-white shrink-0">Prix/pers.</span>
+              {pricePerPerson !== undefined ? (
+                <PriceBig value={pricePerPerson} />
+              ) : (
+                <span class="text-white">—</span>
+              )}
             </div>
           </div>
 
