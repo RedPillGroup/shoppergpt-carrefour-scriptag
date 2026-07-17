@@ -105,7 +105,7 @@ function HeroCarousel({ onSelect }: Props) {
                 // upward past the container (cropping it away), which is exactly
                 // what clipped the top here since object-top already anchors the
                 // subject near the top.
-                class="absolute inset-0 w-full h-full object-cover object-top origin-top scale-[1.25] md:scale-100 transition-transform duration-500 group-hover:scale-[1.3] md:group-hover:scale-[1.02]"
+                class="absolute inset-0 w-full h-full object-cover object-top origin-top scale-[1.45] md:scale-100 transition-transform duration-500 group-hover:scale-[1.5] md:group-hover:scale-[1.02]"
                 src={slide.img}
                 alt=""
               />
