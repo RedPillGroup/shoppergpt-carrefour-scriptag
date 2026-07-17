@@ -108,8 +108,41 @@ export function MenuBuilderPanel({
   const currentMobileIndex = Math.min(mobileStepIndex, Math.max(steps.length - 1, 0));
   const productsScrollRef = useRef<HTMLDivElement | null>(null);
   const goToMobileStep = (index: number) => {
-    setMobileStepIndex(index);
+    const clamped = Math.max(0, Math.min(steps.length - 1, index));
+    setMobileStepIndex(clamped);
     productsScrollRef.current?.scrollTo({ top: 0 });
+  };
+
+  // Mobile-only: let a horizontal scroll/swipe on the sticky step bar itself
+  // change the step too, not just its arrow buttons — the bar has no content
+  // to actually scroll (just an icon + name), so a wheel deltaX / touch swipe
+  // is reinterpreted as "go to next/prev step" once past a small threshold,
+  // then reset so each gesture only moves one step at a time.
+  const stepBarWheelAccumRef = useRef(0);
+  const stepBarTouchStartXRef = useRef<number | null>(null);
+  const SWIPE_THRESHOLD = 40;
+
+  const handleStepBarWheel = (e: WheelEvent) => {
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    stepBarWheelAccumRef.current += delta;
+    if (Math.abs(stepBarWheelAccumRef.current) >= SWIPE_THRESHOLD) {
+      goToMobileStep(currentMobileIndex + (stepBarWheelAccumRef.current > 0 ? 1 : -1));
+      stepBarWheelAccumRef.current = 0;
+    }
+  };
+
+  const handleStepBarTouchStart = (e: TouchEvent) => {
+    stepBarTouchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleStepBarTouchEnd = (e: TouchEvent) => {
+    const startX = stepBarTouchStartXRef.current;
+    stepBarTouchStartXRef.current = null;
+    if (startX == null) return;
+    const deltaX = startX - e.changedTouches[0].clientX;
+    if (Math.abs(deltaX) >= SWIPE_THRESHOLD) {
+      goToMobileStep(currentMobileIndex + (deltaX > 0 ? 1 : -1));
+    }
   };
 
   // ── derived stats ─────────────────────────────────────────────────────────
@@ -205,7 +238,12 @@ export function MenuBuilderPanel({
               is expanded — expanded mobile shows every step stacked, same as
               desktop, so one-step-at-a-time paging no longer applies. */}
           {steps.length > 0 && !mobileExpanded && (
-            <div class="md:hidden shrink-0 sticky top-0 z-20 flex items-center justify-between bg-[#FFF]/60 px-1 py-2.5">
+            <div
+              class="md:hidden shrink-0 sticky top-0 z-20 flex items-center justify-between bg-[#FFF]/60 px-1 py-2.5"
+              onWheel={handleStepBarWheel}
+              onTouchStart={handleStepBarTouchStart}
+              onTouchEnd={handleStepBarTouchEnd}
+            >
               <button
                 type="button"
                 onClick={() => currentMobileIndex > 0 && goToMobileStep(currentMobileIndex - 1)}
