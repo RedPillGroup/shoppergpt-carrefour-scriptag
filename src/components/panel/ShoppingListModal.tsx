@@ -67,7 +67,7 @@ function useFocusTrap(onEscape: () => void) {
  * ShoppingListModal — read-only recap of everything currently in the menu (qty > 0),
  * grouped by step, with a per-step under-coverage warning (qty×persons < guests) and
  * a running total. Purely derived from props already held by MenuBuilderPanel — no
- * extra fetch. "Valider ma liste de courses" is a placeholder confirm action (no
+ * extra fetch. "Ajouter au panier" is a placeholder confirm action (no
  * cart/checkout integration exists yet in this widget); it just closes the modal.
  */
 export function ShoppingListModal({
@@ -203,13 +203,13 @@ export function ShoppingListModal({
                   <ul class="m-0 p-0 list-none flex flex-col gap-2">
                     {items.map(item => (
                       <li key={item.id} class="flex items-center gap-3">
-                        <span class="text-[12px] font-semibold text-[#1A1A2E] shrink-0">
+                        <span class="text-[12px] font-semibold text-[#878787] shrink-0">
                           {item.qty} X
                         </span>
-                        <span class="flex-1 text-[12px] text-[#1A1A2E] leading-snug">
+                        <span class="flex-1 text-[12px] text-[#878787] leading-snug">
                           {item.name}
                         </span>
-                        <span class="text-[12px] font-semibold text-[#E2422B] shrink-0 tabular-nums">
+                        <span class="text-[12px] font-semibold text-[#878787] shrink-0 tabular-nums">
                           {fmtEur(item.lineTotal)}
                         </span>
                       </li>
@@ -235,9 +235,9 @@ export function ShoppingListModal({
           <button
             onClick={onValidate}
             disabled={rows.length === 0}
-            class="rounded-[30px] px-4 py-2 border border-[#AAAAAA] bg-white text-[#8D7A4E] text-[10px] md:text-[11px] font-bold uppercase tracking-wide cursor-pointer opacity-100 transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="rounded-[30px] px-4 py-1 border border-[#AAAAAA] bg-white text-[#8D7A4E] text-[10px] md:text-[11px] font-bold uppercase tracking-wide cursor-pointer opacity-100 transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Valider ma liste de courses
+            Ajouter au panier
           </button>
         </div>
       </motion.div>

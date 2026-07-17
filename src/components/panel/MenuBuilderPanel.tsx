@@ -521,7 +521,7 @@ export function MenuBuilderPanel({
             </div>
           </div>
 
-          {/* Ajouter au panier — opens the shopping-list recap modal.
+          {/* Valider ma liste — opens the shopping-list recap modal.
               Two distinct buttons (not one toggling its content): a plain round
               icon-only button below 1000px (no room next to the price stats — mirrors
               the basket-icon circle in the mobile mockup), and a fixed-size text CTA
@@ -533,7 +533,7 @@ export function MenuBuilderPanel({
                   is just the icon itself — no extra button chrome/wrapper. */}
               <button
                 onClick={() => setShoppingListOpen(true)}
-                aria-label="Ajouter au panier"
+                aria-label="Valider ma liste"
                 class="min-[1000px]:hidden shrink-0 flex items-center justify-center border-0 bg-transparent p-0 cursor-pointer transition-opacity hover:opacity-90"
               >
                 <span
@@ -546,7 +546,7 @@ export function MenuBuilderPanel({
                 class="hidden min-[1000px]:flex shrink-0 items-center justify-center cursor-pointer bg-white hover:bg-[#F7F2E6] transition-colors border-2 border-[#AAAAAA] rounded-30px py-1 px-3 rounded-full"
               >
                 <span class="text-[9px] font-[500] uppercase tracking-wide text-[#8D7A4E] whitespace-nowrap">
-                  Ajouter au panier
+                  Valider ma liste
                 </span>
               </button>
             </Fragment>

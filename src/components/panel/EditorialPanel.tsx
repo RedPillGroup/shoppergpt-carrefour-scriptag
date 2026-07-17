@@ -69,6 +69,15 @@ function HeroCarousel({ onSelect }: Props) {
     };
   }, []);
 
+  // Auto-advance every 4s — `loop: true` on the embla instance above means
+  // scrollNext() just wraps back to the first slide, no bounds check needed.
+  useEffect(() => {
+    const id = setInterval(() => {
+      emblaApiRef.current?.scrollNext();
+    }, 4000);
+    return () => clearInterval(id);
+  }, []);
+
   const prev = (e: MouseEvent) => { e.stopPropagation(); emblaApiRef.current?.scrollPrev(); };
   const next = (e: MouseEvent) => { e.stopPropagation(); emblaApiRef.current?.scrollNext(); };
 
@@ -83,11 +92,20 @@ function HeroCarousel({ onSelect }: Props) {
           {HERO_SLIDES.map((slide, i) => (
             <div
               key={i}
-              class="relative h-full min-w-0 flex-[0_0_100%] cursor-pointer group"
+              // overflow-hidden: the mobile zoom (scale-[1.25] on the img below)
+              // grows past this slide's own width, not just its height — without
+              // clipping here that spills into the neighboring slide's space,
+              // visible as a sliver of the next photo at the right edge.
+              class="relative h-full min-w-0 flex-[0_0_100%] overflow-hidden cursor-pointer group"
               onClick={() => onSelect(slide.query)}
             >
               <img
-                class="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
+                // origin-top: scale grows DOWN from the top edge instead of from
+                // center — a center-origin scale pushes the top of the photo
+                // upward past the container (cropping it away), which is exactly
+                // what clipped the top here since object-top already anchors the
+                // subject near the top.
+                class="absolute inset-0 w-full h-full object-cover object-top origin-top scale-[1.25] md:scale-100 transition-transform duration-500 group-hover:scale-[1.3] md:group-hover:scale-[1.02]"
                 src={slide.img}
                 alt=""
               />
@@ -99,7 +117,7 @@ function HeroCarousel({ onSelect }: Props) {
                   right at the panel's top edge, without the full desktop gradient. */}
               <div class="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[rgba(0,0,0,.75)] to-transparent md:hidden" />
               <div class="absolute top-5 left-4 right-14 md:top-auto md:bottom-0 md:left-0 md:right-0 md:px-7 md:py-6">
-                <p class="m-0 font-['Satisfy'] font-normal text-[24px] md:text-[clamp(32px,3.6vw,48px)] text-white leading-[1.2] md:leading-[1.25] whitespace-pre-line [text-shadow:0_2px_12px_rgba(0,0,0,.3)]">
+                <p class="m-0 font-['Satisfy'] font-normal text-[32px] md:text-[clamp(32px,3.6vw,48px)] text-white leading-[1.2] md:leading-[1.25] whitespace-pre-line [text-shadow:0_2px_12px_rgba(0,0,0,.3)]">
                   {slide.title}
                 </p>
               </div>
