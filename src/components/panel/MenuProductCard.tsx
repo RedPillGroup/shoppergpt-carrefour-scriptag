@@ -25,16 +25,15 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
   if (horizontal) {
     return (
       <div
-        class="relative h-full overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-row cursor-pointer bg-white"
+        class="relative h-full flex flex-row cursor-pointer"
         onClick={() => setSelectedProduct(product)}
       >
-        {/* Everything except the toggle button lives in this one dimmable
-            wrapper — a single opacity on the whole card reads as "grayed out"
-            as one surface, rather than the image/text fading separately. The
-            toggle button is pulled OUT as its own sibling below, absolutely
-            positioned over the same spot, so it stays at full clarity and
-            obviously still tappable. */}
-        <div class={`flex flex-row flex-1 min-w-0 h-full transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}>
+        {/* The whole visual card (bg, shadow, image, content) lives in this one
+            dimmable wrapper — opacity on the outer relative div above would also
+            dim the toggle button (opacity affects the full subtree, it can't be
+            excluded per-child), so instead the button is pulled OUT as a sibling
+            of THIS wrapper, not a descendant of it, and stays at full clarity. */}
+        <div class={`overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] bg-white flex flex-row flex-1 min-w-0 h-full transition-opacity duration-200 ${!inMenu ? 'opacity-60' : ''}`}>
         {/* ── Image + overlays — fixed-width column, but full card height (not
             aspect-square) so the row can grow tall enough for a 3-line name
             without clipping it. object-cover still crops the photo cleanly. ── */}
@@ -125,17 +124,16 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
 
   return (
     <div
-      class="relative overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] flex flex-col cursor-pointer bg-white"
+      class="relative flex flex-col cursor-pointer"
       onClick={() => setSelectedProduct(product)}
     >
-      {/* Everything except the toggle button lives in this one dimmable
-          wrapper — a single opacity on the whole card (image, stepper,
-          price, name) reads as "grayed out" as one surface, rather than
-          several separately-faded pieces. The toggle button is pulled OUT
-          as its own sibling below, absolutely positioned over the same
-          top-right spot, so it's the one thing that stays at full clarity
-          and obviously still tappable. */}
-      <div class={`flex flex-col flex-1 transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}>
+      {/* The whole visual card (bg, shadow, image, stepper, price, name) lives
+          in this one dimmable wrapper — opacity on the outer relative div above
+          would also dim the toggle button (opacity affects the full subtree, it
+          can't be excluded per-child), so instead the button is pulled OUT as a
+          sibling of THIS wrapper, not a descendant of it, and stays at full
+          clarity and obviously still tappable. */}
+      <div class={`overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] bg-white flex flex-col flex-1 transition-opacity duration-200 ${!inMenu ? 'opacity-60' : ''}`}>
         <div class="relative shrink-0">
           <img
             class={`w-full aspect-square object-cover block transition-all duration-200 ${!inMenu ? 'grayscale' : ''}`}

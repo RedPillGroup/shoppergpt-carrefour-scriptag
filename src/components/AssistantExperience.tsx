@@ -131,7 +131,7 @@ export function AssistantExperience() {
       guests_adults: 10,
       guests_kids: 0,
       budget: 200,
-      visual_theme: 'anniv',
+      visual_theme: 'bbq',
       menu_steps: ['Apéritifs', 'Plats', 'Fromages', 'Desserts', 'Boissons', 'Pains'],
     });
     setEventScreenEnabled(true);
