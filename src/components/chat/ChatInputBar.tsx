@@ -251,7 +251,13 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
         }
       } catch (err) {
         console.error('[shoppergpt] transcription failed', err);
-        showMicError('Transcription indisponible');
+        // Temporarily surfacing the raw error (status code / "Failed to
+        // fetch" / etc.) instead of a generic message — needed to tell apart
+        // a backend HTTP error from a network/CORS failure on mobile, which
+        // otherwise both just read as "doesn't work" with no way to diagnose
+        // remotely. Revert to a plain message once the mobile cause is confirmed.
+        const detail = err instanceof Error ? err.message : String(err);
+        showMicError(`Transcription indisponible: ${detail}`);
       } finally {
         setTranscribing(false);
       }
@@ -327,7 +333,7 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
             the user's POV. This surfaces them as a small bubble above the
             button instead, auto-clearing after 4s (see showMicError). */}
         {micError && (
-          <div class="absolute bottom-full right-0 mb-2 w-max max-w-[180px] bg-[#1A1A2E] text-white text-[11px] leading-snug rounded-lg px-2.5 py-1.5 shadow-lg pointer-events-none">
+          <div class="absolute bottom-full right-0 mb-2 w-max max-w-[240px] bg-[#1A1A2E] text-white text-[11px] leading-snug rounded-lg px-2.5 py-1.5 shadow-lg pointer-events-none">
             {micError}
           </div>
         )}
