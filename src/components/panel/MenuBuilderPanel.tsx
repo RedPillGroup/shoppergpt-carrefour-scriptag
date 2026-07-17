@@ -33,12 +33,15 @@ const VISUAL_THEME_VERSIONS: Record<string, string> = {
   brunch: 'v7',
   paques: 'v8',
   noel: 'v7',
-  buffet: 'v10',
+  buffet: 'v10'
 };
 const BACKGROUNDS: Record<string, { before: string; after: string }> = Object.fromEntries(
   Object.entries(VISUAL_THEME_VERSIONS).map(([theme, version]) => [
     theme,
-    { before: `${BACKGROUNDS_BASE_URL}/${theme}-1-${version}.webp`, after: `${BACKGROUNDS_BASE_URL}/${theme}-2-${version}.webp` }
+    {
+      before: `${BACKGROUNDS_BASE_URL}/${theme}-1-${version}.webp`,
+      after: `${BACKGROUNDS_BASE_URL}/${theme}-2-${version}.webp`
+    }
   ])
 );
 
@@ -191,13 +194,13 @@ export function MenuBuilderPanel({
       {/* ── No products: chips centred over full image ────────────────────────── */}
       {!hasProducts && (
         <div class="relative z-10 flex-1 flex flex-col items-center justify-center gap-3 px-6">
-          <div class="bg-white/90 backdrop-blur-[3px] px-6 py-2.5 rounded-full shadow-md">
+          <div class="bg-white/90 backdrop-blur-[3px] px-6 py-2.5 rounded-2xl shadow-md">
             <span class="font-['Satisfy'] text-[#C7B287] text-[20px] md:text-[24px] leading-none whitespace-nowrap">
               {eventLabel}
             </span>
           </div>
           {dateLabel && (
-            <div class="bg-white/90 backdrop-blur-[3px] px-5 py-2 rounded-full shadow-sm">
+            <div class="bg-white/90 backdrop-blur-[3px] px-5 py-2 rounded-2xl shadow-sm">
               <span class="font-['Satisfy'] text-[#B09A6E] text-[14px] md:text-[16px] leading-none">
                 {dateLabel}
               </span>
@@ -266,7 +269,9 @@ export function MenuBuilderPanel({
               </div>
               <button
                 type="button"
-                onClick={() => currentMobileIndex < steps.length - 1 && goToMobileStep(currentMobileIndex + 1)}
+                onClick={() =>
+                  currentMobileIndex < steps.length - 1 && goToMobileStep(currentMobileIndex + 1)
+                }
                 disabled={currentMobileIndex === steps.length - 1}
                 aria-label="Étape suivante"
                 class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
@@ -294,7 +299,9 @@ export function MenuBuilderPanel({
                 single visible section's horizontal card strip below can in turn
                 fill IT (flex-1 all the way down) instead of relying on a fixed
                 px height. Expanded/desktop: normal block flow, unaffected. */}
-            <div class={`flex flex-col gap-8 ${!mobileExpanded ? 'flex-1 min-h-0 md:flex-none md:min-h-0' : ''}`}>
+            <div
+              class={`flex flex-col gap-8 ${!mobileExpanded ? 'flex-1 min-h-0 md:flex-none md:min-h-0' : ''}`}
+            >
               {steps.map((step, stepIdx) => {
                 // Keep backend order stable, only push qty-0 suggestions to the end.
                 // This avoids cards jumping around when users tweak quantities.
@@ -328,7 +335,9 @@ export function MenuBuilderPanel({
                     {/* Step heading chip — hidden in the collapsed mobile view
                         (its step name lives in the sticky top bar instead), but
                         shown once expanded — same as desktop. */}
-                    <div class={`${mobileExpanded ? 'flex' : 'hidden md:flex'} items-center justify-center mb-4`}>
+                    <div
+                      class={`${mobileExpanded ? 'flex' : 'hidden md:flex'} items-center justify-center mb-4`}
+                    >
                       <div class="bg-white px-4 py-1.5 rounded-full shrink-0 shadow-sm">
                         <h2 class="font-['Satisfy'] text-[#C7B287] text-2xl leading-none m-0">
                           {step}
@@ -346,7 +355,10 @@ export function MenuBuilderPanel({
                       // instead of starting flush left with dead trailing columns).
                       <div class="flex flex-wrap justify-center gap-3">
                         {products.map(p => (
-                          <div key={p.id} class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]">
+                          <div
+                            key={p.id}
+                            class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]"
+                          >
                             <MenuProductCard
                               product={p}
                               quantity={quantities[p.id] ?? 0}
@@ -377,7 +389,10 @@ export function MenuBuilderPanel({
                             branch). */}
                         <div class="flex md:hidden items-center flex-1 min-h-0 py-4 overflow-x-auto gap-3 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden -mx-4 px-4">
                           {products.map(p => (
-                            <div key={p.id} class="w-[300px] h-full max-h-[200px] max-w-[300px] shrink-0 snap-center">
+                            <div
+                              key={p.id}
+                              class="w-[300px] h-full max-h-[200px] max-w-[300px] shrink-0 snap-center"
+                            >
                               <MenuProductCard
                                 product={p}
                                 quantity={quantities[p.id] ?? 0}
@@ -465,43 +480,42 @@ export function MenuBuilderPanel({
         {/* Mobile: sized to its own content + padding (shrink-0), not a fixed
             track — the gold side (flex-1) soaks up whatever's left. Desktop
             reverts to an even grid-cols-2 split via md:. */}
-        <div class="shrink-0 md:shrink md:flex-none bg-[#F3F1EE] px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
+        <div class="shrink-0 md:shrink md:flex-none bg-[#FFF] px-3 py-2.5 md:px-4 md:py-3 flex flex-col gap-1.5">
           <div class="flex items-baseline gap-2">
-            <span class="text-[11px] md:text-[11px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
+            <span class="text-[11px] md:text-[11px] font-[500] uppercase tracking-wide text-[#878787] shrink-0">
               Convives
             </span>
-            <span class="md:hidden text-[11px] text-[#8D7A4E] tabular-nums font-semibold">
+            <span class="md:hidden text-[11px] text-[#C8B288] tabular-nums font-[800]">
               {totalGuests || '—'}
             </span>
-            <span class="hidden md:inline text-[11px] text-[#8D7A4E] tabular-nums font-semibold">
-              {requirements.guests_adults ?? '—'} adultes · {requirements.guests_kids ?? '—'} enf.
+            <span class="hidden md:inline text-[11px] tabular-nums font-[500] text-[#878787]">
+              <span class="text-[#C8B288]">{requirements.guests_adults ?? '—'}</span> adultes ·{' '}
+              <span class="text-[#C8B288]">{requirements.guests_kids ?? '—'}</span> enf.
             </span>
           </div>
           <div class="flex items-baseline gap-2">
-            <span class="text-[11px] md:text-[11px] font-semibold uppercase tracking-wide text-[#8A8070] shrink-0">
+            <span class="text-[11px] md:text-[11px] font-[500] uppercase tracking-wide text-[#878787] shrink-0">
               Budget
             </span>
-            <span class="text-[11px] md:text-[11px] text-[#8D7A4E] tabular-nums font-semibold">
+            <span class="text-[11px] md:text-[11px] text-[#878787] tabular-nums font-[500] text-[#C8B288]">
               {requirements.budget !== undefined ? fmtEur(requirements.budget) : '—'}
             </span>
           </div>
         </div>
 
-        <div class="flex-1 min-w-0 md:flex-none bg-[#C7B287] text-white px-3 py-2.5 md:px-4 md:py-3 flex items-center justify-between gap-2">
+        <div class="flex-1 min-w-0 md:flex-none bg-[#C8B288] text-white px-3 py-2.5 md:px-4 md:py-3 flex items-center justify-between gap-2">
           <div class="flex flex-col gap-1.5 min-w-0">
             <div class="flex items-baseline justify-between gap-2">
-              <span class="text-[11px] md:text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
+              <span class="text-[11px] md:text-[11px] font-[500] uppercase text-white shrink-0">
                 Coût total
               </span>
-              <span class="text-[12px] md:text-[11px] text-white tabular-nums font-semibold">
+              <span class="text-[13px] text-white tabular-nums font-[500]">
                 {totalCost > 0 ? fmtEur(totalCost) : '—'}
               </span>
             </div>
             <div class="hidden md:flex items-baseline justify-between gap-2">
-              <span class="text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6] shrink-0">
-                Prix/pers.
-              </span>
-              <span class="text-[11px] text-white tabular-nums font-semibold">
+              <span class="text-[11px] font-[500] uppercase text-white shrink-0">Prix/pers.</span>
+              <span class="text-[13px] text-white tabular-nums font-[500]">
                 {pricePerPerson !== undefined ? fmtEur(pricePerPerson) : '—'}
               </span>
             </div>
@@ -529,10 +543,9 @@ export function MenuBuilderPanel({
               </button>
               <button
                 onClick={() => setShoppingListOpen(true)}
-                class="hidden min-[1000px]:flex shrink-0 items-center justify-center cursor-pointer bg-white hover:bg-[#F7F2E6] transition-colors"
-                style="width:142px; height:32px; border-radius:30px; border:1px solid #AAAAAA; padding:3px 7px;"
+                class="hidden min-[1000px]:flex shrink-0 items-center justify-center cursor-pointer bg-white hover:bg-[#F7F2E6] transition-colors border-2 border-[#AAAAAA] rounded-30px py-1 px-3 rounded-full"
               >
-                <span class="text-[10px] font-bold uppercase tracking-wide text-[#8D7A4E] whitespace-nowrap">
+                <span class="text-[9px] font-[500] uppercase tracking-wide text-[#8D7A4E] whitespace-nowrap">
                   Ajouter au panier
                 </span>
               </button>
