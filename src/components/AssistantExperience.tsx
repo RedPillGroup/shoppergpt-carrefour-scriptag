@@ -328,7 +328,7 @@ export function AssistantExperience() {
     <div class="relative flex flex-col h-full min-h-0 bg-[#FAF9F7]">
       <div class="flex flex-col md:grid flex-1 md:grid-rows-1 md:grid-cols-[38%_1fr] overflow-hidden min-h-0">
         <div
-          class="relative flex order-3 md:order-none md:col-start-1 flex-col bg-white border-b md:border-b-0 md:border-r border-[#E8ECF0] min-h-0 transition-[flex-basis] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          class="relative flex order-3 md:order-none md:col-start-1 flex-col bg-white md:border-r border-[#E8ECF0] min-h-0 transition-[flex-basis] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
           style={{
             flexGrow: 0,
             flexShrink: 0,
