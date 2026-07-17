@@ -54,7 +54,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             without clipping it. object-cover still crops the photo cleanly. ── */}
         <div class="relative shrink-0 w-[150px] h-full">
           <img
-            class={`w-full h-full object-cover block transition-all duration-200 ${!inMenu ? 'grayscale' : ''}`}
+            class="w-full h-full object-cover block"
             src={product.image || PLACEHOLDER}
             alt={product.name}
             loading="lazy"
@@ -146,7 +146,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
       <div class={`flex flex-col flex-1 transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}>
         <div class="relative shrink-0">
           <img
-            class={`w-full aspect-square object-cover block transition-all duration-200 ${!inMenu ? 'grayscale' : ''}`}
+            class="w-full aspect-square object-cover block"
             src={product.image || PLACEHOLDER}
             alt={product.name}
             loading="lazy"
