@@ -533,7 +533,7 @@ export function AssistantExperience() {
             // focused (chatFocused takes 100% then; the panel should be
             // allowed to fully collapse, not forced back to 350px and stealing
             // space from the focused chat).
-            minHeight: chatFocused ? 0 : 350,
+            minHeight: chatFocused ? 0 : 300,
           }}
         >
           {eventScreenEnabled ? (
