@@ -192,7 +192,7 @@ export function MenuBuilderPanel({
 
   return (
     <div
-      class={`flex-1 min-h-[350px] flex flex-col overflow-hidden relative transition-opacity duration-200 ${
+      class={`flex-1 min-h-0 flex flex-col overflow-hidden relative transition-opacity duration-200 ${
         syncing ? 'opacity-60 pointer-events-none' : ''
       }`}
     >

@@ -339,7 +339,15 @@ export function AssistantExperience() {
           }`}
           style={{
             flexGrow: 0,
-            flexShrink: 0,
+            // flexShrink:1 (was 0) — the panel's own min-height floor (see its
+            // wrapper below) needs somewhere to take space FROM on a short
+            // viewport where 55%-for-chat + 350px-for-panel doesn't fit; a
+            // non-shrinking chat pane made that floor unsatisfiable (the
+            // panel just got clipped by its own overflow-hidden instead of
+            // actually reaching 350px). Only bites when the panel's floor is
+            // actually in play — on a normal-height screen there's enough
+            // room for both and chat keeps its full 55%.
+            flexShrink: 1,
             // Focused: chat takes 100% (panel's own flexGrow:1/flexBasis:0
             // below just yields to 0 automatically — no separate change needed
             // there). Collapsed: chat takes the bulk of the height (a %, in
@@ -512,8 +520,21 @@ export function AssistantExperience() {
         </div>
 
         <div
-          class="order-1 md:order-none md:col-start-2 flex flex-col overflow-hidden min-h-0"
-          style={{ flexGrow: 1, flexShrink: 1, flexBasis: 0 }}
+          class="order-1 md:order-none md:col-start-2 flex flex-col overflow-hidden"
+          style={{
+            flexGrow: 1,
+            flexShrink: 1,
+            flexBasis: 0,
+            // The actual floor has to live HERE (the real flex item competing
+            // for space in the mobile column layout) — a min-height set on
+            // MenuBuilderPanel's own internal root doesn't help, since this
+            // wrapper's overflow-hidden would just clip that descendant if
+            // the wrapper itself got flexed smaller. 0 while the chat is
+            // focused (chatFocused takes 100% then; the panel should be
+            // allowed to fully collapse, not forced back to 350px and stealing
+            // space from the focused chat).
+            minHeight: chatFocused ? 0 : 350,
+          }}
         >
           {eventScreenEnabled ? (
             <MenuBuilderPanel
