@@ -1,5 +1,4 @@
 import { h } from 'preact';
-import { useState } from 'preact/hooks';
 import { Product } from '../../types';
 import { useShopperStore } from '../../store';
 
@@ -22,19 +21,6 @@ const MAX_QTY = 99;
 export function MenuProductCard({ product, quantity, onQuantityChange, horizontal = false }: Props) {
   const inMenu = quantity > 0;
   const setSelectedProduct = useShopperStore(s => s.setSelectedProduct);
-
-  // Local state for inline qty editing
-  const [editing, setEditing] = useState(false);
-  const [inputVal, setInputVal] = useState('');
-
-  function commitEdit(raw: string) {
-    const parsed = parseInt(raw, 10);
-    if (!isNaN(parsed)) {
-      const clamped = Math.min(MAX_QTY, Math.max(0, parsed));
-      onQuantityChange(clamped - quantity);
-    }
-    setEditing(false);
-  }
 
   if (horizontal) {
     return (
@@ -72,43 +58,24 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             <button
               onClick={() => onQuantityChange(-1)}
               disabled={quantity === 0}
-              class={`w-7 h-7 rounded-full flex items-center justify-center text-[17px] font-bold transition-colors ${
+              class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[14px] md:text-[17px] font-bold transition-colors ${
                 quantity > 0 ? 'text-[#C7B287] hover:bg-[#F4EFE5]' : 'text-[#D1D5DB] cursor-not-allowed'
               }`}
             >
               −
             </button>
-            {editing ? (
-              <input
-                class="min-w-[28px] w-[28px] text-center text-[14px] font-bold tabular-nums text-[#C7B287] border-none outline-none bg-transparent"
-                type="number"
-                min={0}
-                max={MAX_QTY}
-                value={inputVal}
-                onInput={e => setInputVal((e.target as HTMLInputElement).value)}
-                onBlur={e => commitEdit((e.target as HTMLInputElement).value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') commitEdit((e.target as HTMLInputElement).value);
-                  if (e.key === 'Escape') setEditing(false);
-                }}
-                autoFocus
-              />
-            ) : (
-              <span
-                class={`min-w-[24px] text-center text-[14px] font-bold tabular-nums cursor-text ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
-                onClick={e => {
-                  e.stopPropagation();
-                  setInputVal(String(quantity));
-                  setEditing(true);
-                }}
-              >
-                {quantity}
-              </span>
-            )}
+            {/* Qty display only — not editable by keyboard input, only via the
+                −/+ buttons on either side (a typed value could bypass stock/
+                budget checks the increment path enforces). */}
+            <span
+              class={`min-w-[24px] text-center text-[13px] md:text-[14px] font-bold tabular-nums ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
+            >
+              {quantity}
+            </span>
             <button
               onClick={() => onQuantityChange(+1)}
               disabled={quantity >= MAX_QTY}
-              class={`w-7 h-7 rounded-full flex items-center justify-center text-[17px] font-bold transition-colors ${
+              class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[14px] md:text-[17px] font-bold transition-colors ${
                 quantity < MAX_QTY ? 'text-[#C7B287] hover:bg-[#F4EFE5]' : 'text-[#D1D5DB] cursor-not-allowed'
               }`}
             >
@@ -186,7 +153,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             <button
               onClick={() => onQuantityChange(-1)}
               disabled={quantity === 0}
-              class={`w-7 h-7 rounded-full flex items-center justify-center text-base font-bold transition-colors ${
+              class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-sm md:text-base font-bold transition-colors ${
                 quantity > 0
                   ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
                   : 'text-[#D1D5DB] cursor-not-allowed'
@@ -195,39 +162,19 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
               −
             </button>
 
-            {/* Qty: click to edit inline */}
-            {editing ? (
-              <input
-                class="min-w-[32px] w-[32px] text-center text-[13px] font-bold tabular-nums text-[#C7B287] border-none outline-none bg-transparent"
-                type="number"
-                min={0}
-                max={MAX_QTY}
-                value={inputVal}
-                onInput={e => setInputVal((e.target as HTMLInputElement).value)}
-                onBlur={e => commitEdit((e.target as HTMLInputElement).value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') commitEdit((e.target as HTMLInputElement).value);
-                  if (e.key === 'Escape') setEditing(false);
-                }}
-                autoFocus
-              />
-            ) : (
-              <span
-                class={`min-w-[24px] text-center text-[13px] font-bold tabular-nums cursor-text ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
-                onClick={e => {
-                  e.stopPropagation();
-                  setInputVal(String(quantity));
-                  setEditing(true);
-                }}
-              >
-                {quantity}
-              </span>
-            )}
+            {/* Qty display only — not editable by keyboard input, only via the
+                −/+ buttons on either side (a typed value could bypass stock/
+                budget checks the increment path enforces). */}
+            <span
+              class={`min-w-[24px] text-center text-[12px] md:text-[13px] font-bold tabular-nums ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
+            >
+              {quantity}
+            </span>
 
             <button
               onClick={() => onQuantityChange(+1)}
               disabled={quantity >= MAX_QTY}
-              class={`w-7 h-7 rounded-full flex items-center justify-center text-base font-bold transition-colors ${
+              class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-sm md:text-base font-bold transition-colors ${
                 quantity < MAX_QTY
                   ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
                   : 'text-[#D1D5DB] cursor-not-allowed'

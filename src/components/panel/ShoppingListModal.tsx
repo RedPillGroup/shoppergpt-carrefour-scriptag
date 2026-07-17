@@ -131,7 +131,14 @@ export function ShoppingListModal({
     .filter((s): s is Row => s !== null);
 
   return (
-    <div class="absolute inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    // Fixed (not absolute) so it covers the whole viewport on mobile — the
+    // panel this modal lives in is only ever a fraction of the screen there,
+    // and `absolute inset-0` would just fill that fraction instead of going
+    // full-screen. Desktop keeps the centered-over-panel look via md:.
+    <div
+      class="fixed md:absolute inset-0 z-50 flex items-center justify-center p-0 md:p-4"
+      onClick={onClose}
+    >
       <motion.div
         class="absolute inset-0 bg-black/40"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -144,7 +151,7 @@ export function ShoppingListModal({
         aria-modal="true"
         aria-label="Votre liste de courses"
         tabIndex={-1}
-        class="relative z-10 bg-white shadow-2xl w-full max-w-[400px] max-h-[90%] overflow-hidden flex flex-col outline-none"
+        class="relative z-10 bg-white shadow-2xl w-full h-full md:h-auto max-w-none md:max-w-[400px] max-h-full md:max-h-[90%] overflow-hidden flex flex-col outline-none"
         onClick={e => e.stopPropagation()}
         initial={{ opacity: 0, y: 16, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}

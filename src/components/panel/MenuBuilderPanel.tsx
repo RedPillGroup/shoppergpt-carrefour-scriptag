@@ -7,6 +7,8 @@ import { MenuProductCard } from './MenuProductCard';
 import { ShoppingListModal } from './ShoppingListModal';
 import cartIcon from '../../assets/icons/cart.svg?raw';
 import upIcon from '../../assets/icons/up.svg?raw';
+import leftIcon from '../../assets/icons/left.svg?raw';
+import rightIcon from '../../assets/icons/right.svg?raw';
 
 // Hosted on a public GCS bucket rather than bundled — 16+ images inlined as base64
 // would have bloated the widget's single-file bundle by several MB downloaded on
@@ -209,9 +211,12 @@ export function MenuBuilderPanel({
                 onClick={() => currentMobileIndex > 0 && goToMobileStep(currentMobileIndex - 1)}
                 disabled={currentMobileIndex === 0}
                 aria-label="Étape précédente"
-                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent text-[#B0A898] text-[18px] leading-none disabled:opacity-30 cursor-pointer disabled:cursor-default"
+                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
               >
-                ‹
+                <span
+                  class="inline-flex w-[10px] h-[12px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
+                  dangerouslySetInnerHTML={{ __html: leftIcon }}
+                />
               </button>
               <div class="flex items-center gap-2">
                 <span class="h-[26px] w-[26px] flex items-center justify-center shrink-0 [&_svg]:h-full [&_svg]:w-full">
@@ -226,9 +231,12 @@ export function MenuBuilderPanel({
                 onClick={() => currentMobileIndex < steps.length - 1 && goToMobileStep(currentMobileIndex + 1)}
                 disabled={currentMobileIndex === steps.length - 1}
                 aria-label="Étape suivante"
-                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent text-[#B0A898] text-[18px] leading-none disabled:opacity-30 cursor-pointer disabled:cursor-default"
+                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
               >
-                ›
+                <span
+                  class="inline-flex w-[10px] h-[12px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
+                  dangerouslySetInnerHTML={{ __html: rightIcon }}
+                />
               </button>
             </div>
           )}
