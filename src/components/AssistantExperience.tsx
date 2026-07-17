@@ -341,7 +341,7 @@ export function AssistantExperience() {
             // itself to its full intrinsic height, keeping the input + mic
             // reachable. All plain lengths (not 'auto'/a flexGrow toggle), so
             // the transition interpolates smoothly.
-            flexBasis: chatFocused ? '100%' : mobilePanelExpanded ? '64px' : '60%',
+            flexBasis: chatFocused ? '100%' : mobilePanelExpanded ? '64px' : '55%',
           }}
         >
           {/* Mobile-only "expand" trigger — sits at the chat pane's own top edge
@@ -477,6 +477,21 @@ export function AssistantExperience() {
             onFocus={() => {
               setChatFocused(true);
               setMobilePanelExpanded(false);
+              // Focusing grows the chat pane to 100% (flexBasis transition
+              // above) and the keyboard slides in — both take a moment to
+              // settle, so scrolling immediately would jump to a bottom that's
+              // about to move. Wait a tick past the animations, then re-run on
+              // the visualViewport's own resize (keyboard finishing its slide)
+              // as a second pass in case the first ran before the keyboard's height change had landed.
+              setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 320);
+              const vv = window.visualViewport;
+              if (vv) {
+                const onResize = () => {
+                  bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  vv.removeEventListener('resize', onResize);
+                };
+                vv.addEventListener('resize', onResize);
+              }
             }}
             onBlur={() => setChatFocused(false)}
           />
