@@ -158,7 +158,7 @@ export function ShoppingListModal({
       >
         {/* Header — no divider under the title, matches the reference design */}
         <div class="relative shrink-0 px-5 pt-5 pb-2">
-          <h2 class="m-0 font-['Satisfy'] text-[#C7B287] text-2xl leading-none">
+          <h2 class="m-0 font-['Satisfy'] font-normal text-[#C7B287] text-2xl leading-none">
             Votre liste de courses
           </h2>
           <button
@@ -235,7 +235,7 @@ export function ShoppingListModal({
           <button
             onClick={onValidate}
             disabled={rows.length === 0}
-            class="h-8 md:h-9 px-5 md:px-6 rounded-full bg-white text-[#8D7A4E] text-[10px] md:text-[11px] font-bold uppercase tracking-wide border-0 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="rounded-[30px] px-4 py-2 border border-[#AAAAAA] bg-white text-[#8D7A4E] text-[10px] md:text-[11px] font-bold uppercase tracking-wide cursor-pointer opacity-100 transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Valider ma liste de courses
           </button>
