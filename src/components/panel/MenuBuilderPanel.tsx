@@ -496,7 +496,13 @@ export function MenuBuilderPanel({
             track — the gold side (flex-1) soaks up whatever's left. Desktop
             reverts to an even grid-cols-2 split via md:. */}
         <div class="shrink-0 md:shrink md:flex-none bg-[#FFF] px-3 py-2.5 md:px-4 md:py-3 flex flex-col justify-center gap-1.5">
-          <div class="flex items-baseline gap-2">
+          {/* h-7 + items-center on both rows here, matching the gold side's row
+              height exactly — that's what actually keeps the two columns'
+              label-to-label rhythm in sync, not just an equal `gap` value (see
+              the gold side's comment: its price text is much taller than an
+              11px label, so equal gaps alone still produced uneven-looking
+              spacing since each ROW's own height differed between columns). */}
+          <div class="flex items-center h-7 gap-2">
             <span class="text-[11px] md:text-[11px] font-[500] uppercase tracking-wide text-[#878787] shrink-0">
               Convives
             </span>
@@ -508,7 +514,7 @@ export function MenuBuilderPanel({
               <span class="text-[#C8B288]">{requirements.guests_kids ?? '—'}</span> enf.
             </span>
           </div>
-          <div class="flex items-baseline gap-2">
+          <div class="flex items-center h-7 gap-2">
             <span class="text-[11px] md:text-[11px] font-[500] uppercase tracking-wide text-[#878787] shrink-0">
               Budget
             </span>
