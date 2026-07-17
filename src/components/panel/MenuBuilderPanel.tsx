@@ -194,13 +194,13 @@ export function MenuBuilderPanel({
       {/* ── No products: chips centred over full image ────────────────────────── */}
       {!hasProducts && (
         <div class="relative z-10 flex-1 flex flex-col items-center justify-center gap-3 px-6">
-          <div class="bg-white/90 backdrop-blur-[3px] px-6 py-2.5 rounded-2xl shadow-md">
+          <div class="bg-white/90 backdrop-blur-[3px] px-6 py-2.5 rounded-[100px] shadow-md">
             <span class="font-['Satisfy'] text-[#C7B287] text-[20px] md:text-[24px] leading-none whitespace-nowrap">
               {eventLabel}
             </span>
           </div>
           {dateLabel && (
-            <div class="bg-white/90 backdrop-blur-[3px] px-5 py-2 rounded-2xl shadow-sm">
+            <div class="bg-white/90 backdrop-blur-[3px] px-5 py-2 rounded-[100px] shadow-sm">
               <span class="font-['Satisfy'] text-[#B09A6E] text-[14px] md:text-[16px] leading-none">
                 {dateLabel}
               </span>
@@ -219,13 +219,13 @@ export function MenuBuilderPanel({
               sticky step bar right below already carries the current context,
               and there's no room for both. Desktop keeps them, unaffected. */}
           <div class="hidden md:flex shrink-0 flex-row items-center justify-center gap-3 px-6 pt-8 pb-5 flex-wrap">
-            <div class="bg-white/90 backdrop-blur-[2px] px-6 py-2.5 rounded-2xl shadow-sm">
+            <div class="bg-white/90 backdrop-blur-[2px] px-6 py-2.5 rounded-[100px] shadow-sm">
               <span class="font-['Satisfy'] text-[#C7B287] text-[18px] md:text-[20px] leading-none whitespace-nowrap">
                 {eventLabel}
               </span>
             </div>
             {dateLabel && (
-              <div class="bg-white/90 backdrop-blur-[2px] px-5 py-2.5 rounded-2xl shadow-sm">
+              <div class="bg-white/90 backdrop-blur-[2px] px-5 py-2.5 rounded-[100px] shadow-sm">
                 <span class="font-['Satisfy'] text-[#C7B287] text-[18px] md:text-[20px] leading-none whitespace-nowrap">
                   {dateLabel}
                 </span>
