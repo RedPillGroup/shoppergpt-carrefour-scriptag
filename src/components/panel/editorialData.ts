@@ -31,8 +31,8 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     img: `${EDITORIAL_BASE_URL}/buffet-1-v10.webp`,
-    title: "Cocktails\ndînatoires",
-    query: "Je prépare un cocktail dînatoire",
+    title: "Apéro\ndînatoire",
+    query: "Je prépare un apéro dînatoire",
   },
   {
     img: `${EDITORIAL_BASE_URL}/bapteme-1-v7.webp`,
