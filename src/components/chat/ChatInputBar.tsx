@@ -10,11 +10,12 @@ interface Props {
   onInputChange: (value: string) => void;
   onSend: () => void;
   onKeyDown: (e: KeyboardEvent) => void;
-  /** Fired when the textarea gains focus — mobile-only use is to retract an
-   * expanded panel (see AssistantExperience) so there's more visible chat
-   * height once the iOS keyboard (+ its accessory bar) eats a big chunk of
-   * the screen, instead of the user typing into an even-more-cramped sliver. */
+  /** Fired when the textarea gains/loses focus — mobile-only use is to show
+   * just the chat (hide the product/menu panel entirely) while typing, since
+   * fighting the iOS keyboard + its accessory bar for space isn't worth it —
+   * simpler to just not compete for space at all (see AssistantExperience). */
   onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 /** Pick the first MediaRecorder mime type the browser actually supports. */
@@ -25,7 +26,7 @@ function pickMimeType(): string | undefined {
   return prefs.find(t => MR.isTypeSupported(t));
 }
 
-export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDown, onFocus }: Props) {
+export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDown, onFocus, onBlur }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -111,6 +112,7 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
           onInput={e => onInputChange((e.target as HTMLTextAreaElement).value)}
           onKeyDown={onKeyDown}
           onFocus={onFocus}
+          onBlur={onBlur}
           // This is a chat prompt, not a form field — discourages iOS's
           // AutoFill suggestion icons (passwords/payment/addresses) from
           // showing over the keyboard. Doesn't remove Safari's "Done"/arrows

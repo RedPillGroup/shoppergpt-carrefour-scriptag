@@ -35,6 +35,12 @@ export function AssistantExperience() {
   // Collapsed (default) gives the chat most of the height; expanded flips the ratio
   // so the panel can show a full menu without the user scrolling a tiny viewport.
   const [mobilePanelExpanded, setMobilePanelExpanded] = useState(false);
+  // Mobile-only: while the chat input is focused, show ONLY the chat (the
+  // panel shrinks to 0 — see the chat pane's flexBasis below) instead of
+  // trying to still share the screen with the panel while iOS's keyboard +
+  // its accessory bar eat a big chunk of it. Simpler to just not compete for
+  // space at all than to fight that OS chrome pixel by pixel.
+  const [chatFocused, setChatFocused] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const jwtRef = useRef(jwt);
   const sessionIdRef = useRef(sessionId);
@@ -326,13 +332,16 @@ export function AssistantExperience() {
           style={{
             flexGrow: 0,
             flexShrink: 0,
-            // Collapsed: chat takes the bulk of the height (a %, in sync with the
-            // panel's complementary flexGrow below). Expanded: shrunk to a fixed px
-            // height too small for the message list, so it visually disappears —
-            // ChatInputBar (shrink-0) still forces itself to its full intrinsic
-            // height, keeping the input + mic reachable. Both are plain lengths
-            // (not 'auto'/a flexGrow toggle), so the transition interpolates smoothly.
-            flexBasis: mobilePanelExpanded ? '64px' : '60%',
+            // Focused: chat takes 100% (panel's own flexGrow:1/flexBasis:0
+            // below just yields to 0 automatically — no separate change needed
+            // there). Collapsed: chat takes the bulk of the height (a %, in
+            // sync with the panel's complementary flexGrow). Expanded: shrunk
+            // to a fixed px height too small for the message list, so it
+            // visually disappears — ChatInputBar (shrink-0) still forces
+            // itself to its full intrinsic height, keeping the input + mic
+            // reachable. All plain lengths (not 'auto'/a flexGrow toggle), so
+            // the transition interpolates smoothly.
+            flexBasis: chatFocused ? '100%' : mobilePanelExpanded ? '64px' : '60%',
           }}
         >
           {/* Mobile-only "expand" trigger — sits at the chat pane's own top edge
@@ -461,11 +470,15 @@ export function AssistantExperience() {
             onInputChange={setInput}
             onSend={() => send()}
             onKeyDown={handleKey}
-            // Mobile: focusing the input to type is the same intent as sending
-            // one — retract an expanded panel now rather than waiting for
-            // send(), so there's more visible chat height once the iOS
-            // keyboard (+ its accessory bar) eats a big chunk of the screen.
-            onFocus={() => setMobilePanelExpanded(false)}
+            // Mobile: while typing, show only the chat (see chatFocused above)
+            // instead of fighting the iOS keyboard + accessory bar for space.
+            // Also drop any panel expansion so the layout returns to normal
+            // collapsed proportions once focus/typing is done.
+            onFocus={() => {
+              setChatFocused(true);
+              setMobilePanelExpanded(false);
+            }}
+            onBlur={() => setChatFocused(false)}
           />
         </div>
 
