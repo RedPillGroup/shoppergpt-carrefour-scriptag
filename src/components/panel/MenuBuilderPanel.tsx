@@ -127,7 +127,7 @@ function SuggestMoreCard({
   return (
     <button
       type="button"
-      class={`flex items-center justify-center w-full border-[2px] border-dashed border-[#C8B288] bg-white/90 cursor-pointer disabled:cursor-wait ${matchHeightPx ? '' : 'h-full'}`}
+      class={`flex items-center justify-center w-full border-[2px] border-dashed border-[#C8B288] bg-white/80 cursor-pointer disabled:cursor-wait ${matchHeightPx ? '' : 'h-full'}`}
       style={matchHeightPx ? { height: `${matchHeightPx}px` } : undefined}
       onClick={() => onClick(step)}
       disabled={loading}
@@ -147,10 +147,8 @@ function SuggestMoreCard({
           />
         </svg>
       ) : (
-        <span class="px-4 py-1.5 rounded-full text-[#C8B288] text-[11px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
-          Nouvelle proposition
-          {'\n'}
-          de produits
+        <span class="inline-block p-2 max-w-[85%] rounded-full bg-[#C8B288] text-white text-[10px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
+          Plus d'options
         </span>
       )}
     </button>
