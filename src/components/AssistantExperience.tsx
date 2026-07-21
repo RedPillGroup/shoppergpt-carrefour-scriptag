@@ -359,8 +359,7 @@ export function AssistantExperience() {
 
   const noStoreGreeting =
     'Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n' +
-    'Pour commencer... quel est votre code postal ? Chaque magasin Carrefour propose sa propre ' +
-    'sélection traiteur — je trouverai le plus proche de chez vous pour vous composer un menu sur mesure.';
+    'Pour commencer... quel est votre code postal pour trouver le Carrefour traiteur le plus proche de chez vous ?';
   const storeGreeting =
     'Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n' +
     "Pour commencer... quel est l'heureux événement que vous souhaitez célébrer ?";
