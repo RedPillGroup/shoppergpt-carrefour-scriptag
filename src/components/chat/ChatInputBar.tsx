@@ -59,8 +59,29 @@ function createRecorder(stream: MediaStream): MediaRecorder {
 // automatically; MIN_RECORDING_MS guards against a stray sub-second clip if the
 // user pauses right after tapping the mic (before they've said anything yet).
 const SILENCE_THRESHOLD = 0.02; // RMS amplitude (0-1) below this counts as "quiet"
-const SILENCE_MS = 1800;
+const SILENCE_MS = 3000;
 const MIN_RECORDING_MS = 700;
+// Chirp/Speech-to-Text rejects anything over 60s with a 400 ("Audio can be of
+// a maximum of 60 seconds") — auto-stop a couple seconds early so the clip we
+// actually send is always under that ceiling, rather than surfacing that as a
+// transcription error after the fact.
+const MAX_RECORDING_MS = 58_000;
+
+// Bar pitch (visual style ported from an existing RecordingDots component
+// elsewhere in this codebase — vertical bars with a bouncing scaleY feel —
+// but each bar's height here is driven by real frequency-domain mic data
+// instead of a canned CSS keyframe loop shared by every bar). The COUNT is
+// proportional to the container's actual measured width (see the
+// ResizeObserver effect below) — one bar+gap every WAVE_BAR_PITCH px — so
+// bar density stays visually consistent across screen sizes instead of a
+// fixed count that would look sparse on a wide screen or crowded on a
+// narrow one.
+const WAVE_BAR_PITCH = 6.5; // px per bar, including its gap
+const WAVE_BAR_COUNT_FALLBACK = 40; // used only before the first real measurement
+const WAVE_BAR_COUNT_MIN = 10;
+const WAVE_BAR_COUNT_MAX = 80;
+const WAVE_BAR_MIN_HEIGHT = 3; // px, floor so a bar is never invisible at rest
+const WAVE_BAR_MAX_HEIGHT = 22; // px, matches this pill's ~28-32px inner height
 
 /** Two-note synthesized chime (Web Audio oscillator, no audio asset needed) —
  * an ascending blip on start, descending on stop, so recording state is audible
@@ -120,12 +141,29 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
   inputRef.current = input;
   const { playStart, playStop } = useChime();
 
-  // Silence-detection plumbing — a separate (silence-only) AudioContext/Analyser
-  // graph tapped off the same mic stream, polled on a rAF loop while recording.
+  // Silence-detection plumbing — an AudioContext/Analyser graph tapped off the
+  // same mic stream, polled on a rAF loop while recording. The same analyser
+  // also drives the waveform amplitude below (see startSilenceWatch) — one
+  // audio graph feeding both, rather than standing up a second one.
   const silenceAudioCtxRef = useRef<AudioContext | null>(null);
   const silenceRafRef = useRef<number | null>(null);
   const recordingStartedAtRef = useRef(0);
   const silenceStartedAtRef = useRef<number | null>(null);
+  // Bar-based live waveform (visual style ported from RecordingDots, driven
+  // by real frequency data instead of a canned CSS loop — see WAVE_BAR_PITCH
+  // above). Each bar's HEIGHT is written directly to its own div's
+  // style.height on every animation frame (see tick()/idleLoop below)
+  // instead of Preact state, so animating never re-renders the component —
+  // only the bar COUNT is Preact state (barCount), since changing how many
+  // <div>s exist genuinely needs a render; barCountRef mirrors it for tick()
+  // (a stable closure — see startSilenceWatch) to read the live value
+  // without needing to be recreated whenever the count changes.
+  const waveBarRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const waveContainerRef = useRef<HTMLDivElement | null>(null);
+  const [barCount, setBarCount] = useState(WAVE_BAR_COUNT_FALLBACK);
+  const barCountRef = useRef(barCount);
+  barCountRef.current = barCount;
+  const smoothedRmsRef = useRef(0);
   // stopRecording is defined below but the silence loop (started inside
   // startRecording) needs to call the LATEST version without re-running the
   // effect chain — a ref sidesteps the ordering/circular-dependency issue.
@@ -155,7 +193,29 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
     };
   }, [stopSilenceWatch]);
 
+  // Keeps the bar COUNT proportional to the container's real rendered width
+  // (one bar+gap per WAVE_BAR_PITCH px) — live, via ResizeObserver, so it
+  // adapts on window resize/orientation change too, not just once at mount.
+  // Depends on `recording` since the container only exists in the DOM while
+  // actively recording (see JSX) — this re-runs (and finds a real target)
+  // each time a recording starts.
+  useEffect(() => {
+    if (!recording) return;
+    const container = waveContainerRef.current;
+    if (!container) return;
+    const resize = () => {
+      const width = container.getBoundingClientRect().width;
+      const next = Math.round(width / WAVE_BAR_PITCH);
+      setBarCount(Math.min(WAVE_BAR_COUNT_MAX, Math.max(WAVE_BAR_COUNT_MIN, next)));
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [recording]);
+
   const startSilenceWatch = useCallback((stream: MediaStream) => {
+    smoothedRmsRef.current = 0;
     const Ctor = window.AudioContext || (window as any).webkitAudioContext;
     if (!Ctor) return; // no Web Audio support — silence auto-stop just won't trigger, recording still works
     const ctx = new Ctor();
@@ -165,8 +225,16 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
     analyser.fftSize = 512;
     source.connect(analyser);
     const data = new Uint8Array(analyser.fftSize);
+    // Separate buffer for the bars — frequency-domain data reads as a much
+    // more natural "equalizer" bar animation for actual speech than the
+    // time-domain waveform above (which is what RMS/silence-detection uses).
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
 
     const tick = () => {
+      // Read live each frame (not captured once above) since barCount can
+      // change mid-recording if the window resizes.
+      const barCountNow = barCountRef.current;
+      const binsPerBar = Math.max(1, Math.floor(freqData.length / barCountNow));
       analyser.getByteTimeDomainData(data);
       // RMS of the (centered) waveform — 0 when perfectly silent, ~1 when clipping.
       let sumSquares = 0;
@@ -176,11 +244,39 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
       }
       const rms = Math.sqrt(sumSquares / data.length);
 
+      // EMA-smoothed RMS — still used for the silence-detection threshold
+      // below (raw per-frame RMS jitters too much for a clean threshold check).
+      smoothedRmsRef.current += (rms - smoothedRmsRef.current) * 0.3;
+
+      // Bars — genuinely derived from the mic's current frequency spectrum
+      // (not a canned/looping animation), averaged into barCountNow buckets
+      // and written straight to each bar's height. Real per-bucket variation
+      // across the spectrum already gives a natural equalizer look without
+      // needing extra per-bar smoothing.
+      analyser.getByteFrequencyData(freqData);
+      for (let bar = 0; bar < barCountNow; bar++) {
+        const el = waveBarRefs.current[bar];
+        if (!el) continue;
+        const start = bar * binsPerBar;
+        let sum = 0;
+        for (let i = start; i < start + binsPerBar; i++) sum += freqData[i] ?? 0;
+        const avg = sum / binsPerBar / 255; // 0-1
+        el.style.height = `${WAVE_BAR_MIN_HEIGHT + avg * (WAVE_BAR_MAX_HEIGHT - WAVE_BAR_MIN_HEIGHT)}px`;
+      }
+
       const now = performance.now();
+      const recordedFor = now - recordingStartedAtRef.current;
+      // Hard ceiling regardless of silence state — even continuous speech
+      // has to stop before the backend's 60s limit, or the whole clip gets
+      // rejected outright (see MAX_RECORDING_MS above) instead of just
+      // transcribing what was said so far.
+      if (recordedFor >= MAX_RECORDING_MS) {
+        stopRecordingRef.current();
+        return;
+      }
       if (rms < SILENCE_THRESHOLD) {
         if (silenceStartedAtRef.current == null) silenceStartedAtRef.current = now;
         const silentFor = now - silenceStartedAtRef.current;
-        const recordedFor = now - recordingStartedAtRef.current;
         if (silentFor >= SILENCE_MS && recordedFor >= MIN_RECORDING_MS) {
           stopRecordingRef.current();
           return; // stopSilenceWatch (called from stop) tears this loop down
@@ -287,14 +383,47 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
 
   return (
     <div class="py-2.5 px-3.5 md:py-3.5 md:px-[18px] border-t border-[#E8ECF0] flex items-center gap-1.5 md:gap-2 shrink-0 bg-white">
-      <div class="flex-1 rounded-3xl min-h-9 md:min-h-10 px-1.5 py-1 flex items-center gap-1 border border-black/50">
+      <div class="relative flex-1 rounded-3xl min-h-9 md:min-h-10 px-1.5 py-1 flex items-center gap-1 border border-black/50">
+        {/* Live waveform — visual style ported from an existing RecordingDots
+            component (vertical bars, bouncing feel), but each bar's height
+            is driven by the mic's real frequency-domain data every
+            animation frame (see tick() in startSilenceWatch) — not every bar
+            sharing one canned CSS keyframe loop. The COUNT (barCount) is
+            proportional to this container's actual measured width (see the
+            ResizeObserver effect above), so density stays consistent across
+            screen sizes. Only rendered while actively recording;
+            pointer-events-none so it never blocks typing/clicks. */}
+        {recording && (
+          <div
+            ref={waveContainerRef}
+            class="absolute inset-y-0 left-5 right-14 bg-white pointer-events-none overflow-hidden flex items-center gap-[1.5px] opacity-60"
+          >
+            {Array.from({ length: barCount }).map((_, i) => (
+              <div
+                key={i}
+                ref={el => { waveBarRefs.current[i] = el; }}
+                class="flex-1 min-w-[1px] bg-[#E2422B]"
+                style={{ height: `${WAVE_BAR_MIN_HEIGHT}px` }}
+              />
+            ))}
+          </div>
+        )}
         <textarea
           ref={textareaRef}
           // text-[16px]: iOS Safari auto-zooms the whole page on focus for any
           // input/textarea with a computed font-size under 16px — this is the
           // minimum that avoids it, not a design choice. md: reverts to the
           // smaller size since that zoom-on-focus behavior is mobile-only.
-          class="flex-1 bg-transparent border-0 py-1.5 px-2.5 md:px-3 text-[16px] md:text-[13.5px] text-[#1A1A2E] resize-none outline-none leading-[1.4] max-h-[90px] min-h-0 overflow-y-auto placeholder:text-[#B0A898]"
+          // While recording, the text/placeholder/caret are all made
+          // transparent — the bars overlay above already has its own opaque
+          // bg-white, but the textarea itself would otherwise still show
+          // through around/under it. Fully hides it, not just visually
+          // covers it, so nothing peeks out.
+          class={`flex-1 bg-transparent border-0 py-1.5 px-2.5 md:px-3 text-[16px] md:text-[13.5px] resize-none outline-none leading-[1.4] max-h-[90px] min-h-0 overflow-y-auto ${
+            recording
+              ? 'text-transparent placeholder:text-transparent caret-transparent'
+              : 'text-[#1A1A2E] placeholder:text-[#B0A898]'
+          }`}
           rows={1}
           placeholder={transcribing ? 'Transcription en cours…' : 'Je voudrais...'}
           value={input}
