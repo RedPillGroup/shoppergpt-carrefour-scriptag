@@ -404,7 +404,7 @@ export function AssistantExperience() {
             // itself to its full intrinsic height, keeping the input + mic
             // reachable. All plain lengths (not 'auto'/a flexGrow toggle), so
             // the transition interpolates smoothly.
-            flexBasis: chatFocused ? '100%' : mobilePanelExpanded ? '64px' : '55%'
+            flexBasis: chatFocused ? '100%' : mobilePanelExpanded ? '64px' : '62%'
           }}
         >
           {/* Mobile-only "expand" trigger — sits at the chat pane's own top edge
