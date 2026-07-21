@@ -1,5 +1,5 @@
 import { h, Fragment } from 'preact';
-import { useRef, useMemo, useState } from 'preact/hooks';
+import { useRef, useMemo, useState, useEffect } from 'preact/hooks';
 import { AnimatePresence } from 'framer-motion';
 import { EventRequirements, Product } from '../../types';
 import { getStepIcon } from './icons';
@@ -102,26 +102,57 @@ function menuEventLabel(eventType: string): string {
 }
 
 /** Dashed, grayed-out card offering a couple more event-coherent product ideas
- * for this step — sits last in the grid so it never displaces real products. */
+ * for this step — sits last in the grid so it never displaces real products.
+ * Matching a real MenuProductCard's height by replicating its markup (aspect
+ * ratios, placeholder text blocks…) kept drifting out of sync across the 3
+ * different grid shapes (mobile expanded, mobile horizontal-scroll, desktop) —
+ * any small difference in the real card's actual DOM produces a mismatch here.
+ * `matchHeightPx`, when given, is the REAL measured height of an actual
+ * sibling card in this same grid (see MenuBuilderPanel's ResizeObserver-driven
+ * measurement) — applying it directly as inline height is the only way to
+ * guarantee pixel parity regardless of context. Falls back to a reasonable
+ * fixed height only for the brief instant before that measurement lands, or
+ * when there's no sibling to measure (empty-step case). */
 function SuggestMoreCard({
   step,
   loading,
-  onClick
+  onClick,
+  matchHeightPx
 }: {
   step: string;
   loading: boolean;
   onClick: (step: string) => void;
+  matchHeightPx?: number;
 }) {
   return (
     <button
       type="button"
-      class="w-full h-full min-h-[120px] flex items-center justify-center border-[2px] border-dashed border-[#C8B288] bg-white/90 cursor-pointer disabled:cursor-wait"
+      class={`flex items-center justify-center w-full border-[2px] border-dashed border-[#C8B288] bg-white/90 cursor-pointer disabled:cursor-wait ${matchHeightPx ? '' : 'h-full'}`}
+      style={matchHeightPx ? { height: `${matchHeightPx}px` } : undefined}
       onClick={() => onClick(step)}
       disabled={loading}
     >
-      <span class="rounded-full text-[#C8B288] text-[11px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
-        {loading ? '…' : 'Nouvelle proposition\nde produits'}
-      </span>
+      {loading ? (
+        <svg
+          class="animate-spin w-5 h-5 text-[#C8B288]"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-label="Chargement"
+        >
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"
+          />
+        </svg>
+      ) : (
+        <span class="px-4 py-1.5 rounded-full text-[#C8B288] text-[11px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
+          Nouvelle proposition
+          {'\n'}
+          de produits
+        </span>
+      )}
     </button>
   );
 }
@@ -163,6 +194,38 @@ export function MenuBuilderPanel({
     setMobileStepIndex(clamped);
     productsScrollRef.current?.scrollTo({ top: 0 });
   };
+
+  // Real measured height of one sibling product card per (step, grid variant) —
+  // keyed e.g. "Desserts:desktop" — used to size SuggestMoreCard so it matches
+  // exactly, including when it wraps alone onto its own row (no taller sibling
+  // left in THAT row for flex's default stretch to match against). Markers are
+  // set via `data-measure-key` on the first real product card in each grid
+  // (below); re-measured on mount, on any product/expand-state change, and on
+  // window resize (aspect-square image columns resize with viewport width).
+  const [cardHeights, setCardHeights] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const measure = () => {
+      const root = productsScrollRef.current;
+      if (!root) return;
+      const nodes = root.querySelectorAll<HTMLElement>('[data-measure-key]');
+      setCardHeights(prev => {
+        let changed = false;
+        const next = { ...prev };
+        nodes.forEach(node => {
+          const key = node.dataset.measureKey;
+          const h = node.getBoundingClientRect().height;
+          if (key && h && Math.abs((next[key] ?? 0) - h) > 1) {
+            next[key] = h;
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [productsByStep, mobileExpanded, steps]);
 
   // Mobile-only: let a horizontal scroll/swipe on the sticky step bar itself
   // change the step too, not just its arrow buttons — the bar has no content
@@ -419,9 +482,10 @@ export function MenuBuilderPanel({
                       // not a rigid 3/4-col grid, so a partial row centers as a group
                       // instead of starting flush left with dead trailing columns).
                       <div class="flex flex-wrap justify-center gap-3">
-                        {products.map(p => (
+                        {products.map((p, i) => (
                           <div
                             key={p.id}
+                            data-measure-key={i === 0 ? `${step}:mobileExpanded` : undefined}
                             class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]"
                           >
                             <MenuProductCard
@@ -437,6 +501,7 @@ export function MenuBuilderPanel({
                               step={step}
                               loading={suggestingStep === step}
                               onClick={onSuggestMore}
+                              matchHeightPx={cardHeights[`${step}:mobileExpanded`]}
                             />
                           </div>
                         )}
@@ -486,8 +551,12 @@ export function MenuBuilderPanel({
                           )}
                         </div>
                         <div class="hidden md:flex flex-wrap justify-center gap-3">
-                          {products.map(p => (
-                            <div key={p.id} class="md:flex-[0_0_calc(25%-9px)]">
+                          {products.map((p, i) => (
+                            <div
+                              key={p.id}
+                              data-measure-key={i === 0 ? `${step}:desktop` : undefined}
+                              class="md:flex-[0_0_calc(25%-9px)]"
+                            >
                               <MenuProductCard
                                 product={p}
                                 quantity={quantities[p.id] ?? 0}
@@ -501,6 +570,7 @@ export function MenuBuilderPanel({
                                 step={step}
                                 loading={suggestingStep === step}
                                 onClick={onSuggestMore}
+                                matchHeightPx={cardHeights[`${step}:desktop`]}
                               />
                             </div>
                           )}
