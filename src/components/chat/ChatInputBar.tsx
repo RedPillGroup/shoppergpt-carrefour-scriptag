@@ -83,6 +83,19 @@ const WAVE_BAR_COUNT_MAX = 80;
 const WAVE_BAR_MIN_HEIGHT = 3; // px, floor so a bar is never invisible at rest
 const WAVE_BAR_MAX_HEIGHT = 22; // px, matches this pill's ~28-32px inner height
 
+// iOS Safari zooms the whole page on focus for any input/textarea with a
+// computed font-size under 16px — there's no way around that below 16px real
+// size. To still READ as 12px on mobile, the textarea keeps a real 16px font
+// (zoom-safe) and is visually shrunk with a CSS transform: scale — its width
+// is inflated by 1/MOBILE_TEXT_SCALE so it still spans the full visual width
+// after the shrink (`w-[133.333%]` in the JSX). Desktop needs none of this
+// (13.5px there never triggers the zoom), so scale/width both reset via `md:`.
+const MOBILE_TEXT_SCALE = 12 / 16;
+// Tailwind's default `md` breakpoint — kept in sync with the `md:` classes on
+// the textarea below, since the wrapper's height math (JS) needs to know
+// whether the scale is actually active, which pure CSS can't tell it.
+const MD_BREAKPOINT_QUERY = '(min-width: 768px)';
+
 /** Two-note synthesized chime (Web Audio oscillator, no audio asset needed) —
  * an ascending blip on start, descending on stop, so recording state is audible
  * as well as visible. Lazily creates/reuses one AudioContext across taps. */
@@ -126,6 +139,10 @@ function useChime() {
 
 export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDown, onFocus, onBlur }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Wraps the textarea; its height is set (in JS, see the resize effect
+  // below) to the VISUAL (post-scale) height on mobile, since the textarea's
+  // own layout box stays at its natural pre-scale size — see MOBILE_TEXT_SCALE.
+  const textareaWrapperRef = useRef<HTMLDivElement>(null);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   // Surfaces mic/recording failures that used to be console-only (silent from
@@ -169,12 +186,33 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
   // effect chain — a ref sidesteps the ordering/circular-dependency issue.
   const stopRecordingRef = useRef<() => void>(() => {});
 
-  useEffect(() => {
+  const resizeTextarea = useCallback(() => {
     const el = textareaRef.current;
-    if (!el) return;
+    const wrapper = textareaWrapperRef.current;
+    if (!el || !wrapper) return;
     el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
-  }, [input]);
+    const natural = el.scrollHeight; // pre-scale (real 16px-font) height
+    el.style.height = `${natural}px`;
+    // The textarea's own box stays at `natural` regardless of the visual
+    // scale-down (transform doesn't affect layout/scrollHeight) — the
+    // WRAPPER is what the surrounding flex row actually measures, so on
+    // mobile it needs the smaller POST-scale height, or the row would
+    // reserve the taller pre-scale space and leave visible empty gap under
+    // the visually-shrunk text.
+    const isMobile = !window.matchMedia(MD_BREAKPOINT_QUERY).matches;
+    wrapper.style.height = `${isMobile ? natural * MOBILE_TEXT_SCALE : natural}px`;
+  }, []);
+
+  useEffect(() => {
+    resizeTextarea();
+  }, [input, resizeTextarea]);
+
+  // Crossing the md breakpoint (resize/orientation change) flips whether the
+  // scale is active — re-measure so the wrapper's height matches the new state.
+  useEffect(() => {
+    window.addEventListener('resize', resizeTextarea);
+    return () => window.removeEventListener('resize', resizeTextarea);
+  }, [resizeTextarea]);
 
   const stopSilenceWatch = useCallback(() => {
     if (silenceRafRef.current != null) cancelAnimationFrame(silenceRafRef.current);
@@ -408,39 +446,50 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
             ))}
           </div>
         )}
-        <textarea
-          ref={textareaRef}
-          // text-[16px]: iOS Safari auto-zooms the whole page on focus for any
-          // input/textarea with a computed font-size under 16px — this is the
-          // minimum that avoids it, not a design choice. md: reverts to the
-          // smaller size since that zoom-on-focus behavior is mobile-only.
-          // While recording, the text/placeholder/caret are all made
-          // transparent — the bars overlay above already has its own opaque
-          // bg-white, but the textarea itself would otherwise still show
-          // through around/under it. Fully hides it, not just visually
-          // covers it, so nothing peeks out.
-          class={`flex-1 bg-transparent border-0 py-1.5 px-2.5 md:px-3 text-[16px] md:text-[13.5px] resize-none outline-none leading-[1.4] max-h-[90px] min-h-0 overflow-y-auto ${
-            recording
-              ? 'text-transparent placeholder:text-transparent caret-transparent'
-              : 'text-[#1A1A2E] placeholder:text-[#B0A898]'
-          }`}
-          rows={1}
-          placeholder={transcribing ? 'Transcription en cours…' : 'Je voudrais...'}
-          value={input}
-          onInput={e => onInputChange((e.target as HTMLTextAreaElement).value)}
-          onKeyDown={onKeyDown}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          // This is a chat prompt, not a form field — discourages iOS's
-          // AutoFill suggestion icons (passwords/payment/addresses) from
-          // showing over the keyboard. Doesn't remove Safari's "Done"/arrows
-          // accessory bar itself (that's OS chrome, not addressable from a
-          // web page at all), but it's the one part we can influence.
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellcheck={false}
-        />
+        {/* Wrapper: its height is what the surrounding flex row actually
+            measures (see resizeTextarea) — the textarea inside keeps its own
+            natural pre-scale layout box, visually shrunk by the transform
+            below, so the wrapper is what reconciles the two. overflow-hidden
+            clips the pre-scale box down to the wrapper's (correct, post-scale)
+            bounds. */}
+        <div ref={textareaWrapperRef} class="flex-1 overflow-hidden">
+          <textarea
+            ref={textareaRef}
+            // text-[16px]: iOS Safari auto-zooms the whole page on focus for
+            // any input/textarea with a computed font-size under 16px — real
+            // size has to stay at 16px, no way around it below that. To still
+            // READ as 12px on mobile, scale-75 (with origin-top-left) shrinks
+            // it visually afterward, and w-[133.333%] (1 / 0.75) compensates
+            // so it still spans the full width post-shrink. md: resets all of
+            // this — 13.5px real never triggers the zoom, so desktop needs no
+            // scale trick at all. While recording, the text/placeholder/caret
+            // are all made transparent — the bars overlay above already has
+            // its own opaque bg-white, but the textarea itself would
+            // otherwise still show through around/under it. Fully hides it,
+            // not just visually covers it, so nothing peeks out.
+            class={`bg-transparent border-0 py-1.5 px-2.5 md:px-3 text-[16px] md:text-[13.5px] resize-none outline-none leading-[1.4] max-h-[90px] min-h-0 overflow-y-auto origin-top-left scale-75 md:scale-100 w-[133.333%] md:w-full ${
+              recording
+                ? 'text-transparent placeholder:text-transparent caret-transparent'
+                : 'text-[#1A1A2E] placeholder:text-[#B0A898]'
+            }`}
+            rows={1}
+            placeholder={transcribing ? 'Transcription en cours…' : 'Je voudrais...'}
+            value={input}
+            onInput={e => onInputChange((e.target as HTMLTextAreaElement).value)}
+            onKeyDown={onKeyDown}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            // This is a chat prompt, not a form field — discourages iOS's
+            // AutoFill suggestion icons (passwords/payment/addresses) from
+            // showing over the keyboard. Doesn't remove Safari's "Done"/arrows
+            // accessory bar itself (that's OS chrome, not addressable from a
+            // web page at all), but it's the one part we can influence.
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellcheck={false}
+          />
+        </div>
 
         <button
           class="w-[32px] h-[32px] md:w-[36px] md:h-[36px] bg-[#E2422B] border-0 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-all hover:bg-[#C73A25] active:scale-[.93] disabled:bg-[#E8A99E] disabled:cursor-not-allowed"
