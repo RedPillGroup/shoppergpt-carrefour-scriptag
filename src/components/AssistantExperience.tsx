@@ -556,7 +556,11 @@ export function AssistantExperience() {
             // Also drop any panel expansion so the layout returns to normal
             // collapsed proportions once focus/typing is done.
             onFocus={() => {
-              setChatFocused(true);
+              // TEMP: disabled — was `setChatFocused(true)`, which grows the
+              // chat pane to 100% height (hiding the panel entirely) while
+              // the input is focused on mobile. Re-enable by uncommenting
+              // the line below once we want that behavior back.
+              // setChatFocused(true);
               setMobilePanelExpanded(false);
               // Focusing grows the chat pane to 100% (flexBasis transition
               // above) and the keyboard slides in — both take a moment to
