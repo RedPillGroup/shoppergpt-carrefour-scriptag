@@ -154,3 +154,39 @@ export async function fetchServerMenu(
   const data = (await res.json()) as ServerMenuResponse;
   return { data, etag, notModified: false };
 }
+
+export interface SuggestProductsResponse {
+  step?: string;
+  items?: unknown[];
+}
+
+/** "Nouvelle proposition de produits" — ask the backend for a couple of new,
+ * event-coherent products for one step. Deterministic route, no LLM tool call
+ * on the orchestrator's side (see routes.py's /suggest_products). */
+export async function suggestProducts(
+  sessionId: string | null,
+  step: string
+): Promise<Product[]> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-client-id": getClientId()
+  };
+  if (sessionId) headers["X-Session-Id"] = sessionId;
+
+  const res = await fetch(`${getApiUrl()}/suggest_products`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ step })
+  });
+  if (!res.ok) {
+    throw new Error(`POST /suggest_products failed: ${res.status}`);
+  }
+  const data = (await res.json()) as SuggestProductsResponse;
+  const products: Product[] = [];
+  for (const raw of data.items ?? []) {
+    if (!raw || typeof raw !== "object") continue;
+    const product = buildProduct(raw as Record<string, unknown>);
+    if (product) products.push(product);
+  }
+  return products;
+}

@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useShopperStore } from '../store';
 import { EventRequirements, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
-import { fetchServerMenu, menuResponseToPanelState } from '../api/menu';
+import { fetchServerMenu, menuResponseToPanelState, suggestProducts } from '../api/menu';
 import { getMockScreen } from '../api/config';
 import { EditorialPanel } from './panel/EditorialPanel';
 import { MessageBubble } from './chat/MessageBubble';
@@ -354,6 +354,41 @@ export function AssistantExperience() {
     });
   }, []);
 
+  const [suggestingStep, setSuggestingStep] = useState<string | null>(null);
+
+  // "Nouvelle proposition de produits" card — a deterministic REST call (POST
+  // /suggest_products), not a chat turn: the backend already persists the picks
+  // server-side as showcase (qty=0) items, so the orchestrator picks them up via
+  // live_context on its own next turn without us telling it anything here. We
+  // just merge the same picks into local state so they render immediately,
+  // without waiting on a GET /menu round trip.
+  const handleSuggestMore = useCallback(
+    async (step: string) => {
+      if (suggestingStep) return;
+      setSuggestingStep(step);
+      try {
+        const newProducts = await suggestProducts(sessionId, step);
+        if (newProducts.length === 0) return;
+        setProductsByStep(prev => {
+          const existingIds = new Set((prev[step] ?? []).map(p => p.id));
+          const fresh = newProducts.filter(p => !existingIds.has(p.id));
+          if (fresh.length === 0) return prev;
+          return { ...prev, [step]: [...(prev[step] ?? []), ...fresh] };
+        });
+        setMenuQuantities(prev => {
+          const next = { ...prev };
+          for (const p of newProducts) next[p.id] ??= 0;
+          return next;
+        });
+      } catch (err) {
+        console.error('suggest_products failed', err);
+      } finally {
+        setSuggestingStep(null);
+      }
+    },
+    [sessionId, suggestingStep]
+  );
+
   const isStreaming = isLoading && streamingText.length > 0;
   const isWaiting = isLoading && streamingText.length === 0;
 
@@ -603,6 +638,8 @@ export function AssistantExperience() {
               syncing={panelSyncing}
               mobileExpanded={mobilePanelExpanded}
               onRetractMobile={() => setMobilePanelExpanded(false)}
+              onSuggestMore={handleSuggestMore}
+              suggestingStep={suggestingStep}
             />
           ) : (
             <EditorialPanel onSelect={q => send(q)} />

@@ -45,7 +45,7 @@ function EventEditorialTile({
   );
 }
 
-const AUTOPLAY_INTERVAL_MS = 4000;
+const AUTOPLAY_INTERVAL_MS = 6000;
 
 function HeroCarousel({ onSelect }: Props) {
   const viewportRef = useRef<HTMLDivElement | null>(null);

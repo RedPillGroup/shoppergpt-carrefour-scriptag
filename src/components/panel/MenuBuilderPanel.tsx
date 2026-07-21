@@ -60,6 +60,12 @@ interface Props {
    * needs to sit within the chat pane's own bounds. */
   mobileExpanded?: boolean;
   onRetractMobile?: () => void;
+  /** Fired when the user taps the "Nouvelle proposition de produits" card for a
+   * step — parent owns the actual API call (see AssistantExperience). */
+  onSuggestMore?: (step: string) => void;
+  /** Step currently awaiting a suggest_products response, if any — shows a
+   * loading state on that one card only. */
+  suggestingStep?: string | null;
 }
 
 /** Format a number as "1 234,56 €" (French locale). */
@@ -95,6 +101,31 @@ function menuEventLabel(eventType: string): string {
   return `Menu de ${t}`;
 }
 
+/** Dashed, grayed-out card offering a couple more event-coherent product ideas
+ * for this step — sits last in the grid so it never displaces real products. */
+function SuggestMoreCard({
+  step,
+  loading,
+  onClick
+}: {
+  step: string;
+  loading: boolean;
+  onClick: (step: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      class="w-full h-full min-h-[120px] flex items-center justify-center border-[2px] border-dashed border-[#C8B288] bg-white/90 cursor-pointer disabled:cursor-wait"
+      onClick={() => onClick(step)}
+      disabled={loading}
+    >
+      <span class="rounded-full text-[#C8B288] text-[11px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
+        {loading ? '…' : 'Nouvelle proposition\nde produits'}
+      </span>
+    </button>
+  );
+}
+
 export function MenuBuilderPanel({
   requirements,
   productsByStep,
@@ -102,7 +133,9 @@ export function MenuBuilderPanel({
   onQuantityChange,
   syncing = false,
   mobileExpanded = false,
-  onRetractMobile
+  onRetractMobile,
+  onSuggestMore,
+  suggestingStep = null
 }: Props) {
   const [shoppingListOpen, setShoppingListOpen] = useState(false);
 
@@ -366,9 +399,21 @@ export function MenuBuilderPanel({
                     </div>
 
                     {products.length === 0 ? (
-                      <p class="text-center text-[11px] text-[#CBCBCB] py-4 m-0">
-                        Aucun produit disponible pour ce service.
-                      </p>
+                      onSuggestMore ? (
+                        <div class="flex justify-center px-4">
+                          <div class="w-full max-w-[220px]">
+                            <SuggestMoreCard
+                              step={step}
+                              loading={suggestingStep === step}
+                              onClick={onSuggestMore}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <p class="text-center text-[11px] text-[#CBCBCB] py-4 m-0">
+                          Aucun produit disponible pour ce service.
+                        </p>
+                      )
                     ) : mobileExpanded ? (
                       // Expanded mobile: same grid as desktop (flex-wrap + justify-center,
                       // not a rigid 3/4-col grid, so a partial row centers as a group
@@ -386,6 +431,15 @@ export function MenuBuilderPanel({
                             />
                           </div>
                         ))}
+                        {onSuggestMore && (
+                          <div class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]">
+                            <SuggestMoreCard
+                              step={step}
+                              loading={suggestingStep === step}
+                              onClick={onSuggestMore}
+                            />
+                          </div>
+                        )}
                       </div>
                     ) : (
                       // Collapsed: mobile scrolls this step's products horizontally
@@ -421,6 +475,15 @@ export function MenuBuilderPanel({
                               />
                             </div>
                           ))}
+                          {onSuggestMore && (
+                            <div class="w-[300px] h-full max-h-[200px] max-w-[300px] shrink-0 snap-center">
+                              <SuggestMoreCard
+                                step={step}
+                                loading={suggestingStep === step}
+                                onClick={onSuggestMore}
+                              />
+                            </div>
+                          )}
                         </div>
                         <div class="hidden md:flex flex-wrap justify-center gap-3">
                           {products.map(p => (
@@ -432,6 +495,15 @@ export function MenuBuilderPanel({
                               />
                             </div>
                           ))}
+                          {onSuggestMore && (
+                            <div class="md:flex-[0_0_calc(25%-9px)]">
+                              <SuggestMoreCard
+                                step={step}
+                                loading={suggestingStep === step}
+                                onClick={onSuggestMore}
+                              />
+                            </div>
+                          )}
                         </div>
                       </Fragment>
                     )}
