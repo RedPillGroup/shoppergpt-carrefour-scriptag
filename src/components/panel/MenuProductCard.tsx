@@ -102,7 +102,14 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             (just a small pt-3 for breathing room, no big pb pushing them down
             from the bottom). ────────── */}
         <div class="flex-1 min-w-0 flex flex-col justify-start gap-1 px-3 pt-3 pb-2">
-          <PriceBig value={product.price} size="lg" />
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <PriceBig value={product.price} size="lg" />
+            {product.is_composable && (
+              <span class="px-1.5 py-0.5 rounded-full bg-[#C7B287] text-white text-[9px] font-semibold uppercase tracking-wide leading-none">
+                Composer
+              </span>
+            )}
+          </div>
           <div class="text-[12px] font-[400] leading-snug line-clamp-3">
             {product.name}
           </div>
@@ -203,7 +210,18 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
 
         {/* ── Content ─────────────────────────────────────── */}
         <div class="px-2.5 pt-2 pb-3 flex flex-col gap-0.5">
-          <PriceBig value={product.price} size="sm" />
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <PriceBig value={product.price} size="sm" />
+            {/* "Build-your-own" plateau (real Carrefour composition data, see
+                is_composable) — clicking the card opens the Composer flow
+                instead of the plain description (see AssistantExperience's
+                selectedProduct branch), this badge is just the visual cue. */}
+            {product.is_composable && (
+              <span class="px-1.5 py-0.5 rounded-full bg-[#C7B287] text-white text-[9px] font-semibold uppercase tracking-wide leading-none">
+                Composer
+              </span>
+            )}
+          </div>
           {/* min-h reserves space for 2 lines (leading-snug ≈ 1.375 × font-size)
               even when the name only wraps to 1 — otherwise cards with short vs
               long names end up different heights in the same row. */}

@@ -24,5 +24,10 @@ export function buildProduct(p: Record<string, unknown>): Product | null {
     expression_pvc: p.expression_pvc != null ? String(p.expression_pvc) : null,
     volume: p.volume != null ? String(p.volume) : null,
     nb_pieces: p.nb_pieces != null ? Number(p.nb_pieces) : null,
+    is_composable: Boolean(p.is_composable),
+    plateau_selection:
+      p.plateau_selection && typeof p.plateau_selection === "object"
+        ? (p.plateau_selection as Record<string, number>)
+        : undefined,
   };
 }

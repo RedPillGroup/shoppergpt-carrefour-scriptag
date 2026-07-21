@@ -16,6 +16,18 @@ export interface Product {
   volume?: string | null;
   /** Number of individual pieces in one sellable unit, e.g. 6 for a pack of 6 cans. */
   nb_pieces?: number | null;
+  /** "Build-your-own" plateau (e.g. "choisissez 6 fromages parmi 22") — true only
+   * for products with real structured Carrefour composition data (backend's
+   * is_composable), never guessed from the name. Drives the "Composer" flow
+   * instead of the plain description modal. */
+  is_composable?: boolean;
+  /** The user's chosen pieces for an is_composable product — code ("0-0", per
+   * Carrefour's composition_plateau.groups[].pieces[].code) → qty. Saved on
+   * the product itself (not a separate map) so it rides along the normal
+   * menu sync to the backend, and is ready to build the real cart payload
+   * (POST /cart/add {options:{plateau:{...}}}) once that integration lands —
+   * without this, "Valider" would only mark qty=1 with the actual choice lost. */
+  plateau_selection?: Record<string, number>;
 }
 
 export interface StepSuggestionItem {

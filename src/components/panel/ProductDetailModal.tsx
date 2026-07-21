@@ -1,8 +1,9 @@
 import { h } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { motion } from 'framer-motion';
 import { getApiUrl, getClientId } from '../../api/config';
 import { useShopperStore } from '../../store';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface CompositionPiece {
   name: string;
@@ -46,64 +47,6 @@ interface Props {
 
 const PLACEHOLDER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='160' viewBox='0 0 200 160'%3E%3Crect width='200' height='160' fill='%23F3F1EE'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23C7B287' font-size='36'%3E🍽%3C/text%3E%3C/svg%3E";
-
-// ── Focus trap ────────────────────────────────────────────────────────────────
-// Shadow-DOM-safe: listens on document (events from inside Shadow DOM bubble up)
-// and uses e.composedPath() to see the real focused element across the boundary.
-
-const FOCUSABLE_SELECTORS =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-function getFocusable(container: HTMLElement): HTMLElement[] {
-  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
-}
-
-function useFocusTrap(onEscape: () => void) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  // Keep onEscape stable inside the effect without re-running it.
-  const onEscapeRef = useRef(onEscape);
-  onEscapeRef.current = onEscape;
-
-  useEffect(() => {
-    const el = panelRef.current;
-    if (!el) return;
-
-    // Move focus into the panel so keyboard users are immediately inside.
-    // tabIndex={-1} on the panel div makes it programmatically focusable.
-    el.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onEscapeRef.current();
-        return;
-      }
-
-      if (e.key !== 'Tab') return;
-
-      const focusable = getFocusable(el);
-      if (!focusable.length) { e.preventDefault(); return; }
-
-      // composedPath()[0] is the real focused element even inside a Shadow root.
-      const active = e.composedPath()[0] as HTMLElement;
-      const first = focusable[0];
-      const last  = focusable[focusable.length - 1];
-
-      if (e.shiftKey && active === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []); // runs once on mount; onEscape always current via ref
-
-  return panelRef;
-}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 

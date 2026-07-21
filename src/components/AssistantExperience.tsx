@@ -14,6 +14,7 @@ import { StreamingBubble } from './chat/StreamingBubble';
 import { ChatInputBar } from './chat/ChatInputBar';
 import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
 import { ProductDetailModal } from './panel/ProductDetailModal';
+import { ComposeProductModal } from './panel/ComposeProductModal';
 import downIcon from '../assets/icons/down.svg?raw';
 
 export function AssistantExperience() {
@@ -155,37 +156,132 @@ export function AssistantExperience() {
     setEventScreenEnabled(true);
 
     if (mock === 'products') {
-      const mk = (id: string, name: string, price: number, step: string): Product => ({
+      // Real Carrefour Traiteur catalogue products (name/price/image straight from
+      // the dev DB) instead of blank-image placeholders — so the mock actually
+      // looks like a real composed menu when eyeballing layout/styling changes.
+      const mk = (
+        id: string,
+        name: string,
+        price: number,
+        persons: number | null,
+        step: string,
+        image: string,
+        isComposable = false
+      ): Product => ({
         id,
         name,
         price,
-        persons: 4,
-        image: '',
-        menu_step: step
+        persons,
+        image,
+        menu_step: step,
+        is_composable: isComposable
       });
+      // Real SKUs (not made-up "mock-N" ids) — the product detail modal fetches
+      // GET /product/{id} against the real catalogue, so a fake id would just
+      // 404 the moment "voir détails" is tapped on a mock product.
       setProductsByStep({
         Apéritifs: [
-          mk('mock-1', '6 Verrines tartare de tomates et thon', 7.95, 'Apéritifs'),
-          mk('mock-2', '4 verrines noix de Saint-Jacques et tartare basilic', 4.99, 'Apéritifs')
+          mk(
+            '111',
+            '6 Verrines tartare de tomates et thon',
+            7.95,
+            6,
+            'Apéritifs',
+            'https://traiteur.carrefour.fr/media/catalog/product/v/e/verrine_tomate_thon_carrefour_traiteur_2.jpg'
+          ),
+          mk(
+            '24642',
+            '4 verrines noix de Saint-Jacques et tartare de tomates basilic',
+            4.95,
+            4,
+            'Apéritifs',
+            'https://traiteur.carrefour.fr/media/catalog/product/v/e/verrines_1_.png'
+          )
         ],
         Plats: [
-          mk('mock-3', 'Filet de Bœuf Wellington en croûte', 32.9, 'Plats'),
-          mk('mock-4', 'Gratin dauphinois', 3.0, 'Plats')
+          mk(
+            '717',
+            'Filet de Bœuf Wellington en croûte',
+            32.9,
+            7,
+            'Plats',
+            'https://traiteur.carrefour.fr/media/catalog/product/b/o/boeuf_en_croute_carrefour_1.jpg'
+          ),
+          mk(
+            '88',
+            'Gratin dauphinois',
+            3.0,
+            1,
+            'Plats',
+            'https://traiteur.carrefour.fr/media/catalog/product/g/r/gratin_dauphinois_carrefour_traiteur_2_.jpg'
+          )
         ],
-        Fromages: [mk('mock-5', 'Plateau de 4 fromages', 10.9, 'Fromages')],
-        Desserts: [mk('mock-6', 'Tarte aux fraises', 9.99, 'Desserts')],
-        Boissons: [mk('mock-7', 'Macarons framboises', 12.5, 'Boissons')],
-        Pains: [mk('mock-8', 'Macarons', 19.0, 'Pains')]
+        Fromages: [
+          mk(
+            '454',
+            'Plateau du fromager - 10 fromages',
+            24.9,
+            18,
+            'Fromages',
+            'https://traiteur.carrefour.fr/media/catalog/product/p/l/plateau_fromages_10_carrefour_traiteur.jpg'
+          ),
+          // is_composable: true — real "build-your-own" product (has actual
+          // composition_plateau data ingested), opens the Composer modal
+          // instead of the plain description on click. See derive_composable
+          // in shopper-gpt-carrefour-ingest.
+          mk(
+            '406',
+            'Plateau de 6 fromages',
+            15.9,
+            12,
+            'Fromages',
+            'https://traiteur.carrefour.fr/media/catalog/product/p/l/plateau_6_fromages_carrefour_traiteur_2.jpg',
+            true
+          )
+        ],
+        Desserts: [
+          mk(
+            '197',
+            'Tarte aux fraises - 6 parts',
+            9.99,
+            6,
+            'Desserts',
+            'https://traiteur.carrefour.fr/media/catalog/product/_/t/_tarte_aux_fraises_500x500_.png'
+          )
+        ],
+        Boissons: [
+          mk(
+            '4282',
+            'Champagne brut, Nicolas Feuillatte Grande Réserve',
+            23.95,
+            null,
+            'Boissons',
+            'https://traiteur.carrefour.fr/media/catalog/product/c/h/champagne_brut__nicolas_feuillatte_grande_r_serve__carrefour_traiteur.jpg'
+          )
+        ],
+        // Was mistakenly "72 Macarons" (a Desserts product) — swapped for a real
+        // Pains item so step and product actually match.
+        Pains: [
+          mk(
+            '8084',
+            '4 baguettes campagnardes',
+            2.97,
+            16,
+            'Pains',
+            'https://traiteur.carrefour.fr/media/catalog/product/b/a/baguette_campagne_carrefour_traiteur_1.jpg'
+          )
+        ]
       });
       setMenuQuantities({
-        'mock-1': 6,
-        'mock-2': 0,
-        'mock-3': 2,
-        'mock-4': 10,
-        'mock-5': 1,
-        'mock-6': 2,
-        'mock-7': 0,
-        'mock-8': 0
+        '111': 6,
+        '24642': 0,
+        '717': 2,
+        '88': 10,
+        '454': 0,
+        '406': 1,
+        '197': 2,
+        '4282': 0,
+        '8084': 0
       });
 
       // Canned conversation history behind the mock menu — otherwise the
@@ -219,7 +315,11 @@ export function AssistantExperience() {
           sku: p.id,
           menu_step: step,
           qty,
-          recommended_quantity: qty
+          recommended_quantity: qty,
+          // Rides along so the backend keeps it on the menu item (see
+          // tools.sync_state) — otherwise a composed plateau's chosen pieces
+          // would be silently dropped on the very next chat turn.
+          ...(p.plateau_selection ? { plateau_selection: p.plateau_selection } : {})
         };
       })
     );
@@ -353,6 +453,30 @@ export function AssistantExperience() {
       return { ...prev, [productId]: next };
     });
   }, []);
+
+  // Saves the user's chosen pieces onto the plateau product itself (not a
+  // separate map) — that's what makes it ride along the existing menu sync
+  // (getClientState → sync_state → state.py) instead of being lost the moment
+  // this modal closes, so it's already sitting there ready for "Ajouter au
+  // panier" to build the real POST /cart/add {options:{plateau:{...}}} payload.
+  const handleComposeValidate = useCallback(
+    (productId: string, step: string, selection: Record<string, number>) => {
+      setProductsByStep(prev => {
+        const list = prev[step];
+        if (!list) return prev;
+        const idx = list.findIndex(p => p.id === productId);
+        if (idx === -1) return prev;
+        const updated = { ...list[idx], plateau_selection: selection };
+        const nextList = [...list];
+        nextList[idx] = updated;
+        return { ...prev, [step]: nextList };
+      });
+      if ((menuQuantitiesRef.current[productId] ?? 0) === 0) {
+        handleQuantityChange(productId, 1);
+      }
+    },
+    [handleQuantityChange]
+  );
 
   const [suggestingStep, setSuggestingStep] = useState<string | null>(null);
 
@@ -647,9 +771,25 @@ export function AssistantExperience() {
         </div>
       </div>
 
-      {/* Product detail modal — rendered above everything else inside the widget */}
+      {/* Product detail modal — rendered above everything else inside the widget.
+          "Composer" plateaux (is_composable) open the dedicated composition
+          flow instead of the plain description — see ComposeProductModal. */}
       <AnimatePresence>
-        {selectedProduct && (
+        {selectedProduct && selectedProduct.is_composable && (
+          <ComposeProductModal
+            productId={selectedProduct.id}
+            onClose={() => setSelectedProduct(null)}
+            initialSelection={selectedProduct.plateau_selection}
+            onValidate={selection =>
+              handleComposeValidate(
+                selectedProduct.id,
+                selectedProduct.menu_step ?? '',
+                selection
+              )
+            }
+          />
+        )}
+        {selectedProduct && !selectedProduct.is_composable && (
           <ProductDetailModal
             productId={selectedProduct.id}
             onClose={() => setSelectedProduct(null)}
