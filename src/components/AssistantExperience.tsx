@@ -394,16 +394,14 @@ export function AssistantExperience() {
             // actually in play — on a normal-height screen there's enough
             // room for both and chat keeps its full 55%.
             flexShrink: 1,
-            // Focused: chat takes 100% (panel's own flexGrow:1/flexBasis:0
-            // below just yields to 0 automatically — no separate change needed
-            // there). Collapsed: chat takes the bulk of the height (a %, in
-            // sync with the panel's complementary flexGrow). Expanded: shrunk
-            // to a fixed px height too small for the message list, so it
-            // visually disappears — ChatInputBar (shrink-0) still forces
-            // itself to its full intrinsic height, keeping the input + mic
-            // reachable. All plain lengths (not 'auto'/a flexGrow toggle), so
-            // the transition interpolates smoothly.
-            flexBasis: chatFocused ? '100%' : mobilePanelExpanded ? '64px' : '62%'
+            // Collapsed: chat takes the bulk of the height (a %, in sync with
+            // the panel's complementary flexGrow). Expanded: shrunk to a fixed
+            // px height too small for the message list, so it visually
+            // disappears — ChatInputBar (shrink-0) still forces itself to its
+            // full intrinsic height, keeping the input + mic reachable. Focus
+            // no longer changes this — chatFocused only hides the expand
+            // trigger now, the panel keeps its normal proportions.
+            flexBasis: mobilePanelExpanded ? '64px' : '62%'
           }}
         >
           {/* Mobile-only "expand" trigger — sits at the chat pane's own top edge
@@ -556,18 +554,17 @@ export function AssistantExperience() {
             // Also drop any panel expansion so the layout returns to normal
             // collapsed proportions once focus/typing is done.
             onFocus={() => {
-              // TEMP: disabled — was `setChatFocused(true)`, which grows the
-              // chat pane to 100% height (hiding the panel entirely) while
-              // the input is focused on mobile. Re-enable by uncommenting
-              // the line below once we want that behavior back.
-              // setChatFocused(true);
+              // chatFocused now only hides the mobile expand trigger (see its
+              // `!chatFocused` check below) — it no longer grows the chat pane
+              // to 100% (flexBasis stays at its normal collapsed/expanded
+              // values regardless of focus; see the flexBasis style below).
+              setChatFocused(true);
               setMobilePanelExpanded(false);
-              // Focusing grows the chat pane to 100% (flexBasis transition
-              // above) and the keyboard slides in — both take a moment to
-              // settle, so scrolling immediately would jump to a bottom that's
-              // about to move. Wait a tick past the animations, then re-run on
-              // the visualViewport's own resize (keyboard finishing its slide)
-              // as a second pass in case the first ran before the keyboard's height change had landed.
+              // The keyboard sliding in still takes a moment to settle, so
+              // scrolling immediately would jump to a bottom that's about to
+              // move. Wait a tick, then re-run on the visualViewport's own
+              // resize (keyboard finishing its slide) as a second pass in
+              // case the first ran before the keyboard's height change had landed.
               setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 320);
               const vv = window.visualViewport;
               if (vv) {
@@ -592,11 +589,9 @@ export function AssistantExperience() {
             // for space in the mobile column layout) — a min-height set on
             // MenuBuilderPanel's own internal root doesn't help, since this
             // wrapper's overflow-hidden would just clip that descendant if
-            // the wrapper itself got flexed smaller. 0 while the chat is
-            // focused (chatFocused takes 100% then; the panel should be
-            // allowed to fully collapse, not forced back to 350px and stealing
-            // space from the focused chat).
-            minHeight: chatFocused ? 0 : 300
+            // the wrapper itself got flexed smaller. Always enforced now —
+            // focus no longer shrinks the panel away.
+            minHeight: 300
           }}
         >
           {eventScreenEnabled ? (

@@ -45,10 +45,26 @@ function EventEditorialTile({
   );
 }
 
+const AUTOPLAY_INTERVAL_MS = 4000;
+
 function HeroCarousel({ onSelect }: Props) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const emblaApiRef = useRef<EmblaCarouselType | null>(null);
+  const autoplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [idx, setIdx] = useState(0);
+
+  // Self-rescheduling timeout instead of a plain setInterval so any manual
+  // interaction (arrows, dots, or dragging the slide itself) can just call
+  // this again to push the next auto-advance back out by a full interval —
+  // otherwise a manual change right before the interval fires would get
+  // immediately overridden by the autoplay, feeling like it fought the user.
+  const scheduleAutoplay = () => {
+    if (autoplayTimerRef.current != null) clearTimeout(autoplayTimerRef.current);
+    autoplayTimerRef.current = setTimeout(() => {
+      emblaApiRef.current?.scrollNext();
+      scheduleAutoplay();
+    }, AUTOPLAY_INTERVAL_MS);
+  };
 
   useEffect(() => {
     if (!viewportRef.current) return;
@@ -60,26 +76,34 @@ function HeroCarousel({ onSelect }: Props) {
     syncSelectedSlide();
     embla.on("select", syncSelectedSlide);
     embla.on("reInit", syncSelectedSlide);
+    // "pointerDown" fires on the user's own drag/swipe of the slide (not on
+    // programmatic scrollNext() calls) — reschedule autoplay from here too,
+    // otherwise dragging the carousel wouldn't pause it the way the arrow/dot
+    // clicks below do.
+    embla.on("pointerDown", scheduleAutoplay);
+
+    scheduleAutoplay();
 
     return () => {
       embla.off("select", syncSelectedSlide);
       embla.off("reInit", syncSelectedSlide);
+      embla.off("pointerDown", scheduleAutoplay);
+      if (autoplayTimerRef.current != null) clearTimeout(autoplayTimerRef.current);
       embla.destroy();
       emblaApiRef.current = null;
     };
   }, []);
 
-  // Auto-advance every 4s — `loop: true` on the embla instance above means
-  // scrollNext() just wraps back to the first slide, no bounds check needed.
-  useEffect(() => {
-    const id = setInterval(() => {
-      emblaApiRef.current?.scrollNext();
-    }, 4000);
-    return () => clearInterval(id);
-  }, []);
-
-  const prev = (e: MouseEvent) => { e.stopPropagation(); emblaApiRef.current?.scrollPrev(); };
-  const next = (e: MouseEvent) => { e.stopPropagation(); emblaApiRef.current?.scrollNext(); };
+  const prev = (e: MouseEvent) => {
+    e.stopPropagation();
+    emblaApiRef.current?.scrollPrev();
+    scheduleAutoplay();
+  };
+  const next = (e: MouseEvent) => {
+    e.stopPropagation();
+    emblaApiRef.current?.scrollNext();
+    scheduleAutoplay();
+  };
 
   return (
     // Mobile: the slider fills the whole panel (event tiles hidden below, see
@@ -147,7 +171,7 @@ function HeroCarousel({ onSelect }: Props) {
           <button
             key={i}
             class={`w-[7px] h-[7px] rounded-full border-0 p-0 cursor-pointer transition-all duration-200 ${i === idx ? "bg-white scale-[1.3]" : "bg-[rgba(255,255,255,.5)]"}`}
-            onClick={(e) => { (e as MouseEvent).stopPropagation(); emblaApiRef.current?.scrollTo(i); }}
+            onClick={(e) => { (e as MouseEvent).stopPropagation(); emblaApiRef.current?.scrollTo(i); scheduleAutoplay(); }}
           />
         ))}
       </div>
