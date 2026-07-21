@@ -1,5 +1,5 @@
 import { h, Fragment } from 'preact';
-import { useRef, useMemo, useState, useEffect } from 'preact/hooks';
+import { useRef, useMemo, useState } from 'preact/hooks';
 import { AnimatePresence } from 'framer-motion';
 import { EventRequirements, Product } from '../../types';
 import { getStepIcon } from './icons';
@@ -103,54 +103,88 @@ function menuEventLabel(eventType: string): string {
 
 /** Dashed, grayed-out card offering a couple more event-coherent product ideas
  * for this step — sits last in the grid so it never displaces real products.
- * Matching a real MenuProductCard's height by replicating its markup (aspect
- * ratios, placeholder text blocks…) kept drifting out of sync across the 3
- * different grid shapes (mobile expanded, mobile horizontal-scroll, desktop) —
- * any small difference in the real card's actual DOM produces a mismatch here.
- * `matchHeightPx`, when given, is the REAL measured height of an actual
- * sibling card in this same grid (see MenuBuilderPanel's ResizeObserver-driven
- * measurement) — applying it directly as inline height is the only way to
- * guarantee pixel parity regardless of context. Falls back to a reasonable
- * fixed height only for the brief instant before that measurement lands, or
- * when there's no sibling to measure (empty-step case). */
+ *
+ * Self-sized to match MenuProductCard's own height with NO measurement, JS,
+ * or "sibling in the same row" dependency (which is what kept drifting out of
+ * sync — a card alone on its own last grid row has no taller sibling for
+ * flex/grid stretch to size against). MenuProductCard's own height is really
+ * just: an aspect-square image (height = column width, since the image is
+ * `w-full aspect-square`) + a content block whose height is fixed by its
+ * text/line-clamp/padding, not by width. So mirroring THAT exact shape here —
+ * same aspect-square area, same content block dimensions via invisible
+ * placeholders — lands on the same total height at any grid width, in any
+ * grid (mobile expanded, desktop), automatically, no JS required. */
 function SuggestMoreCard({
   step,
   loading,
   onClick,
-  matchHeightPx
+  horizontal = false
 }: {
   step: string;
   loading: boolean;
   onClick: (step: string) => void;
-  matchHeightPx?: number;
+  horizontal?: boolean;
 }) {
+  const label = loading ? (
+    <svg
+      class="animate-spin w-5 h-5 text-[#C8B288]"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-label="Chargement"
+    >
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+      <path
+        class="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"
+      />
+    </svg>
+  ) : (
+    <span class="inline-block p-2 max-w-[85%] rounded-full bg-[#C8B288] text-white text-[10px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
+      Plus d'options
+    </span>
+  );
+
+  // Mobile horizontal-scroll row: the wrapping card there already has an
+  // explicit h-full (capped at max-h-[200px], same as real horizontal
+  // MenuProductCards in that row) — just fill it, no aspect-ratio needed.
+  if (horizontal) {
+    return (
+      <button
+        type="button"
+        onClick={() => onClick(step)}
+        disabled={loading}
+        class="flex items-center justify-center w-full h-full border-[2px] border-dashed border-[#C8B288] bg-white/80 cursor-pointer disabled:cursor-wait"
+      >
+        {label}
+      </button>
+    );
+  }
+
   return (
+    // Border + background on the OUTER button — spanning image AND placeholder
+    // — so the dashed box reads as one continuous card the full height of a
+    // real MenuProductCard, not just a small square with a blank gap below it.
+    // `aspect-square` (not h-full) is what actually makes this self-sizing:
+    // with the grid's `items-start` (no row-stretch), there's no ancestor with
+    // a definite height for h-full to resolve against — aspect-ratio derives
+    // height from the column's own width instead, which always exists.
     <button
       type="button"
-      class={`flex items-center justify-center w-full border-[2px] border-dashed border-[#C8B288] bg-white/80 cursor-pointer disabled:cursor-wait ${matchHeightPx ? '' : 'h-full'}`}
-      style={matchHeightPx ? { height: `${matchHeightPx}px` } : undefined}
       onClick={() => onClick(step)}
       disabled={loading}
+      class="relative flex flex-col w-full border-[2px] border-dashed border-[#C8B288] bg-white/80 cursor-pointer disabled:cursor-wait pb-1"
     >
-      {loading ? (
-        <svg
-          class="animate-spin w-5 h-5 text-[#C8B288]"
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-label="Chargement"
-        >
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"
-          />
-        </svg>
-      ) : (
-        <span class="inline-block p-2 max-w-[85%] rounded-full bg-[#C8B288] text-white text-[10px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
-          Plus d'options
-        </span>
-      )}
+      {/* aspect-square + placeholder below are layout-only (sizing), kept
+          invisible/empty — the label is a separate absolutely-positioned
+          overlay centered on the WHOLE card (image + placeholder), not just
+          the top square, via inset-0 on this wrapper. */}
+      <div class="w-full aspect-square" aria-hidden="true" />
+      <div class="px-2.5 pt-2 pb-3 flex flex-col gap-0.5 invisible" aria-hidden="true">
+        <span class="text-[18px] leading-none">0,00 €</span>
+        <div class="text-[11px] leading-snug line-clamp-2 min-h-[2.75em]">&nbsp;</div>
+      </div>
+      <div class="absolute inset-0 flex items-center justify-center">{label}</div>
     </button>
   );
 }
@@ -192,38 +226,6 @@ export function MenuBuilderPanel({
     setMobileStepIndex(clamped);
     productsScrollRef.current?.scrollTo({ top: 0 });
   };
-
-  // Real measured height of one sibling product card per (step, grid variant) —
-  // keyed e.g. "Desserts:desktop" — used to size SuggestMoreCard so it matches
-  // exactly, including when it wraps alone onto its own row (no taller sibling
-  // left in THAT row for flex's default stretch to match against). Markers are
-  // set via `data-measure-key` on the first real product card in each grid
-  // (below); re-measured on mount, on any product/expand-state change, and on
-  // window resize (aspect-square image columns resize with viewport width).
-  const [cardHeights, setCardHeights] = useState<Record<string, number>>({});
-  useEffect(() => {
-    const measure = () => {
-      const root = productsScrollRef.current;
-      if (!root) return;
-      const nodes = root.querySelectorAll<HTMLElement>('[data-measure-key]');
-      setCardHeights(prev => {
-        let changed = false;
-        const next = { ...prev };
-        nodes.forEach(node => {
-          const key = node.dataset.measureKey;
-          const h = node.getBoundingClientRect().height;
-          if (key && h && Math.abs((next[key] ?? 0) - h) > 1) {
-            next[key] = h;
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
-      });
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [productsByStep, mobileExpanded, steps]);
 
   // Mobile-only: let a horizontal scroll/swipe on the sticky step bar itself
   // change the step too, not just its arrow buttons — the bar has no content
@@ -476,32 +478,32 @@ export function MenuBuilderPanel({
                         </p>
                       )
                     ) : mobileExpanded ? (
-                      // Expanded mobile: same grid as desktop (flex-wrap + justify-center,
-                      // not a rigid 3/4-col grid, so a partial row centers as a group
-                      // instead of starting flush left with dead trailing columns).
-                      <div class="flex flex-wrap justify-center gap-3">
-                        {products.map((p, i) => (
-                          <div
+                      // Expanded mobile: same grid as desktop — a real CSS grid
+                      // (equal-width columns) instead of flex-wrap. A card alone
+                      // on the last row now sizes purely from its own aspect-ratio
+                      // (see SuggestMoreCard), so it matches without needing a
+                      // taller row-sibling to stretch against.
+                      // items-start: grid's default align-items:stretch forces every
+                      // card in a ROW to match its tallest sibling — which items
+                      // share a row (and how tall it gets) depends on the column
+                      // count, so it stretched differently at 2 cols vs 4 cols.
+                      // Disabling stretch lets each card size purely from its own
+                      // aspect-ratio/content, matching everywhere.
+                      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-start">
+                        {products.map(p => (
+                          <MenuProductCard
                             key={p.id}
-                            data-measure-key={i === 0 ? `${step}:mobileExpanded` : undefined}
-                            class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]"
-                          >
-                            <MenuProductCard
-                              product={p}
-                              quantity={quantities[p.id] ?? 0}
-                              onQuantityChange={delta => onQuantityChange(p.id, delta)}
-                            />
-                          </div>
+                            product={p}
+                            quantity={quantities[p.id] ?? 0}
+                            onQuantityChange={delta => onQuantityChange(p.id, delta)}
+                          />
                         ))}
                         {onSuggestMore && (
-                          <div class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]">
-                            <SuggestMoreCard
-                              step={step}
-                              loading={suggestingStep === step}
-                              onClick={onSuggestMore}
-                              matchHeightPx={cardHeights[`${step}:mobileExpanded`]}
-                            />
-                          </div>
+                          <SuggestMoreCard
+                            step={step}
+                            loading={suggestingStep === step}
+                            onClick={onSuggestMore}
+                          />
                         )}
                       </div>
                     ) : (
@@ -544,33 +546,26 @@ export function MenuBuilderPanel({
                                 step={step}
                                 loading={suggestingStep === step}
                                 onClick={onSuggestMore}
+                                horizontal
                               />
                             </div>
                           )}
                         </div>
-                        <div class="hidden md:flex flex-wrap justify-center gap-3">
-                          {products.map((p, i) => (
-                            <div
+                        <div class="hidden md:grid md:grid-cols-4 gap-3 items-start">
+                          {products.map(p => (
+                            <MenuProductCard
                               key={p.id}
-                              data-measure-key={i === 0 ? `${step}:desktop` : undefined}
-                              class="md:flex-[0_0_calc(25%-9px)]"
-                            >
-                              <MenuProductCard
-                                product={p}
-                                quantity={quantities[p.id] ?? 0}
-                                onQuantityChange={delta => onQuantityChange(p.id, delta)}
-                              />
-                            </div>
+                              product={p}
+                              quantity={quantities[p.id] ?? 0}
+                              onQuantityChange={delta => onQuantityChange(p.id, delta)}
+                            />
                           ))}
                           {onSuggestMore && (
-                            <div class="md:flex-[0_0_calc(25%-9px)]">
-                              <SuggestMoreCard
-                                step={step}
-                                loading={suggestingStep === step}
-                                onClick={onSuggestMore}
-                                matchHeightPx={cardHeights[`${step}:desktop`]}
-                              />
-                            </div>
+                            <SuggestMoreCard
+                              step={step}
+                              loading={suggestingStep === step}
+                              onClick={onSuggestMore}
+                            />
                           )}
                         </div>
                       </Fragment>
