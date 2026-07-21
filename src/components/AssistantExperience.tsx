@@ -17,7 +17,18 @@ import { ProductDetailModal } from './panel/ProductDetailModal';
 import downIcon from '../assets/icons/down.svg?raw';
 
 export function AssistantExperience() {
-  const { messages, addMessage, isLoading, setIsLoading, jwt, setJwt, sessionId, selectedProduct, setSelectedProduct, store } = useShopperStore();
+  const {
+    messages,
+    addMessage,
+    isLoading,
+    setIsLoading,
+    jwt,
+    setJwt,
+    sessionId,
+    selectedProduct,
+    setSelectedProduct,
+    store
+  } = useShopperStore();
   const shouldReduceMotion = useReducedMotion();
   const [input, setInput] = useState('');
   const [question, setQuestion] = useState<string | null>(null);
@@ -73,15 +84,19 @@ export function AssistantExperience() {
     // in the store + notify the host page so its header updates (sandbox navbar / Carrefour).
     if (panel.store && panel.store.store_id) {
       const cur = useShopperStore.getState().store;
-      if (!cur || String(cur.store_id) !== String(panel.store.store_id) || cur.mode !== panel.store.mode) {
+      if (
+        !cur ||
+        String(cur.store_id) !== String(panel.store.store_id) ||
+        cur.mode !== panel.store.mode
+      ) {
         useShopperStore.getState().setStore(panel.store);
         window.dispatchEvent(
-          new CustomEvent("shoppergpt:change_shop", {
+          new CustomEvent('shoppergpt:change_shop', {
             detail: {
               store_id: panel.store.store_id,
               store_name: panel.store.store_name,
-              mode: panel.store.mode,
-            },
+              mode: panel.store.mode
+            }
           })
         );
       }
@@ -89,23 +104,26 @@ export function AssistantExperience() {
   }, []);
 
   /** Authoritative panel sync from MongoDB (GET /menu + ETag). */
-  const syncPanelFromServer = useCallback(async (force = false) => {
-    const token = sessionIdRef.current;
-    if (!token) return;
-    setPanelSyncing(true);
-    try {
-      const { data, etag, notModified } = await fetchServerMenu(token, {
-        ifNoneMatch: force ? null : menuEtagRef.current,
-      });
-      if (etag) menuEtagRef.current = etag;
-      if (notModified || !data) return;
-      applyPanelState(menuResponseToPanelState(data));
-    } catch (err) {
-      console.warn('[shopper-gpt] GET /menu failed:', err);
-    } finally {
-      setPanelSyncing(false);
-    }
-  }, [applyPanelState]);
+  const syncPanelFromServer = useCallback(
+    async (force = false) => {
+      const token = sessionIdRef.current;
+      if (!token) return;
+      setPanelSyncing(true);
+      try {
+        const { data, etag, notModified } = await fetchServerMenu(token, {
+          ifNoneMatch: force ? null : menuEtagRef.current
+        });
+        if (etag) menuEtagRef.current = etag;
+        if (notModified || !data) return;
+        applyPanelState(menuResponseToPanelState(data));
+      } catch (err) {
+        console.warn('[shopper-gpt] GET /menu failed:', err);
+      } finally {
+        setPanelSyncing(false);
+      }
+    },
+    [applyPanelState]
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -132,7 +150,7 @@ export function AssistantExperience() {
       guests_kids: 0,
       budget: 200,
       visual_theme: 'bbq',
-      menu_steps: ['Apéritifs', 'Plats', 'Fromages', 'Desserts', 'Boissons', 'Pains'],
+      menu_steps: ['Apéritifs', 'Plats', 'Fromages', 'Desserts', 'Boissons', 'Pains']
     });
     setEventScreenEnabled(true);
 
@@ -143,21 +161,21 @@ export function AssistantExperience() {
         price,
         persons: 4,
         image: '',
-        menu_step: step,
+        menu_step: step
       });
       setProductsByStep({
-        'Apéritifs': [
+        Apéritifs: [
           mk('mock-1', '6 Verrines tartare de tomates et thon', 7.95, 'Apéritifs'),
-          mk('mock-2', '4 verrines noix de Saint-Jacques et tartare basilic', 4.99, 'Apéritifs'),
+          mk('mock-2', '4 verrines noix de Saint-Jacques et tartare basilic', 4.99, 'Apéritifs')
         ],
-        'Plats': [
+        Plats: [
           mk('mock-3', 'Filet de Bœuf Wellington en croûte', 32.9, 'Plats'),
-          mk('mock-4', 'Gratin dauphinois', 3.0, 'Plats'),
+          mk('mock-4', 'Gratin dauphinois', 3.0, 'Plats')
         ],
-        'Fromages': [mk('mock-5', 'Plateau de 4 fromages', 10.9, 'Fromages')],
-        'Desserts': [mk('mock-6', 'Tarte aux fraises', 9.99, 'Desserts')],
-        'Boissons': [mk('mock-7', 'Macarons framboises', 12.5, 'Boissons')],
-        'Pains': [mk('mock-8', 'Macarons', 19.0, 'Pains')],
+        Fromages: [mk('mock-5', 'Plateau de 4 fromages', 10.9, 'Fromages')],
+        Desserts: [mk('mock-6', 'Tarte aux fraises', 9.99, 'Desserts')],
+        Boissons: [mk('mock-7', 'Macarons framboises', 12.5, 'Boissons')],
+        Pains: [mk('mock-8', 'Macarons', 19.0, 'Pains')]
       });
       setMenuQuantities({
         'mock-1': 6,
@@ -168,6 +186,24 @@ export function AssistantExperience() {
         'mock-6': 2,
         'mock-7': 0,
         'mock-8': 0
+      });
+
+      // Canned conversation history behind the mock menu — otherwise the
+      // chat pane sits empty next to a fully-populated panel, which doesn't
+      // match what a real in-progress session actually looks like.
+      addMessage({
+        id: 'mock-msg-1',
+        role: 'user',
+        content: 'Livraison',
+        timestamp: new Date(0)
+      });
+      addMessage({
+        id: 'mock-msg-2',
+        role: 'assistant',
+        content:
+          "C'est entendu ! Voici une proposition de menu raffiné pour votre dîner : je vous suggère un Filet de Bœuf Wellington en croûte accompagné d'un gratin dauphinois fondant, le tout sublimé par une sélection de vins et un champagne Moët & Chandon pour débuter la soirée en beauté.\n\n" +
+          'Le budget total de cette sélection est cohérent avec votre enveloppe. Que pensez-vous de cet ensemble ?',
+        timestamp: new Date(0)
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -183,9 +219,9 @@ export function AssistantExperience() {
           sku: p.id,
           menu_step: step,
           qty,
-          recommended_quantity: qty,
+          recommended_quantity: qty
         };
-      }),
+      })
     );
     const base: Record<string, unknown> = { menu_revision: menuRevisionRef.current };
     if (pendingStepSelectionRef.current) {
@@ -197,107 +233,118 @@ export function AssistantExperience() {
     return products.length > 0 ? { ...base, products } : base;
   };
 
-  useChatAnswer(question, jwt, {
-    onJwt: newJwt => {
-      setJwt(newJwt);
-      jwtRef.current = newJwt;
+  useChatAnswer(
+    question,
+    jwt,
+    {
+      onJwt: newJwt => {
+        setJwt(newJwt);
+        jwtRef.current = newJwt;
+      },
+      onPhase: phase => setComposePhase(phase),
+      onToken: token => setStreamingText(prev => prev + token),
+      onMeta: meta => {
+        const needsSync =
+          Boolean(meta.sync_conflict) ||
+          meta.menu_changed === true ||
+          meta.store_changed === true ||
+          (typeof meta.menu_revision === 'number' && meta.menu_revision > menuRevisionRef.current);
+        if (needsSync) {
+          panelSyncedThisTurnRef.current = true;
+          void syncPanelFromServer(true);
+        }
+        if (meta.step_suggestion?.steps?.length) {
+          stepSuggestionRef.current = meta.step_suggestion.steps;
+        }
+        if (meta.store_options?.stores?.length) {
+          storeOptionsRef.current = meta.store_options.stores;
+        }
+        if (meta.mode_options?.name) {
+          modeOptionsRef.current = meta.mode_options;
+        }
+        // select_store ran this turn and did NOT come back needing a mode → the
+        // selection was actually finalized this turn (as opposed to store_changed
+        // alone, which also fires for a needs_mode round-trip).
+        if (meta.store_changed && !meta.mode_options) {
+          storeResolvedRef.current = true;
+        }
+      },
+      onComplete: fullText => {
+        addMessage({
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: fullText,
+          timestamp: new Date(),
+          stepSuggestion: stepSuggestionRef.current,
+          storeOptions: storeOptionsRef.current,
+          modeOptions: modeOptionsRef.current,
+          storeResolved: storeResolvedRef.current || undefined
+        });
+        stepSuggestionRef.current = undefined;
+        storeOptionsRef.current = undefined;
+        modeOptionsRef.current = undefined;
+        storeResolvedRef.current = false;
+        setStreamingText('');
+        setComposePhase(null);
+        setIsLoading(false);
+        setQuestion(null);
+        if (!panelSyncedThisTurnRef.current) {
+          void syncPanelFromServer();
+        }
+        panelSyncedThisTurnRef.current = false;
+      },
+      onError: msg => {
+        addMessage({
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `❌ Une erreur est survenue : ${msg}`,
+          timestamp: new Date()
+        });
+        stepSuggestionRef.current = undefined;
+        storeOptionsRef.current = undefined;
+        modeOptionsRef.current = undefined;
+        storeResolvedRef.current = false;
+        setStreamingText('');
+        setComposePhase(null);
+        setIsLoading(false);
+        setQuestion(null);
+      }
     },
-    onPhase: phase => setComposePhase(phase),
-    onToken: token => setStreamingText(prev => prev + token),
-    onMeta: meta => {
-      const needsSync =
-        Boolean(meta.sync_conflict) ||
-        meta.menu_changed === true ||
-        meta.store_changed === true ||
-        (typeof meta.menu_revision === 'number' && meta.menu_revision > menuRevisionRef.current);
-      if (needsSync) {
-        panelSyncedThisTurnRef.current = true;
-        void syncPanelFromServer(true);
-      }
-      if (meta.step_suggestion?.steps?.length) {
-        stepSuggestionRef.current = meta.step_suggestion.steps;
-      }
-      if (meta.store_options?.stores?.length) {
-        storeOptionsRef.current = meta.store_options.stores;
-      }
-      if (meta.mode_options?.name) {
-        modeOptionsRef.current = meta.mode_options;
-      }
-      // select_store ran this turn and did NOT come back needing a mode → the
-      // selection was actually finalized this turn (as opposed to store_changed
-      // alone, which also fires for a needs_mode round-trip).
-      if (meta.store_changed && !meta.mode_options) {
-        storeResolvedRef.current = true;
-      }
-    },
-    onComplete: fullText => {
-      addMessage({
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: fullText,
-        timestamp: new Date(),
-        stepSuggestion: stepSuggestionRef.current,
-        storeOptions: storeOptionsRef.current,
-        modeOptions: modeOptionsRef.current,
-        storeResolved: storeResolvedRef.current || undefined
-      });
-      stepSuggestionRef.current = undefined;
-      storeOptionsRef.current = undefined;
-      modeOptionsRef.current = undefined;
-      storeResolvedRef.current = false;
+    getClientState
+  );
+
+  const send = useCallback(
+    (text?: string) => {
+      const t = (text ?? input).trim();
+      if (!t || isLoading) return;
+      addMessage({ id: Date.now().toString(), role: 'user', content: t, timestamp: new Date() });
+      setInput('');
       setStreamingText('');
       setComposePhase(null);
-      setIsLoading(false);
-      setQuestion(null);
-      if (!panelSyncedThisTurnRef.current) {
-        void syncPanelFromServer();
-      }
+      setIsLoading(true);
       panelSyncedThisTurnRef.current = false;
-    },
-    onError: msg => {
-      addMessage({
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: `❌ Une erreur est survenue : ${msg}`,
-        timestamp: new Date()
-      });
       stepSuggestionRef.current = undefined;
       storeOptionsRef.current = undefined;
       modeOptionsRef.current = undefined;
       storeResolvedRef.current = false;
-      setStreamingText('');
-      setComposePhase(null);
-      setIsLoading(false);
-      setQuestion(null);
-    }
-  }, getClientState);
+      // Mobile: sending a message means the user wants to keep chatting — retract
+      // the expanded panel so the chat (and their own message) is visible again,
+      // instead of leaving them staring at the still-expanded product view.
+      setMobilePanelExpanded(false);
+      setQuestion(t);
+    },
+    [input, isLoading, addMessage, setIsLoading]
+  );
 
-  const send = useCallback((text?: string) => {
-    const t = (text ?? input).trim();
-    if (!t || isLoading) return;
-    addMessage({ id: Date.now().toString(), role: 'user', content: t, timestamp: new Date() });
-    setInput('');
-    setStreamingText('');
-    setComposePhase(null);
-    setIsLoading(true);
-    panelSyncedThisTurnRef.current = false;
-    stepSuggestionRef.current = undefined;
-    storeOptionsRef.current = undefined;
-    modeOptionsRef.current = undefined;
-    storeResolvedRef.current = false;
-    // Mobile: sending a message means the user wants to keep chatting — retract
-    // the expanded panel so the chat (and their own message) is visible again,
-    // instead of leaving them staring at the still-expanded product view.
-    setMobilePanelExpanded(false);
-    setQuestion(t);
-  }, [input, isLoading, addMessage, setIsLoading]);
-
-  const handleKey = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
-  }, [send]);
+  const handleKey = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    },
+    [send]
+  );
 
   const handleQuantityChange = useCallback((productId: string, delta: number) => {
     setMenuQuantities(prev => {
@@ -311,17 +358,17 @@ export function AssistantExperience() {
   const isWaiting = isLoading && streamingText.length === 0;
 
   const noStoreGreeting =
-    "Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n" +
-    "Pour commencer... quel est votre code postal ? Chaque magasin Carrefour propose sa propre " +
-    "sélection traiteur — je trouverai le plus proche de chez vous pour vous composer un menu sur mesure.";
+    'Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n' +
+    'Pour commencer... quel est votre code postal ? Chaque magasin Carrefour propose sa propre ' +
+    'sélection traiteur — je trouverai le plus proche de chez vous pour vous composer un menu sur mesure.';
   const storeGreeting =
-    "Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n" +
+    'Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n' +
     "Pour commencer... quel est l'heureux événement que vous souhaitez célébrer ?";
   const initialGreeting: import('../types').Message = {
     id: 'w1',
     role: 'assistant',
     content: store ? storeGreeting : noStoreGreeting,
-    timestamp: new Date(0),
+    timestamp: new Date(0)
   };
 
   return (
@@ -357,7 +404,7 @@ export function AssistantExperience() {
             // itself to its full intrinsic height, keeping the input + mic
             // reachable. All plain lengths (not 'auto'/a flexGrow toggle), so
             // the transition interpolates smoothly.
-            flexBasis: chatFocused ? '100%' : mobilePanelExpanded ? '64px' : '55%',
+            flexBasis: chatFocused ? '100%' : mobilePanelExpanded ? '64px' : '55%'
           }}
         >
           {/* Mobile-only "expand" trigger — sits at the chat pane's own top edge
@@ -371,20 +418,23 @@ export function AssistantExperience() {
               Hidden on desktop and once the panel is already expanded (the panel
               itself takes over showing the retract handle then). */}
           {eventScreenEnabled && !mobilePanelExpanded && (
-            <button
-              type="button"
-              // -translate-x-1/2: left-1/2 alone only puts this button's OWN left
-              // edge at the pane's horizontal center, not the button itself — it
-              // was sitting shifted right by half its own width. The seam shadow
-              // itself now lives on the whole pane container (see its class
-              // above) instead of a per-icon drop-shadow, so it reads as one
-              // continuous line rather than a shadow local to just this handle.
-              class="hidden max-md:flex absolute top-0 left-1/2 -translate-x-1/2 z-10 cursor-pointer"
-              onClick={() => setMobilePanelExpanded(true)}
-              aria-label="Agrandir le menu"
-              aria-expanded={false}
-              dangerouslySetInnerHTML={{ __html: downIcon }}
-            />
+            // Add transparent gradient to make text disapear smoothly
+            <div class="bg-gradient-to-b from-white to-transparent w-full h-8 absolute">
+              <button
+                type="button"
+                // -translate-x-1/2: left-1/2 alone only puts this button's OWN left
+                // edge at the pane's horizontal center, not the button itself — it
+                // was sitting shifted right by half its own width. The seam shadow
+                // itself now lives on the whole pane container (see its class
+                // above) instead of a per-icon drop-shadow, so it reads as one
+                // continuous line rather than a shadow local to just this handle.
+                class="hidden max-md:flex absolute top-0 left-1/2 -translate-x-1/2 z-10 cursor-pointer"
+                onClick={() => setMobilePanelExpanded(true)}
+                aria-label="Agrandir le menu"
+                aria-expanded={false}
+                dangerouslySetInnerHTML={{ __html: downIcon }}
+              />
+            </div>
           )}
 
           <div
@@ -401,7 +451,7 @@ export function AssistantExperience() {
               // margin on top of that pushed the whole pane taller than intended,
               // leaving a sliver of chat visible instead of it being fully hidden
               // behind the panel, and shoving the input bar down with it.
-              eventScreenEnabled && !mobilePanelExpanded ? 'mt-8 md:mt-0' : ''
+              eventScreenEnabled && !mobilePanelExpanded ? 'md:mt-0 pt-2' : ''
             }`}
           >
             {/* Standalone header greeting — separate from the initialGreeting
@@ -414,7 +464,9 @@ export function AssistantExperience() {
                 <motion.div
                   class="shrink-0 overflow-hidden px-5 md:px-8"
                   initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.998 }}
-                  animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1, height: 'auto' }}
+                  animate={
+                    shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1, height: 'auto' }
+                  }
                   exit={shouldReduceMotion ? undefined : { opacity: 0, height: 0 }}
                   transition={
                     shouldReduceMotion
@@ -424,8 +476,10 @@ export function AssistantExperience() {
                 >
                   <p class="m-0 pt-3 pb-5 md:py-10 font-normal text-[#C7B287] text-base md:text-2xl leading-[1.45]">
                     Bonjour et bienvenue, je suis{' '}
-                    <span class="font-['Satisfy'] font-normal text-[#C7B287] text-[24px] md:text-3xl mr-[1px]">Cathia</span> votre agent
-                    intelligent traiteur. Que puis-je faire pour vous&nbsp;?
+                    <span class="font-['Satisfy'] font-normal text-[#C7B287] text-[24px] md:text-3xl mr-[1px]">
+                      Cathia
+                    </span>{' '}
+                    votre agent intelligent traiteur. Que puis-je faire pour vous&nbsp;?
                   </p>
                 </motion.div>
               )}
@@ -465,7 +519,9 @@ export function AssistantExperience() {
                   onStepSelectionChange={steps => {
                     pendingStepSelectionRef.current = steps;
                   }}
-                  onValidateSteps={() => send('Ces étapes me conviennent, vous pouvez composer le menu.')}
+                  onValidateSteps={() =>
+                    send('Ces étapes me conviennent, vous pouvez composer le menu.')
+                  }
                   choiceCardsDisabled={
                     // Same principle as stepSelectionDisabled above: only freeze once
                     // the flow has actually moved past THIS card (a newer store/mode
@@ -473,14 +529,18 @@ export function AssistantExperience() {
                     // NOT based on the globally currently-selected store, since that stays
                     // true forever after the FIRST resolution and would freeze every later
                     // re-generated card (e.g. after "je veux en choisir un autre") too.
-                    messages.slice(i + 1).some(msg => msg.storeOptions || msg.modeOptions || msg.storeResolved)
+                    messages
+                      .slice(i + 1)
+                      .some(msg => msg.storeOptions || msg.modeOptions || msg.storeResolved)
                   }
                   onSelectStore={storeName => send(storeName)}
                   onSelectMode={modeLabel => send(modeLabel)}
                 />
               ))}
               {isWaiting && (composePhase ? <ComposingIndicator /> : <TypingIndicator />)}
-              {isStreaming && <StreamingBubble text={streamingText.replace(/__NEWLINE__/g, '\n')} />}
+              {isStreaming && (
+                <StreamingBubble text={streamingText.replace(/__NEWLINE__/g, '\n')} />
+              )}
             </div>
 
             <div ref={bottomRef} />
@@ -533,7 +593,7 @@ export function AssistantExperience() {
             // focused (chatFocused takes 100% then; the panel should be
             // allowed to fully collapse, not forced back to 350px and stealing
             // space from the focused chat).
-            minHeight: chatFocused ? 0 : 300,
+            minHeight: chatFocused ? 0 : 300
           }}
         >
           {eventScreenEnabled ? (
