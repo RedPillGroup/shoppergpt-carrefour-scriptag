@@ -86,7 +86,12 @@ function HeroCarousel({ onSelect }: Props) {
     // EditorialGrid) — title sits top-left directly on the photo, arrows sit low
     // and inset, no dark gradient/dots. Desktop keeps the original bottom-anchored
     // title + centered arrows + gradient + dots, unchanged.
-    <div class="relative flex-1 md:basis-[30%] overflow-hidden">
+    // inset (not a regular bottom box-shadow) — this panel sits inside a
+    // same-size overflow-hidden wrapper in AssistantExperience, which clips
+    // any shadow that needs to bleed OUTSIDE this box before it ever renders.
+    // inset paints INSIDE this box's own bottom edge instead, so it survives
+    // that clipping.
+    <div class="relative flex-1 md:basis-[30%] overflow-hidden shadow-[inset_0_-6px_8px_-6px_rgba(0,0,0,0.12)]">
       <div class="h-full overflow-hidden" ref={viewportRef}>
         <div class="flex h-full">
           {HERO_SLIDES.map((slide, i) => (

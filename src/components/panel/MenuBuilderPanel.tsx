@@ -191,8 +191,13 @@ export function MenuBuilderPanel({
   const dateLabel = requirements.event_date ? `le ${requirements.event_date}` : null;
 
   return (
+    // inset (not a regular bottom box-shadow) — this panel sits inside a
+    // same-size overflow-hidden wrapper in AssistantExperience, which clips
+    // any shadow that needs to bleed OUTSIDE this box before it ever renders.
+    // inset paints INSIDE this box's own bottom edge instead, so it survives
+    // that clipping.
     <div
-      class={`flex-1 min-h-0 flex flex-col overflow-hidden relative transition-opacity duration-200 ${
+      class={`flex-1 min-h-0 flex flex-col overflow-hidden relative shadow-[inset_0_-6px_8px_-6px_rgba(0,0,0,0.12)] transition-opacity duration-200 ${
         syncing ? 'opacity-60 pointer-events-none' : ''
       }`}
     >
