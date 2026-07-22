@@ -140,8 +140,8 @@ function SuggestMoreCard({
       />
     </svg>
   ) : (
-    <span class="inline-block p-2 max-w-[85%] rounded-full bg-[#C8B288] text-white text-[10px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
-      Plus d'options
+    <span class="inline-block p-2 max-w-[85%] rounded-full bg-[#C8B288] text-white text-[8px] lg:text-[10px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
+      Nouvelle proposition de  produits
     </span>
   );
 
@@ -173,7 +173,7 @@ function SuggestMoreCard({
       type="button"
       onClick={() => onClick(step)}
       disabled={loading}
-      class="relative flex flex-col w-full border-[2px] border-dashed border-[#C8B288] bg-white/80 cursor-pointer disabled:cursor-wait pb-1"
+      class="relative flex flex-col w-full border-[2px] border-dashed border-[#C8B288] bg-white/80 cursor-pointer disabled:cursor-wait h-full"
     >
       {/* aspect-square + placeholder below are layout-only (sizing), kept
           invisible/empty — the label is a separate absolutely-positioned

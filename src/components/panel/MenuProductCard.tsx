@@ -148,7 +148,7 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
 
   return (
     <div
-      class="relative flex flex-col cursor-pointer"
+      class="relative flex flex-col cursor-pointer h-full"
       onClick={() => setSelectedProduct(product)}
     >
       {/* bg-white here stays at FULL opacity always — it's what stops the
