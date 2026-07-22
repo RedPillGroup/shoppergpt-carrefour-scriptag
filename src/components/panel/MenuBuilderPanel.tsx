@@ -140,8 +140,8 @@ function SuggestMoreCard({
       />
     </svg>
   ) : (
-    <span class="inline-block p-2 max-w-[85%] rounded-full bg-[#C8B288] text-white text-[8px] lg:text-[10px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
-      Nouvelle proposition de  produits
+    <span class="border-[1px] border-white inline-block p-2 max-w-[85%] rounded-full bg-[#C8B288] text-white text-[8px] lg:text-[10px] font-semibold uppercase tracking-wide text-center leading-tight whitespace-pre-line">
+      Nouvelle proposition de produits
     </span>
   );
 
@@ -154,7 +154,7 @@ function SuggestMoreCard({
         type="button"
         onClick={() => onClick(step)}
         disabled={loading}
-        class="flex items-center justify-center w-full h-full border-[2px] border-dashed border-[#C8B288] bg-white/80 cursor-pointer disabled:cursor-wait"
+        class="flex items-center justify-center w-full h-full border-[2px] border-dashed border-[#C8B288] bg-white/40 cursor-pointer disabled:cursor-wait"
       >
         {label}
       </button>
@@ -173,7 +173,7 @@ function SuggestMoreCard({
       type="button"
       onClick={() => onClick(step)}
       disabled={loading}
-      class="relative flex flex-col w-full border-[2px] border-dashed border-[#C8B288] bg-white/80 cursor-pointer disabled:cursor-wait h-full"
+      class="relative flex flex-col w-full border-[2px] border-dashed border-[#C8B288] bg-white/40 cursor-pointer disabled:cursor-wait h-full"
     >
       {/* aspect-square + placeholder below are layout-only (sizing), kept
           invisible/empty — the label is a separate absolutely-positioned
@@ -478,32 +478,33 @@ export function MenuBuilderPanel({
                         </p>
                       )
                     ) : mobileExpanded ? (
-                      // Expanded mobile: same grid as desktop — a real CSS grid
-                      // (equal-width columns) instead of flex-wrap. A card alone
-                      // on the last row now sizes purely from its own aspect-ratio
-                      // (see SuggestMoreCard), so it matches without needing a
-                      // taller row-sibling to stretch against.
-                      // items-start: grid's default align-items:stretch forces every
-                      // card in a ROW to match its tallest sibling — which items
-                      // share a row (and how tall it gets) depends on the column
-                      // count, so it stretched differently at 2 cols vs 4 cols.
-                      // Disabling stretch lets each card size purely from its own
-                      // aspect-ratio/content, matching everywhere.
-                      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-start">
+                      // Expanded mobile: same grid as desktop. flex-wrap (not CSS
+                      // grid) — grid places a partial last row's items left-aligned
+                      // in the track (leftover columns just sit empty on the
+                      // right), it never centers the group; flex-wrap's
+                      // justify-center does. Each card now derives its own height
+                      // purely from its own aspect-ratio (not from row-stretch —
+                      // see SuggestMoreCard), so equal-width flex-basis items in
+                      // the same row already land at the same natural height
+                      // without needing align-items to do anything.
+                      <div class="flex flex-wrap justify-center gap-3">
                         {products.map(p => (
-                          <MenuProductCard
-                            key={p.id}
-                            product={p}
-                            quantity={quantities[p.id] ?? 0}
-                            onQuantityChange={delta => onQuantityChange(p.id, delta)}
-                          />
+                          <div key={p.id} class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]">
+                            <MenuProductCard
+                              product={p}
+                              quantity={quantities[p.id] ?? 0}
+                              onQuantityChange={delta => onQuantityChange(p.id, delta)}
+                            />
+                          </div>
                         ))}
                         {onSuggestMore && (
-                          <SuggestMoreCard
-                            step={step}
-                            loading={suggestingStep === step}
-                            onClick={onSuggestMore}
-                          />
+                          <div class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]">
+                            <SuggestMoreCard
+                              step={step}
+                              loading={suggestingStep === step}
+                              onClick={onSuggestMore}
+                            />
+                          </div>
                         )}
                       </div>
                     ) : (
@@ -551,21 +552,24 @@ export function MenuBuilderPanel({
                             </div>
                           )}
                         </div>
-                        <div class="hidden md:grid md:grid-cols-4 gap-3 items-start">
+                        <div class="hidden md:flex flex-wrap justify-center gap-3">
                           {products.map(p => (
-                            <MenuProductCard
-                              key={p.id}
-                              product={p}
-                              quantity={quantities[p.id] ?? 0}
-                              onQuantityChange={delta => onQuantityChange(p.id, delta)}
-                            />
+                            <div key={p.id} class="md:flex-[0_0_calc(25%-9px)]">
+                              <MenuProductCard
+                                product={p}
+                                quantity={quantities[p.id] ?? 0}
+                                onQuantityChange={delta => onQuantityChange(p.id, delta)}
+                              />
+                            </div>
                           ))}
                           {onSuggestMore && (
-                            <SuggestMoreCard
-                              step={step}
-                              loading={suggestingStep === step}
-                              onClick={onSuggestMore}
-                            />
+                            <div class="md:flex-[0_0_calc(25%-9px)]">
+                              <SuggestMoreCard
+                                step={step}
+                                loading={suggestingStep === step}
+                                onClick={onSuggestMore}
+                              />
+                            </div>
                           )}
                         </div>
                       </Fragment>
