@@ -8,6 +8,11 @@ interface Props {
   quantities: Record<string, number>;
   steps: string[];
   totalGuests: number;
+  /** Build-your-own plateaux (is_composable, qty > 0) whose chosen pieces
+   * don't yet add up to the required total — see MenuBuilderPanel. Surfaced
+   * here as a per-item warning + what disables "Ajouter au panier", instead
+   * of blocking entry to this recap in the first place. */
+  incompleteComposableProducts?: Product[];
   onClose: () => void;
   onValidate: () => void;
 }
@@ -75,10 +80,19 @@ export function ShoppingListModal({
   quantities,
   steps,
   totalGuests,
+  incompleteComposableProducts = [],
   onClose,
   onValidate,
 }: Props) {
   const panelRef = useFocusTrap(onClose);
+
+  const incompleteIds = new Set(incompleteComposableProducts.map(p => p.id));
+  const canAddToCart = incompleteComposableProducts.length === 0;
+  const addToCartTooltip = canAddToCart
+    ? undefined
+    : incompleteComposableProducts.length === 1
+      ? `Terminez la composition de « ${incompleteComposableProducts[0].name} » avant d'ajouter au panier.`
+      : `Terminez la composition de vos ${incompleteComposableProducts.length} plateaux avant d'ajouter au panier.`;
 
   let totalCost = 0;
 
@@ -202,16 +216,30 @@ export function ShoppingListModal({
                   )}
                   <ul class="m-0 p-0 list-none flex flex-col gap-2">
                     {items.map(item => (
-                      <li key={item.id} class="flex items-center gap-3">
-                        <span class="text-[12px] font-semibold text-[#878787] shrink-0">
-                          {item.qty} X
-                        </span>
-                        <span class="flex-1 text-[12px] text-[#878787] leading-snug">
-                          {item.name}
-                        </span>
-                        <span class="text-[12px] font-semibold text-[#878787] shrink-0 tabular-nums">
-                          {fmtEur(item.lineTotal)}
-                        </span>
+                      <li key={item.id} class="flex flex-col gap-1">
+                        <div class="flex items-center gap-3">
+                          <span class="text-[12px] font-semibold text-[#878787] shrink-0">
+                            {item.qty} X
+                          </span>
+                          <span class="flex-1 text-[12px] text-[#878787] leading-snug">
+                            {item.name}
+                          </span>
+                          <span class="text-[12px] font-semibold text-[#878787] shrink-0 tabular-nums">
+                            {fmtEur(item.lineTotal)}
+                          </span>
+                        </div>
+                        {incompleteIds.has(item.id) && (
+                          <div class="flex items-start gap-1.5 text-[#D14343]">
+                            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" class="shrink-0 mt-[1px]">
+                              <circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.4" />
+                              <path d="M10 6v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                              <circle cx="10" cy="13.6" r="0.9" fill="currentColor" />
+                            </svg>
+                            <span class="text-[11px] leading-snug">
+                              Plateau pas encore composé — ouvrez-le pour choisir vos produits
+                            </span>
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -232,13 +260,29 @@ export function ShoppingListModal({
               {fmtEur(totalCost)}
             </span>
           </div>
-          <button
-            onClick={onValidate}
-            disabled={rows.length === 0}
-            class="rounded-[30px] px-4 py-1 border border-[#AAAAAA] bg-white text-[#8D7A4E] text-[10px] md:text-[11px] font-bold uppercase tracking-wide cursor-pointer opacity-100 transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Ajouter au panier
-          </button>
+          {/* Empty list uses the native `disabled` (nothing to explain there).
+              An incomplete plateau instead guards the click handler +
+              aria-disabled + dimmed styling — same reasoning as the tooltip
+              pattern elsewhere: native `disabled` kills hover in Chrome,
+              which would kill the tooltip explaining WHY right along with it. */}
+          <span class="relative group">
+            <button
+              onClick={() => canAddToCart && onValidate()}
+              disabled={rows.length === 0}
+              aria-disabled={!canAddToCart}
+              class={`rounded-[30px] px-4 py-1 border border-[#AAAAAA] text-[#8D7A4E] text-[10px] md:text-[11px] font-bold uppercase tracking-wide transition-opacity disabled:cursor-not-allowed disabled:opacity-50 ${
+                canAddToCart ? 'bg-white cursor-pointer hover:opacity-90' : 'bg-[#F0EDE8] cursor-not-allowed opacity-70'
+              }`}
+            >
+              Ajouter au panier
+            </button>
+            {addToCartTooltip && (
+              <span class="pointer-events-none absolute bottom-full right-0 mb-2 w-56 rounded-lg bg-[#1A1A2E] px-3 py-2 text-[11px] leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 z-30">
+                {addToCartTooltip}
+                <span class="absolute top-full right-4 -mt-1 h-2 w-2 rotate-45 bg-[#1A1A2E]" />
+              </span>
+            )}
+          </span>
         </div>
       </motion.div>
     </div>

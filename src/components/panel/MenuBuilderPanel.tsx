@@ -208,6 +208,31 @@ export function MenuBuilderPanel({
     return confirmed.length > 0 ? confirmed : Object.keys(productsByStep);
   }, [requirements.menu_steps, productsByStep]);
 
+  // A build-your-own plateau in the menu (is_composable, qty > 0) that isn't
+  // FULLY composed can't become a real cart line — a partial selection (or
+  // none at all, if the Composer modal was never opened) is passed down to
+  // ShoppingListModal, which surfaces it as a warning and disables "Ajouter
+  // au panier" there (see that component) rather than blocking entry to the
+  // recap itself. plateau_target_qty is only ever set once the Composer
+  // modal has been validated at least once (see ComposeProductModal /
+  // handleComposeValidate) — undefined means "never composed", itself
+  // incomplete, not a pass.
+  const incompleteComposableProducts = useMemo(() => {
+    const incomplete: Product[] = [];
+    for (const items of Object.values(productsByStep)) {
+      for (const p of items) {
+        if (!p.is_composable) continue;
+        if ((quantities[p.id] ?? 0) <= 0) continue;
+        const chosenQty = p.plateau_selection
+          ? Object.values(p.plateau_selection).reduce((sum, q) => sum + q, 0)
+          : 0;
+        const complete = p.plateau_target_qty != null && chosenQty === p.plateau_target_qty;
+        if (!complete) incomplete.push(p);
+      }
+    }
+    return incomplete;
+  }, [productsByStep, quantities]);
+
   // Refs for smooth scroll-to on tab click (desktop bottom tab bar)
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -709,6 +734,11 @@ export function MenuBuilderPanel({
               1px border, 30px radius). Icon and label never show at the same time. */}
           {hasProducts && (
             <Fragment>
+              {/* Always openable — an incomplete plateau is surfaced INSIDE the
+                  recap modal (a warning + the disabled "Ajouter au panier"),
+                  not by blocking entry to the recap itself. Seeing what's
+                  incomplete needs the modal open, not a tooltip on a button
+                  that's easy to miss on a small/mobile screen. */}
               {/* cart.svg now bakes in its own white circle background, so this
                   is just the icon itself — no extra button chrome/wrapper. */}
               <button
@@ -742,6 +772,7 @@ export function MenuBuilderPanel({
             quantities={quantities}
             steps={steps}
             totalGuests={totalGuests}
+            incompleteComposableProducts={incompleteComposableProducts}
             onClose={() => setShoppingListOpen(false)}
             onValidate={() => setShoppingListOpen(false)}
           />

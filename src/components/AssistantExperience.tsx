@@ -318,8 +318,10 @@ export function AssistantExperience() {
           recommended_quantity: qty,
           // Rides along so the backend keeps it on the menu item (see
           // tools.sync_state) — otherwise a composed plateau's chosen pieces
-          // would be silently dropped on the very next chat turn.
-          ...(p.plateau_selection ? { plateau_selection: p.plateau_selection } : {})
+          // (and the total needed to judge it complete) would be silently
+          // dropped on the very next chat turn.
+          ...(p.plateau_selection ? { plateau_selection: p.plateau_selection } : {}),
+          ...(p.plateau_target_qty != null ? { plateau_target_qty: p.plateau_target_qty } : {})
         };
       })
     );
@@ -460,13 +462,17 @@ export function AssistantExperience() {
   // this modal closes, so it's already sitting there ready for "Ajouter au
   // panier" to build the real POST /cart/add {options:{plateau:{...}}} payload.
   const handleComposeValidate = useCallback(
-    (productId: string, step: string, selection: Record<string, number>) => {
+    (productId: string, step: string, selection: Record<string, number>, targetQty: number) => {
       setProductsByStep(prev => {
         const list = prev[step];
         if (!list) return prev;
         const idx = list.findIndex(p => p.id === productId);
         if (idx === -1) return prev;
-        const updated = { ...list[idx], plateau_selection: selection };
+        const updated = {
+          ...list[idx],
+          plateau_selection: selection,
+          plateau_target_qty: targetQty
+        };
         const nextList = [...list];
         nextList[idx] = updated;
         return { ...prev, [step]: nextList };
@@ -780,11 +786,12 @@ export function AssistantExperience() {
             productId={selectedProduct.id}
             onClose={() => setSelectedProduct(null)}
             initialSelection={selectedProduct.plateau_selection}
-            onValidate={selection =>
+            onValidate={(selection, targetQty) =>
               handleComposeValidate(
                 selectedProduct.id,
                 selectedProduct.menu_step ?? '',
-                selection
+                selection,
+                targetQty
               )
             }
           />

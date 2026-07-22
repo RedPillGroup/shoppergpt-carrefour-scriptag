@@ -29,5 +29,6 @@ export function buildProduct(p: Record<string, unknown>): Product | null {
       p.plateau_selection && typeof p.plateau_selection === "object"
         ? (p.plateau_selection as Record<string, number>)
         : undefined,
+    plateau_target_qty: p.plateau_target_qty != null ? Number(p.plateau_target_qty) : undefined,
   };
 }

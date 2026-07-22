@@ -44,11 +44,15 @@ interface Props {
    * any — re-opening this modal on an already-composed plateau must start
    * from what the user picked last time, not blank. */
   initialSelection?: Record<string, number>;
-  /** Called with the chosen pieces (code → qty) once the user validates —
-   * the real add-to-cart call (POST /cart/add with options.plateau, per the
-   * Carrefour Cart API doc) is a separate, later integration; for now this
-   * just marks the plateau as "in the menu" like any other product. */
-  onValidate: (selection: Record<string, number>) => void;
+  /** Called with the chosen pieces (code → qty) AND the required total
+   * (composition_plateau.qty) once the user validates — the panel needs the
+   * target alongside the selection to later tell a genuinely complete
+   * plateau apart from one that was only partially composed (see
+   * MenuBuilderPanel's "Valider mon menu" gate). The real add-to-cart call
+   * (POST /cart/add with options.plateau, per the Carrefour Cart API doc) is
+   * a separate, later integration; for now this just marks the plateau as
+   * "in the menu" like any other product. */
+  onValidate: (selection: Record<string, number>, targetQty: number) => void;
 }
 
 const PLACEHOLDER =
@@ -215,7 +219,7 @@ export function ComposeProductModal({ productId, onClose, initialSelection, onVa
               type="button"
               disabled={!canValidate}
               onClick={() => {
-                onValidate(selection);
+                onValidate(selection, targetQty);
                 onClose();
               }}
               class={`px-5 py-2 rounded-full text-[12px] font-semibold uppercase tracking-wide transition-colors ${

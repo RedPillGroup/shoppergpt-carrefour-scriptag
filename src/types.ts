@@ -28,6 +28,13 @@ export interface Product {
    * (POST /cart/add {options:{plateau:{...}}}) once that integration lands —
    * without this, "Valider" would only mark qty=1 with the actual choice lost. */
   plateau_selection?: Record<string, number>;
+  /** The plateau's required total piece count (composition_plateau.qty at the
+   * time it was composed) — needed alongside plateau_selection to tell a
+   * genuinely COMPLETE plateau apart from a partial one (sum(plateau_selection)
+   * === plateau_target_qty). Without this, the panel can't gate "Valider mon
+   * menu" on composition completeness — it would only know a selection
+   * exists, not whether it's the full one. */
+  plateau_target_qty?: number;
 }
 
 export interface StepSuggestionItem {
