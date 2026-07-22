@@ -11,6 +11,10 @@ interface CompositionPiece {
   conditionnement?: string | null;
   image_url?: string | null;
   extra_price?: number | null;
+  /** Per-piece composition/allergen text (HTML) — only some pieces have it in
+   * Carrefour's data. The info icon is only rendered when this is present;
+   * no icon promising info that doesn't exist. */
+  ingredients?: string | null;
 }
 
 interface CompositionGroup {
@@ -134,7 +138,6 @@ export function ComposeProductModal({ productId, onClose, initialSelection, onVa
       return next;
     });
   };
-
   return (
     <div class="absolute inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       {/* Backdrop */}
@@ -310,6 +313,27 @@ function ComposeContent({
                         qty > 0 ? 'border-[#C7B287] bg-[#FBF8F2]' : 'border-[#F0EDE8]'
                       }`}
                     >
+                      {/* Info icon — hover only, not a click target: a plain
+                          span (not a button) with a `group`/`group-hover`
+                          tooltip, same pattern as the Ajouter au panier
+                          tooltip elsewhere. Only rendered when there's real
+                          per-piece data (composition/allergens) to show — no
+                          icon promising info that doesn't exist. focus-within
+                          keeps it reachable via keyboard (Tab), not just mouse. */}
+                      {piece.ingredients && (
+                        <span
+                          tabIndex={0}
+                          role="img"
+                          aria-label={`Informations sur ${piece.name}`}
+                          class="group/info absolute top-1 left-1 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-[#D1D5DB] bg-white text-[10px] font-serif italic text-[#9A8C78] hover:border-[#C7B287] hover:text-[#C7B287] focus:outline-none"
+                        >
+                          i
+                          <span class="pointer-events-none absolute top-6 left-0 z-20 w-48 rounded-lg bg-[#1A1A2E] p-2.5 text-left text-[10px] font-sans font-normal not-italic leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/info:opacity-100 group-focus-within/info:opacity-100 [&_b]:font-semibold [&_br]:block">
+                            <span dangerouslySetInnerHTML={{ __html: piece.ingredients }} />
+                          </span>
+                        </span>
+                      )}
+
                       <img
                         src={piece.image_url || PLACEHOLDER}
                         alt=""
@@ -322,9 +346,7 @@ function ComposeContent({
                         {piece.name}
                       </span>
                       {piece.conditionnement && (
-                        <span class="text-[9px] text-[#9A8C78] mt-0.5">
-                          {piece.conditionnement}
-                        </span>
+                        <span class="text-[9px] text-[#9A8C78] mt-0.5">{piece.conditionnement}</span>
                       )}
                       <div class="flex items-center gap-1 mt-1.5 bg-white rounded-full shadow-sm px-1 py-0.5">
                         <button
