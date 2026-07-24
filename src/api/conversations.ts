@@ -57,15 +57,6 @@ export async function fetchConversations(): Promise<ConversationSummary[]> {
   }
   const data = (await res.json()) as { conversations?: ConversationSummary[] };
   const list = data.conversations ?? [];
-  console.log("[shopper-gpt] conversations list", {
-    count: list.length,
-    rows: list.map((c) => ({
-      id: c.conversation_id,
-      title: c.title,
-      event_type: c.event_type,
-      has_panel_snapshot: c.has_panel_snapshot,
-    })),
-  });
   return list;
 }
 
@@ -87,31 +78,5 @@ export async function fetchConversation(
     throw new Error(`GET /conversations/${conversationId} failed: ${res.status}`);
   }
   const data = (await res.json()) as ConversationDetail;
-  console.log("[shopper-gpt] conversation detail", {
-    conversation_id: data.conversation_id,
-    scopes: data.scopes,
-    has_panel_snapshot: data.has_panel_snapshot,
-    event_type: data.event_type,
-    title: data.title,
-    left: {
-      messageCount: data.messages?.length ?? 0,
-      shape: (data.messages ?? []).map((m) => ({
-        role: m.role,
-        contentLen: (m.content || "").length,
-        hasToolOutput: m.tool_output != null,
-        hasToolResultsFiltered: m.tool_results_filtered != null,
-        hasToolCallsPayload: m.tool_calls_payload != null,
-        preview: (m.content || "").slice(0, 80),
-      })),
-    },
-    right: data.menu
-      ? {
-          products: data.menu.products?.length ?? 0,
-          event_requirements: data.menu.event_requirements,
-          menu_revision: data.menu.menu_revision,
-          total_cost_eur: data.menu.total_cost_eur,
-        }
-      : null,
-  });
   return data;
 }
