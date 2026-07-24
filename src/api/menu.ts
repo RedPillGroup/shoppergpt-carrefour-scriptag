@@ -1,6 +1,7 @@
 import { getApiUrl, getClientId } from "./config";
 import { EventRequirements, Product } from "../types";
 import { buildProduct } from "../utils/productExtractor";
+import { useShopperStore } from "../store";
 
 export interface ServerMenuResponse {
   products?: unknown[];
@@ -28,6 +29,17 @@ export interface FetchServerMenuResult {
   data: ServerMenuResponse | null;
   etag: string | null;
   notModified: boolean;
+}
+
+function menuHeaders(sessionId: string | null): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-client-id": getClientId(),
+  };
+  if (sessionId) headers["X-Session-Id"] = sessionId;
+  const conversationId = useShopperStore.getState().conversationId;
+  if (conversationId) headers["X-Conversation-Id"] = conversationId;
+  return headers;
 }
 
 function parseString(value: unknown): string | undefined {
@@ -131,16 +143,12 @@ export function menuResponseToPanelState(data: ServerMenuResponse): MenuPanelSta
   };
 }
 
-/** Load the session menu from MongoDB (supports ETag / 304). */
+/** Load the conversation menu from MongoDB (supports ETag / 304). */
 export async function fetchServerMenu(
   sessionId: string | null,
   options?: { ifNoneMatch?: string | null }
 ): Promise<FetchServerMenuResult> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "x-client-id": getClientId(),
-  };
-  if (sessionId) headers["X-Session-Id"] = sessionId;
+  const headers = menuHeaders(sessionId);
   if (options?.ifNoneMatch) headers["If-None-Match"] = options.ifNoneMatch;
 
   const res = await fetch(`${getApiUrl()}/menu`, { headers });
@@ -167,11 +175,7 @@ export async function suggestProducts(
   sessionId: string | null,
   step: string
 ): Promise<Product[]> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "x-client-id": getClientId()
-  };
-  if (sessionId) headers["X-Session-Id"] = sessionId;
+  const headers = menuHeaders(sessionId);
 
   const res = await fetch(`${getApiUrl()}/suggest_products`, {
     method: "POST",

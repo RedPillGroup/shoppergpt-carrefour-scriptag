@@ -1,8 +1,12 @@
 import { create } from "zustand";
 import { Message, Product, Store } from "./types";
+import type { ConversationSummary } from "./api/conversations";
 
 interface ShopperState {
   sessionId: string | null;
+  /** Active chat thread (conv_…). Cleared on page load / refresh — not persisted. */
+  conversationId: string | null;
+  conversations: ConversationSummary[];
   jwt: string | null;
   store: Store | null;
   messages: Message[];
@@ -15,9 +19,12 @@ interface ShopperState {
   hasInteracted: boolean;
 
   setSessionId: (id: string) => void;
+  setConversationId: (id: string | null) => void;
+  setConversations: (list: ConversationSummary[]) => void;
   setJwt: (jwt: string) => void;
   setStore: (store: Store) => void;
   addMessage: (message: Message) => void;
+  setMessages: (messages: Message[]) => void;
   setProducts: (products: Product[]) => void;
   setSelectedProduct: (product: Product | null) => void;
   toggleOpen: () => void;
@@ -30,6 +37,8 @@ interface ShopperState {
 
 export const useShopperStore = create<ShopperState>((set, get) => ({
   sessionId: null,
+  conversationId: null,
+  conversations: [],
   jwt: null,
   store: null,
   messages: [],
@@ -42,10 +51,13 @@ export const useShopperStore = create<ShopperState>((set, get) => ({
   hasInteracted: false,
 
   setSessionId: (id) => set({ sessionId: id }),
+  setConversationId: (id) => set({ conversationId: id }),
+  setConversations: (list) => set({ conversations: list }),
   setJwt: (jwt) => set({ jwt }),
   setStore: (store) => set({ store }),
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
+  setMessages: (messages) => set({ messages }),
   setProducts: (products) => set({ products }),
   setSelectedProduct: (product) => set({ selectedProduct: product }),
   toggleOpen: () => {
@@ -73,4 +85,3 @@ export const useShopperStore = create<ShopperState>((set, get) => ({
     }
   },
 }));
-

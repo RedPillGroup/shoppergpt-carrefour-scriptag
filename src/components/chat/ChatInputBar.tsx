@@ -16,6 +16,9 @@ interface Props {
    * simpler to just not compete for space at all (see AssistantExperience). */
   onFocus?: () => void;
   onBlur?: () => void;
+  /** Show the conversations hamburger (only when ≥ 2 threads for this session). */
+  showConversationsButton?: boolean;
+  onOpenConversations?: () => void;
 }
 
 /** Every MediaRecorder mime type worth trying, most-preferred first. Safari/iOS
@@ -137,7 +140,17 @@ function useChime() {
   };
 }
 
-export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDown, onFocus, onBlur }: Props) {
+export function ChatInputBar({
+  input,
+  isLoading,
+  onInputChange,
+  onSend,
+  onKeyDown,
+  onFocus,
+  onBlur,
+  showConversationsButton = false,
+  onOpenConversations,
+}: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Wraps the textarea; its height is set (in JS, see the resize effect
   // below) to the VISUAL (post-scale) height on mobile, since the textarea's
@@ -421,6 +434,19 @@ export function ChatInputBar({ input, isLoading, onInputChange, onSend, onKeyDow
 
   return (
     <div class="py-2.5 px-3.5 md:py-3.5 md:px-[18px] border-t border-[#E8ECF0] flex items-center gap-1.5 md:gap-2 shrink-0 bg-white">
+      {showConversationsButton && (
+        <button
+          type="button"
+          class="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer text-[#1A1A2E] hover:opacity-70 shrink-0"
+          aria-label="Discussions récentes"
+          title="Discussions récentes"
+          onClick={onOpenConversations}
+        >
+          <svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden="true">
+            <path d="M1 1.5h20M1 8h20M1 14.5h20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </button>
+      )}
       <div class="relative flex-1 rounded-3xl min-h-9 md:min-h-10 px-1.5 py-1 flex items-center gap-1 border border-black/50">
         {/* Live waveform — visual style ported from an existing RecordingDots
             component (vertical bars, bouncing feel), but each bar's height

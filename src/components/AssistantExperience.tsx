@@ -6,12 +6,17 @@ import { EventRequirements, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
 import { fetchServerMenu, menuResponseToPanelState, suggestProducts } from '../api/menu';
 import { getEnv, getMockScreen } from '../api/config';
+import {
+  fetchConversation,
+  fetchConversations
+} from '../api/conversations';
 import { EditorialPanel } from './panel/EditorialPanel';
 import { MessageBubble } from './chat/MessageBubble';
 import { TypingIndicator } from './chat/TypingIndicator';
 import { ComposingIndicator } from './chat/ComposingIndicator';
 import { StreamingBubble } from './chat/StreamingBubble';
 import { ChatInputBar } from './chat/ChatInputBar';
+import { ConversationsDrawer } from './chat/ConversationsDrawer';
 import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
 import { ProductDetailModal } from './panel/ProductDetailModal';
 import { ComposeProductModal } from './panel/ComposeProductModal';
@@ -21,11 +26,16 @@ export function AssistantExperience() {
   const {
     messages,
     addMessage,
+    setMessages,
     isLoading,
     setIsLoading,
     jwt,
     setJwt,
     sessionId,
+    conversationId,
+    setConversationId,
+    conversations,
+    setConversations,
     selectedProduct,
     setSelectedProduct,
     store
@@ -42,6 +52,7 @@ export function AssistantExperience() {
   const [productsByStep, setProductsByStep] = useState<Record<string, Product[]>>({});
   const [menuQuantities, setMenuQuantities] = useState<Record<string, number>>({});
   const [panelSyncing, setPanelSyncing] = useState(false);
+  const [conversationsOpen, setConversationsOpen] = useState(false);
   // Mobile-only: the product/menu panel sits on top and the chat below (reversed
   // from desktop's side-by-side layout — see the drag-handle chevron between them).
   // Collapsed (default) gives the chat most of the height; expanded flips the ratio
@@ -78,9 +89,7 @@ export function AssistantExperience() {
     setMenuQuantities(panel.menuQuantities);
     setEventRequirements(panel.eventRequirements);
     menuRevisionRef.current = panel.menuRevision;
-    if (panel.hasMenu) {
-      setEventScreenEnabled(true);
-    }
+    setEventScreenEnabled(panel.hasMenu);
     // Store selected server-side (e.g. by the assistant via manage_store) → reflect it
     // in the store + notify the host page so its header updates (sandbox navbar / Carrefour).
     if (panel.store && panel.store.store_id) {
@@ -126,15 +135,27 @@ export function AssistantExperience() {
     [applyPanelState]
   );
 
+  const resetPanelToDefault = useCallback(() => {
+    setProductsByStep({});
+    setMenuQuantities({});
+    setEventRequirements({});
+    setEventScreenEnabled(false);
+    setMobilePanelExpanded(false);
+    menuRevisionRef.current = 0;
+    menuEtagRef.current = null;
+  }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, streamingText]);
 
   useEffect(() => {
-    // Skip the real GET /menu sync in mock mode — it would immediately
-    // overwrite the canned data below with the (empty) actual server state.
-    if (sessionId && !getMockScreen()) void syncPanelFromServer();
-  }, [sessionId, syncPanelFromServer]);
+    // Refresh must land on the default editorial screen — do not rehydrate the
+    // last session menu into the right panel. Panel sync happens after answers
+    // and when opening a conversation from the drawer.
+    if (!sessionId || getMockScreen()) return;
+    resetPanelToDefault();
+  }, [sessionId, resetPanelToDefault]);
 
   // Dev/testing only — jump straight to a MenuBuilderPanel screen with canned
   // data via data-mock-screen="event"|"products" on the script tag, instead of
@@ -337,6 +358,75 @@ export function AssistantExperience() {
     return products.length > 0 ? { ...base, products } : base;
   };
 
+  const refreshConversations = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      const list = await fetchConversations();
+      setConversations(list);
+    } catch (err) {
+      console.warn('[shopper-gpt] GET /conversations failed:', err);
+    }
+  }, [sessionId, setConversations]);
+
+  // Refresh lands on the default (empty) chat; conversationId is intentionally
+  // not persisted. Same PHPSESSID → load sidebar list for the burger drawer.
+  useEffect(() => {
+    if (!sessionId) return;
+    void refreshConversations();
+  }, [sessionId, refreshConversations]);
+
+  const openConversation = useCallback(
+    async (id: string) => {
+      try {
+        setConversationsOpen(false);
+        setIsLoading(true);
+        const leavingId = useShopperStore.getState().conversationId;
+        const data = await fetchConversation(id, {
+          leavingConversationId: leavingId
+        });
+        setConversationId(id);
+        const mapped: Message[] = (data.messages || [])
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map((m, i) => ({
+            id: m.message_id || `${id}-${i}`,
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+            timestamp: m.timestamp ? new Date(m.timestamp) : new Date()
+          }));
+        setMessages(mapped);
+        setStreamingText('');
+        setComposePhase(null);
+        setQuestion(null);
+        // Right panel is per-conversation. Usable snapshot → render it.
+        // Otherwise show the default editorial screen.
+        if (data.has_panel_snapshot && data.menu) {
+          const panel = menuResponseToPanelState(data.menu);
+          if (panel.hasMenu) {
+            applyPanelState(panel);
+            menuEtagRef.current = null;
+          } else {
+            resetPanelToDefault();
+          }
+        } else {
+          resetPanelToDefault();
+        }
+        void refreshConversations();
+      } catch (err) {
+        console.warn('[shopper-gpt] open conversation failed:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      setConversationId,
+      setMessages,
+      setIsLoading,
+      applyPanelState,
+      resetPanelToDefault,
+      refreshConversations
+    ]
+  );
+
   useChatAnswer(
     question,
     jwt,
@@ -396,6 +486,7 @@ export function AssistantExperience() {
           void syncPanelFromServer();
         }
         panelSyncedThisTurnRef.current = false;
+        void refreshConversations();
       },
       onError: msg => {
         addMessage({
@@ -716,6 +807,8 @@ export function AssistantExperience() {
             onInputChange={setInput}
             onSend={() => send()}
             onKeyDown={handleKey}
+            showConversationsButton={true}
+            onOpenConversations={() => setConversationsOpen(true)}
             // Mobile: while typing, show only the chat (see chatFocused above)
             // instead of fighting the iOS keyboard + accessory bar for space.
             // Also drop any panel expansion so the layout returns to normal
@@ -743,6 +836,14 @@ export function AssistantExperience() {
               }
             }}
             onBlur={() => setChatFocused(false)}
+          />
+
+          <ConversationsDrawer
+            open={conversationsOpen}
+            conversations={conversations}
+            activeConversationId={conversationId}
+            onClose={() => setConversationsOpen(false)}
+            onSelect={id => void openConversation(id)}
           />
         </div>
 
@@ -778,6 +879,7 @@ export function AssistantExperience() {
           )}
         </div>
       </div>
+
 
       {/* Product detail modal — rendered above everything else inside the widget.
           "Composer" plateaux (is_composable) open the dedicated composition
