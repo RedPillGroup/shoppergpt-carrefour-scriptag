@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useShopperStore } from '../store';
 import { EventRequirements, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
-import { fetchServerMenu, menuResponseToPanelState, suggestProducts } from '../api/menu';
+import { fetchServerMenu, menuResponseToPanelState, suggestProducts, syncMenuState } from '../api/menu';
 import { getEnv, getMockScreen } from '../api/config';
 import {
   fetchConversation,
@@ -381,6 +381,18 @@ export function AssistantExperience() {
         setConversationsOpen(false);
         setIsLoading(true);
         const leavingId = useShopperStore.getState().conversationId;
+        // Flush local-only edits (quantity changes, removed/kept suggestions) for
+        // the conversation being left BEFORE switching — otherwise anything not
+        // yet carried along by a chat message's client_state is lost the moment
+        // we navigate away, since nothing else ever persisted it server-side.
+        // Best-effort: a sync failure must never block the actual switch.
+        if (leavingId) {
+          try {
+            await syncMenuState(sessionId, getClientState() ?? {});
+          } catch (err) {
+            console.warn('[shopper-gpt] pre-switch menu sync failed:', err);
+          }
+        }
         const data = await fetchConversation(id, {
           leavingConversationId: leavingId
         });
@@ -418,6 +430,7 @@ export function AssistantExperience() {
       }
     },
     [
+      sessionId,
       setConversationId,
       setMessages,
       setIsLoading,

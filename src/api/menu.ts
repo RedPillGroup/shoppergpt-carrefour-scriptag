@@ -163,6 +163,27 @@ export async function fetchServerMenu(
   return { data, etag, notModified: false };
 }
 
+/** Eagerly persist the panel's current local state (see getClientState in
+ * AssistantExperience.tsx) instead of waiting for the next chat message to
+ * carry it along as /answer's client_state. Without this, quantity changes,
+ * removed products, and kept/discarded suggestions made without sending a
+ * message are lost the moment the user switches conversations or refreshes —
+ * GET /menu and conversation-restore only ever reflect what was last WRITTEN
+ * to user_state, and until now only a chat turn ever wrote there. */
+export async function syncMenuState(
+  sessionId: string | null,
+  clientState: Record<string, unknown>
+): Promise<void> {
+  const res = await fetch(`${getApiUrl()}/menu/sync`, {
+    method: "POST",
+    headers: menuHeaders(sessionId),
+    body: JSON.stringify(clientState)
+  });
+  if (!res.ok) {
+    throw new Error(`POST /menu/sync failed: ${res.status}`);
+  }
+}
+
 export interface SuggestProductsResponse {
   step?: string;
   items?: unknown[];
