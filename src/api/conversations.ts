@@ -1,10 +1,13 @@
 import { getApiUrl, getClientId } from "./config";
 import { useShopperStore } from "../store";
+import type { ServerMenuResponse } from "./menu";
 
 export interface ConversationSummary {
   conversation_id: string;
   session_id: string;
   title: string;
+  event_type?: string | null;
+  has_panel_snapshot?: boolean;
   created_at?: string;
   updated_at?: string;
   archived?: boolean;
@@ -16,6 +19,20 @@ export interface ConversationMessage {
   timestamp?: string;
   content: string;
   tool_output?: unknown;
+  tool_results_filtered?: unknown;
+  tool_calls_payload?: unknown;
+}
+
+export interface ConversationDetail {
+  conversation_id: string;
+  session_id?: string;
+  messages: ConversationMessage[];
+  total_messages?: number;
+  has_panel_snapshot?: boolean;
+  event_type?: string | null;
+  title?: string | null;
+  menu?: ServerMenuResponse;
+  scopes?: { left?: string; right?: string };
 }
 
 function sessionHeaders(): Record<string, string> {
@@ -39,31 +56,62 @@ export async function fetchConversations(): Promise<ConversationSummary[]> {
     throw new Error(`GET /conversations failed: ${res.status}`);
   }
   const data = (await res.json()) as { conversations?: ConversationSummary[] };
-  return data.conversations ?? [];
+  const list = data.conversations ?? [];
+  console.log("[shopper-gpt] conversations list", {
+    count: list.length,
+    rows: list.map((c) => ({
+      id: c.conversation_id,
+      title: c.title,
+      event_type: c.event_type,
+      has_panel_snapshot: c.has_panel_snapshot,
+    })),
+  });
+  return list;
 }
 
 /** Full thread when the user opens a sidebar row. */
 export async function fetchConversation(
-  conversationId: string
-): Promise<{ conversation_id: string; messages: ConversationMessage[] }> {
-  const res = await fetch(`${getApiUrl()}/conversations/${encodeURIComponent(conversationId)}`, {
-    headers: sessionHeaders(),
-  });
+  conversationId: string,
+  options?: { leavingConversationId?: string | null }
+): Promise<ConversationDetail> {
+  const headers = sessionHeaders();
+  const leaving = options?.leavingConversationId?.trim();
+  if (leaving && leaving !== conversationId) {
+    headers["X-Leaving-Conversation-Id"] = leaving;
+  }
+  const res = await fetch(
+    `${getApiUrl()}/conversations/${encodeURIComponent(conversationId)}`,
+    { headers }
+  );
   if (!res.ok) {
     throw new Error(`GET /conversations/${conversationId} failed: ${res.status}`);
   }
-  return res.json();
-}
-
-/** Temporary fake titles until product copy / title generation is decided. */
-const FAKE_TITLES = [
-  "Préparer l'anniversaire de mon fils et de ses 5 amis",
-  "Trouver une idée de repas de fête des mères",
-  "Organiser un buffet d'entreprise pour 30 personnes",
-  "Composer un menu brunch du dimanche",
-  "Préparer un apéro dinatoire entre amis",
-];
-
-export function fakeConversationTitle(index: number): string {
-  return FAKE_TITLES[index % FAKE_TITLES.length];
+  const data = (await res.json()) as ConversationDetail;
+  console.log("[shopper-gpt] conversation detail", {
+    conversation_id: data.conversation_id,
+    scopes: data.scopes,
+    has_panel_snapshot: data.has_panel_snapshot,
+    event_type: data.event_type,
+    title: data.title,
+    left: {
+      messageCount: data.messages?.length ?? 0,
+      shape: (data.messages ?? []).map((m) => ({
+        role: m.role,
+        contentLen: (m.content || "").length,
+        hasToolOutput: m.tool_output != null,
+        hasToolResultsFiltered: m.tool_results_filtered != null,
+        hasToolCallsPayload: m.tool_calls_payload != null,
+        preview: (m.content || "").slice(0, 80),
+      })),
+    },
+    right: data.menu
+      ? {
+          products: data.menu.products?.length ?? 0,
+          event_requirements: data.menu.event_requirements,
+          menu_revision: data.menu.menu_revision,
+          total_cost_eur: data.menu.total_cost_eur,
+        }
+      : null,
+  });
+  return data;
 }

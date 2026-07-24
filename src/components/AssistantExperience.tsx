@@ -89,9 +89,7 @@ export function AssistantExperience() {
     setMenuQuantities(panel.menuQuantities);
     setEventRequirements(panel.eventRequirements);
     menuRevisionRef.current = panel.menuRevision;
-    if (panel.hasMenu) {
-      setEventScreenEnabled(true);
-    }
+    setEventScreenEnabled(panel.hasMenu);
     // Store selected server-side (e.g. by the assistant via manage_store) → reflect it
     // in the store + notify the host page so its header updates (sandbox navbar / Carrefour).
     if (panel.store && panel.store.store_id) {
@@ -137,15 +135,27 @@ export function AssistantExperience() {
     [applyPanelState]
   );
 
+  const resetPanelToDefault = useCallback(() => {
+    setProductsByStep({});
+    setMenuQuantities({});
+    setEventRequirements({});
+    setEventScreenEnabled(false);
+    setMobilePanelExpanded(false);
+    menuRevisionRef.current = 0;
+    menuEtagRef.current = null;
+  }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, streamingText]);
 
   useEffect(() => {
-    // Skip the real GET /menu sync in mock mode — it would immediately
-    // overwrite the canned data below with the (empty) actual server state.
-    if (sessionId && !getMockScreen()) void syncPanelFromServer();
-  }, [sessionId, syncPanelFromServer]);
+    // Refresh must land on the default editorial screen — do not rehydrate the
+    // last session menu into the right panel. Panel sync happens after answers
+    // and when opening a conversation from the drawer.
+    if (!sessionId || getMockScreen()) return;
+    resetPanelToDefault();
+  }, [sessionId, resetPanelToDefault]);
 
   // Dev/testing only — jump straight to a MenuBuilderPanel screen with canned
   // data via data-mock-screen="event"|"products" on the script tag, instead of
@@ -355,7 +365,7 @@ export function AssistantExperience() {
   }, [sessionId, setConversations]);
 
   // Refresh lands on the default (empty) chat; conversationId is intentionally
-  // not persisted. Same PHPSESSID → load sidebar list when ≥ 2 threads exist.
+  // not persisted. Same PHPSESSID → load sidebar list for the burger drawer.
   useEffect(() => {
     if (!sessionId) return;
     void refreshConversations();
@@ -366,7 +376,10 @@ export function AssistantExperience() {
       try {
         setConversationsOpen(false);
         setIsLoading(true);
-        const data = await fetchConversation(id);
+        const leavingId = useShopperStore.getState().conversationId;
+        const data = await fetchConversation(id, {
+          leavingConversationId: leavingId
+        });
         setConversationId(id);
         const mapped: Message[] = (data.messages || [])
           .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -380,14 +393,34 @@ export function AssistantExperience() {
         setStreamingText('');
         setComposePhase(null);
         setQuestion(null);
-        void syncPanelFromServer(true);
+        // Right panel is per-conversation. Usable snapshot → render it.
+        // Otherwise show the default editorial screen.
+        if (data.has_panel_snapshot && data.menu) {
+          const panel = menuResponseToPanelState(data.menu);
+          if (panel.hasMenu) {
+            applyPanelState(panel);
+            menuEtagRef.current = null;
+          } else {
+            resetPanelToDefault();
+          }
+        } else {
+          resetPanelToDefault();
+        }
+        void refreshConversations();
       } catch (err) {
         console.warn('[shopper-gpt] open conversation failed:', err);
       } finally {
         setIsLoading(false);
       }
     },
-    [setConversationId, setMessages, setIsLoading, syncPanelFromServer]
+    [
+      setConversationId,
+      setMessages,
+      setIsLoading,
+      applyPanelState,
+      resetPanelToDefault,
+      refreshConversations
+    ]
   );
 
   useChatAnswer(
@@ -760,21 +793,13 @@ export function AssistantExperience() {
             <div ref={bottomRef} />
           </div>
 
-          <ConversationsDrawer
-            open={conversationsOpen}
-            conversations={conversations}
-            activeConversationId={conversationId}
-            onClose={() => setConversationsOpen(false)}
-            onSelect={id => void openConversation(id)}
-          />
-
           <ChatInputBar
             input={input}
             isLoading={isLoading}
             onInputChange={setInput}
             onSend={() => send()}
             onKeyDown={handleKey}
-            showConversationsButton={conversations.length >= 2}
+            showConversationsButton={true}
             onOpenConversations={() => setConversationsOpen(true)}
             // Mobile: while typing, show only the chat (see chatFocused above)
             // instead of fighting the iOS keyboard + accessory bar for space.
@@ -803,6 +828,14 @@ export function AssistantExperience() {
               }
             }}
             onBlur={() => setChatFocused(false)}
+          />
+
+          <ConversationsDrawer
+            open={conversationsOpen}
+            conversations={conversations}
+            activeConversationId={conversationId}
+            onClose={() => setConversationsOpen(false)}
+            onSelect={id => void openConversation(id)}
           />
         </div>
 
@@ -838,6 +871,7 @@ export function AssistantExperience() {
           )}
         </div>
       </div>
+
 
       {/* Product detail modal — rendered above everything else inside the widget.
           "Composer" plateaux (is_composable) open the dedicated composition
