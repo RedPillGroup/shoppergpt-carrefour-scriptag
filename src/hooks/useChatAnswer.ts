@@ -15,6 +15,7 @@ export interface MetaPayload {
     client_revision?: number;
     server_revision?: number;
   };
+  conversation_id?: string;
   /** Advisory step suggestion from recommend_menu_steps — drives the interactive
    * on/off step-selection card rendered under the assistant's message. */
   step_suggestion?: {
@@ -116,6 +117,10 @@ export function useChatAnswer(
         if (sessionId) {
           headers["X-Session-Id"] = sessionId;
         }
+        const conversationId = useShopperStore.getState().conversationId;
+        if (conversationId) {
+          headers["X-Conversation-Id"] = conversationId;
+        }
         if (jwt) {
           headers["Authorization"] = `Bearer ${jwt}`;
         }
@@ -137,6 +142,11 @@ export function useChatAnswer(
         const newToken = res.headers.get("X-Session-Token");
         if (newToken && !cancelled) onJwt?.(newToken);
 
+        const returnedConversationId = res.headers.get("X-Conversation-Id");
+        if (returnedConversationId && !cancelled) {
+          useShopperStore.getState().setConversationId(returnedConversationId);
+        }
+
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         const parser = new SSEParser();
@@ -153,6 +163,9 @@ export function useChatAnswer(
             if (event === "meta") {
               try {
                 const meta: MetaPayload = JSON.parse(data);
+                if (meta.conversation_id) {
+                  useShopperStore.getState().setConversationId(meta.conversation_id);
+                }
                 onMeta(meta);
               } catch {
                 // Malformed meta — ignore

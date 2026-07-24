@@ -5,6 +5,10 @@ import { useShopperStore } from '../store';
 import { EventRequirements, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
 import { fetchServerMenu, menuResponseToPanelState, suggestProducts } from '../api/menu';
+import {
+  fetchConversation,
+  fetchConversations
+} from '../api/conversations';
 import { getMockScreen } from '../api/config';
 import { EditorialPanel } from './panel/EditorialPanel';
 import { MessageBubble } from './chat/MessageBubble';
@@ -12,6 +16,7 @@ import { TypingIndicator } from './chat/TypingIndicator';
 import { ComposingIndicator } from './chat/ComposingIndicator';
 import { StreamingBubble } from './chat/StreamingBubble';
 import { ChatInputBar } from './chat/ChatInputBar';
+import { ConversationsDrawer } from './chat/ConversationsDrawer';
 import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
 import { ProductDetailModal } from './panel/ProductDetailModal';
 import { ComposeProductModal } from './panel/ComposeProductModal';
@@ -21,11 +26,16 @@ export function AssistantExperience() {
   const {
     messages,
     addMessage,
+    setMessages,
     isLoading,
     setIsLoading,
     jwt,
     setJwt,
     sessionId,
+    conversationId,
+    setConversationId,
+    conversations,
+    setConversations,
     selectedProduct,
     setSelectedProduct,
     store
@@ -42,6 +52,7 @@ export function AssistantExperience() {
   const [productsByStep, setProductsByStep] = useState<Record<string, Product[]>>({});
   const [menuQuantities, setMenuQuantities] = useState<Record<string, number>>({});
   const [panelSyncing, setPanelSyncing] = useState(false);
+  const [conversationsOpen, setConversationsOpen] = useState(false);
   // Mobile-only: the product/menu panel sits on top and the chat below (reversed
   // from desktop's side-by-side layout — see the drag-handle chevron between them).
   // Collapsed (default) gives the chat most of the height; expanded flips the ratio
@@ -333,6 +344,52 @@ export function AssistantExperience() {
     return products.length > 0 ? { ...base, products } : base;
   };
 
+  const refreshConversations = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      const list = await fetchConversations();
+      setConversations(list);
+    } catch (err) {
+      console.warn('[shopper-gpt] GET /conversations failed:', err);
+    }
+  }, [sessionId, setConversations]);
+
+  // Refresh lands on the default (empty) chat; conversationId is intentionally
+  // not persisted. Same PHPSESSID → load sidebar list when ≥ 2 threads exist.
+  useEffect(() => {
+    if (!sessionId) return;
+    void refreshConversations();
+  }, [sessionId, refreshConversations]);
+
+  const openConversation = useCallback(
+    async (id: string) => {
+      try {
+        setConversationsOpen(false);
+        setIsLoading(true);
+        const data = await fetchConversation(id);
+        setConversationId(id);
+        const mapped: Message[] = (data.messages || [])
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map((m, i) => ({
+            id: m.message_id || `${id}-${i}`,
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+            timestamp: m.timestamp ? new Date(m.timestamp) : new Date()
+          }));
+        setMessages(mapped);
+        setStreamingText('');
+        setComposePhase(null);
+        setQuestion(null);
+        void syncPanelFromServer(true);
+      } catch (err) {
+        console.warn('[shopper-gpt] open conversation failed:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setConversationId, setMessages, setIsLoading, syncPanelFromServer]
+  );
+
   useChatAnswer(
     question,
     jwt,
@@ -392,6 +449,7 @@ export function AssistantExperience() {
           void syncPanelFromServer();
         }
         panelSyncedThisTurnRef.current = false;
+        void refreshConversations();
       },
       onError: msg => {
         addMessage({
@@ -633,7 +691,7 @@ export function AssistantExperience() {
                   <p class="m-0 pt-3 pb-5 md:py-10 font-normal text-[#C7B287] text-base md:text-2xl leading-[1.45]">
                     Bonjour et bienvenue, je suis{' '}
                     <span class="font-['Satisfy'] font-normal text-[#C7B287] text-[24px] md:text-3xl mr-[1px]">
-                      Cathia
+                      Cathiaaaa3
                     </span>{' '}
                     votre agent intelligent traiteur. Que puis-je faire pour vous&nbsp;?
                   </p>
@@ -702,12 +760,22 @@ export function AssistantExperience() {
             <div ref={bottomRef} />
           </div>
 
+          <ConversationsDrawer
+            open={conversationsOpen}
+            conversations={conversations}
+            activeConversationId={conversationId}
+            onClose={() => setConversationsOpen(false)}
+            onSelect={id => void openConversation(id)}
+          />
+
           <ChatInputBar
             input={input}
             isLoading={isLoading}
             onInputChange={setInput}
             onSend={() => send()}
             onKeyDown={handleKey}
+            showConversationsButton={conversations.length >= 2}
+            onOpenConversations={() => setConversationsOpen(true)}
             // Mobile: while typing, show only the chat (see chatFocused above)
             // instead of fighting the iOS keyboard + accessory bar for space.
             // Also drop any panel expansion so the layout returns to normal
