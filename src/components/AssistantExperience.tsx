@@ -691,7 +691,7 @@ export function AssistantExperience() {
                   <p class="m-0 pt-3 pb-5 md:py-10 font-normal text-[#C7B287] text-base md:text-2xl leading-[1.45]">
                     Bonjour et bienvenue, je suis{' '}
                     <span class="font-['Satisfy'] font-normal text-[#C7B287] text-[24px] md:text-3xl mr-[1px]">
-                      Cathiaaaa3
+                      Cathia
                     </span>{' '}
                     votre agent intelligent traiteur. Que puis-je faire pour vous&nbsp;?
                   </p>
