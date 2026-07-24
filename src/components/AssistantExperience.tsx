@@ -5,7 +5,7 @@ import { useShopperStore } from '../store';
 import { EventRequirements, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
 import { fetchServerMenu, menuResponseToPanelState, suggestProducts } from '../api/menu';
-import { getMockScreen } from '../api/config';
+import { getEnv, getMockScreen } from '../api/config';
 import { EditorialPanel } from './panel/EditorialPanel';
 import { MessageBubble } from './chat/MessageBubble';
 import { TypingIndicator } from './chat/TypingIndicator';
@@ -145,12 +145,12 @@ export function AssistantExperience() {
     if (!mock) return;
 
     setEventRequirements({
-      event_type: 'anniversaire',
-      event_date: '27 août 2026',
+      event_name: 'anniversaire',
+      date: '27 août 2026',
       guests_adults: 10,
       guests_kids: 0,
       budget: 200,
-      visual_theme: 'bbq',
+      event_theme: 'bbq',
       menu_steps: ['Apéritifs', 'Plats', 'Fromages', 'Desserts', 'Boissons', 'Pains']
     });
     setEventScreenEnabled(true);
@@ -325,7 +325,9 @@ export function AssistantExperience() {
         };
       })
     );
-    const base: Record<string, unknown> = { menu_revision: menuRevisionRef.current };
+    // Sent every turn (cheap, idempotent) — see waib-api's state.set_env. Gates
+    // whether a real Carrefour Cart API call can ever fire for this session.
+    const base: Record<string, unknown> = { menu_revision: menuRevisionRef.current, env: getEnv() };
     if (pendingStepSelectionRef.current) {
       base.menu_steps = pendingStepSelectionRef.current;
       // One-shot: consumed by this request only, so a stale snapshot can't later

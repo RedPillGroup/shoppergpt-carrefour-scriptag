@@ -107,14 +107,14 @@ export type MenuStep = 'Apéritifs' | 'Entrées' | 'Plats' | 'Sauces' | 'Fromage
 export const ALL_MENU_STEPS: MenuStep[] = ['Apéritifs', 'Entrées', 'Plats', 'Sauces', 'Fromages', 'Desserts', 'Boissons', 'Pains', 'Petit Déj', 'Table & Déco'];
 
 export interface EventRequirements {
-  event_type?: string;
-  event_date?: string;
+  event_name?: string;
+  date?: string;
   guests_adults?: number;
   guests_kids?: number;
   budget?: number;
   /** Confirmed course categories, in order. Only set after the user has validated them. */
   menu_steps?: string[];
   /** LLM-inferred background theme (anniv, apero, bbq, buffet, gouter, mariage, picnic,
-   * tv, generique) — picks the matching visu-{theme}1/2.webp pair in MenuBuilderPanel. */
-  visual_theme?: string;
+   * tv, generique) — picks the matching visu-{event_theme}1/2.webp pair in MenuBuilderPanel. */
+  event_theme?: string;
 }

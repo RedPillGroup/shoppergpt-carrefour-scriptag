@@ -6,6 +6,8 @@ declare global {
       sessionId?: string;
       /** Dev/testing only — see getMockScreen(). */
       mockScreen?: string;
+      /** "sandbox" (default) | "carrefour" — see getEnv(). */
+      env?: string;
     };
   }
 }
@@ -35,6 +37,19 @@ export function getClientId(): string {
  */
 export function getInitialSessionId(): string | null {
   return _scriptData.sessionId ?? window.SHOPPERGPT_CONFIG?.sessionId ?? null;
+}
+
+/**
+ * "sandbox" (default) | "carrefour". Injected via `data-env` on the script tag —
+ * Carrefour's real embed sets `data-env="carrefour"`; our own sandbox test host
+ * never sets it, so it defaults safely to "sandbox". Gates, server-side, whether
+ * a real Carrefour Cart API call is ever allowed to fire for this session (see
+ * waib-api's state.get_env) — the real cart must NEVER be touched from a session
+ * running on our own sandbox. Any value other than "sandbox"/"carrefour" is
+ * ignored server-side, so a typo here just silently stays sandbox-safe.
+ */
+export function getEnv(): string {
+  return _scriptData.env ?? window.SHOPPERGPT_CONFIG?.env ?? "sandbox";
 }
 
 /**

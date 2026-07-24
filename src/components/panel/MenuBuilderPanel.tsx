@@ -12,10 +12,10 @@ import rightIcon from '../../assets/icons/right.svg?raw';
 
 // Hosted on a public GCS bucket rather than bundled — 16+ images inlined as base64
 // would have bloated the widget's single-file bundle by several MB downloaded on
-// every page. Keyed by event_requirements.visual_theme (LLM-inferred, see
+// every page. Keyed by event_requirements.event_theme (LLM-inferred, see
 // set_event_info) — "generique" is the fallback used before a theme is known or
 // when none fits. "buffet" has its own visual, distinct from "apero" (see
-// info.py's visual_theme enum).
+// info.py's theme enum).
 const BACKGROUNDS_BASE_URL = 'https://storage.googleapis.com/carrefour-shoppergpt-backgrounds';
 // Per-theme version suffix — bump just one theme's entry when only that image is
 // re-exported, so unrelated themes don't need re-uploading to pick a new name.
@@ -304,12 +304,12 @@ export function MenuBuilderPanel({
   const pricePerPerson = totalGuests > 0 && totalCost > 0 ? totalCost / totalGuests : undefined;
 
   const hasProducts = Object.keys(productsByStep).length > 0;
-  const background = BACKGROUNDS[requirements.visual_theme ?? ''] ?? BACKGROUNDS.generique;
+  const background = BACKGROUNDS[requirements.event_theme ?? ''] ?? BACKGROUNDS.generique;
 
-  const eventLabel = requirements.event_type
-    ? menuEventLabel(requirements.event_type)
+  const eventLabel = requirements.event_name
+    ? menuEventLabel(requirements.event_name)
     : 'Mon menu traiteur';
-  const dateLabel = requirements.event_date ? `le ${requirements.event_date}` : null;
+  const dateLabel = requirements.date ? `le ${requirements.date}` : null;
 
   return (
     // inset (not a regular bottom box-shadow) — this panel sits inside a

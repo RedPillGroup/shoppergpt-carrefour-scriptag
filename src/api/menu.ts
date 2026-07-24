@@ -57,11 +57,11 @@ function parseNumber(value: unknown): number | undefined {
 function parseEventRequirements(raw: Record<string, unknown>): EventRequirements {
   const next: EventRequirements = {};
 
-  const eventType = parseString(raw.event_type);
-  if (eventType !== undefined) next.event_type = eventType;
+  const eventName = parseString(raw.event_name);
+  if (eventName !== undefined) next.event_name = eventName;
 
-  const eventDate = parseString(raw.event_date);
-  if (eventDate !== undefined) next.event_date = eventDate;
+  const eventDate = parseString(raw.date);
+  if (eventDate !== undefined) next.date = eventDate;
 
   const adults = parseNumber(raw.guests_adults);
   if (adults !== undefined) next.guests_adults = adults;
@@ -77,8 +77,8 @@ function parseEventRequirements(raw: Record<string, unknown>): EventRequirements
     next.menu_steps = steps as string[];
   }
 
-  const visualTheme = parseString(raw.visual_theme);
-  if (visualTheme !== undefined) next.visual_theme = visualTheme;
+  const eventTheme = parseString(raw.event_theme);
+  if (eventTheme !== undefined) next.event_theme = eventTheme;
 
   return next;
 }
