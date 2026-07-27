@@ -66,6 +66,10 @@ interface Props {
   /** Step currently awaiting a suggest_products response, if any — shows a
    * loading state on that one card only. */
   suggestingStep?: string | null;
+  /** "Ajouter au panier" in ShoppingListModal — parent owns the actual API call
+   * (POST /cart/confirm, no-op outside the real Carrefour context) and any
+   * error messaging; this panel just forwards the tap. */
+  onConfirmCart?: () => void;
 }
 
 /** Format a number as "1 234,56 €" (French locale). */
@@ -198,7 +202,8 @@ export function MenuBuilderPanel({
   mobileExpanded = false,
   onRetractMobile,
   onSuggestMore,
-  suggestingStep = null
+  suggestingStep = null,
+  onConfirmCart
 }: Props) {
   const [shoppingListOpen, setShoppingListOpen] = useState(false);
 
@@ -774,7 +779,10 @@ export function MenuBuilderPanel({
             totalGuests={totalGuests}
             incompleteComposableProducts={incompleteComposableProducts}
             onClose={() => setShoppingListOpen(false)}
-            onValidate={() => setShoppingListOpen(false)}
+            onValidate={() => {
+              setShoppingListOpen(false);
+              onConfirmCart?.();
+            }}
           />
         )}
       </AnimatePresence>

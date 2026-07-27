@@ -5,6 +5,7 @@ import { useShopperStore } from '../store';
 import { EventRequirements, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
 import { fetchServerMenu, menuResponseToPanelState, suggestProducts, syncMenuState } from '../api/menu';
+import { confirmCart } from '../api/cart';
 import { getEnv, getMockScreen } from '../api/config';
 import {
   fetchConversation,
@@ -642,6 +643,36 @@ export function AssistantExperience() {
     [sessionId, suggestingStep]
   );
 
+  // "Ajouter au panier" — pushes the composed menu to Carrefour's REAL cart via
+  // POST /cart/confirm. No-op (status="skipped") outside the real Carrefour
+  // context (our sandbox), by design — see api/cart.ts. Our own menu state is
+  // never touched here regardless of outcome; a failure just shows a French
+  // error message so the user knows the real cart wasn't updated and can retry.
+  const handleConfirmCart = useCallback(async () => {
+    try {
+      const result = await confirmCart(sessionId);
+      if (result.status === 'error') {
+        console.warn('[shopper-gpt] cart/confirm failed:', result.detail);
+        addMessage({
+          id: Date.now().toString(),
+          role: 'assistant',
+          content:
+            "❌ Impossible d'ajouter le menu à votre panier Carrefour. Veuillez réessayer.",
+          timestamp: new Date()
+        });
+      }
+    } catch (err) {
+      console.warn('[shopper-gpt] cart/confirm request failed:', err);
+      addMessage({
+        id: Date.now().toString(),
+        role: 'assistant',
+        content:
+          "❌ Impossible d'ajouter le menu à votre panier Carrefour. Veuillez réessayer.",
+        timestamp: new Date()
+      });
+    }
+  }, [sessionId, addMessage]);
+
   const isStreaming = isLoading && streamingText.length > 0;
   const isWaiting = isLoading && streamingText.length === 0;
 
@@ -903,6 +934,7 @@ export function AssistantExperience() {
               onRetractMobile={() => setMobilePanelExpanded(false)}
               onSuggestMore={handleSuggestMore}
               suggestingStep={suggestingStep}
+              onConfirmCart={handleConfirmCart}
             />
           ) : (
             <EditorialPanel onSelect={q => send(q)} />
