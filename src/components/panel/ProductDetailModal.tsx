@@ -87,7 +87,16 @@ export function ProductDetailModal({ productId, onClose }: Props) {
         return res.json() as Promise<ProductDetail>;
       })
       .then(data => { if (!cancelled) { setDetail(data); setLoading(false); } })
-      .catch(err => { if (!cancelled) { setError(err.message ?? 'Erreur'); setLoading(false); } });
+      .catch(err => {
+        // err.message here is either "HTTP 404" (ours) or the browser's own raw
+        // fetch error ("Failed to fetch" in Chrome, etc.) — never in French. Show
+        // a fixed French message; keep the raw detail in the console only.
+        if (!cancelled) {
+          console.warn('[shopper-gpt] product detail fetch failed:', err);
+          setError('Impossible de charger ce produit. Veuillez réessayer.');
+          setLoading(false);
+        }
+      });
 
     return () => { cancelled = true; };
   }, [productId, jwt]);

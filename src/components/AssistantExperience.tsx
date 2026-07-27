@@ -502,10 +502,21 @@ export function AssistantExperience() {
         void refreshConversations();
       },
       onError: msg => {
+        // msg is the raw fetch()/browser error (e.g. "Failed to fetch" in Chrome,
+        // "NetworkError when attempting to fetch resource" in Firefox, "Load
+        // failed" in Safari) — never in French regardless of the user's browser
+        // locale, since it's the browser engine's own string, not ours. Always
+        // show a fixed French message instead; keep the raw detail in the
+        // console only, for debugging.
+        console.warn('[shopper-gpt] /answer failed:', msg);
+        const isNetworkError = !navigator.onLine || /fetch|network|load failed/i.test(msg);
+        const userMessage = isNetworkError
+          ? 'Connexion internet indisponible. Vérifiez votre connexion et réessayez.'
+          : 'Une erreur est survenue. Veuillez réessayer.';
         addMessage({
           id: Date.now().toString(),
           role: 'assistant',
-          content: `❌ Une erreur est survenue : ${msg}`,
+          content: `❌ ${userMessage}`,
           timestamp: new Date()
         });
         stepSuggestionRef.current = undefined;

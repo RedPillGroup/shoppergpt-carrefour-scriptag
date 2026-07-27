@@ -106,8 +106,12 @@ export function ComposeProductModal({ productId, onClose, initialSelection, onVa
         }
       })
       .catch(err => {
+        // err.message here is either "HTTP 404" (ours) or the browser's own raw
+        // fetch error ("Failed to fetch" in Chrome, etc.) — never in French. Show
+        // a fixed French message; keep the raw detail in the console only.
         if (!cancelled) {
-          setError(err.message ?? 'Erreur');
+          console.warn('[shopper-gpt] compose product fetch failed:', err);
+          setError('Impossible de charger ce produit. Veuillez réessayer.');
           setLoading(false);
         }
       });
