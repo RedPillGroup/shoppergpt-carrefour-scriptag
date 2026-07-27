@@ -397,14 +397,13 @@ export function ChatInputBar({
           showMicError('Rien entendu, réessayez');
         }
       } catch (err) {
+        // err.message here can be a raw backend "Transcription HTTP 500" or the
+        // browser's own fetch error ("Failed to fetch", "Load failed", etc.) —
+        // never in French. Keep the raw detail in the console only (useful for
+        // telling a backend error apart from a network/CORS failure on mobile)
+        // and always show a fixed French message to the user.
         console.error('[shoppergpt] transcription failed', err);
-        // Temporarily surfacing the raw error (status code / "Failed to
-        // fetch" / etc.) instead of a generic message — needed to tell apart
-        // a backend HTTP error from a network/CORS failure on mobile, which
-        // otherwise both just read as "doesn't work" with no way to diagnose
-        // remotely. Revert to a plain message once the mobile cause is confirmed.
-        const detail = err instanceof Error ? err.message : String(err);
-        showMicError(`Transcription indisponible: ${detail}`);
+        showMicError('Transcription indisponible, réessayez');
       } finally {
         setTranscribing(false);
       }

@@ -509,8 +509,14 @@ export function AssistantExperience() {
         // show a fixed French message instead; keep the raw detail in the
         // console only, for debugging.
         console.warn('[shopper-gpt] /answer failed:', msg);
-        const isNetworkError = !navigator.onLine || /fetch|network|load failed/i.test(msg);
-        const userMessage = isNetworkError
+        // Only navigator.onLine is a reliable "no internet" signal — the error
+        // TEXT itself can't distinguish "no internet" from "server unreachable"
+        // (CORS block, backend down, connection refused all throw the exact same
+        // "Failed to fetch"/"Load failed" from the browser). Guessing from the
+        // message would misdirect the user to check their own connection when
+        // the real problem is on our end — so anything except a confirmed
+        // offline browser gets the honest generic message instead.
+        const userMessage = !navigator.onLine
           ? 'Connexion internet indisponible. Vérifiez votre connexion et réessayez.'
           : 'Une erreur est survenue. Veuillez réessayer.';
         addMessage({
