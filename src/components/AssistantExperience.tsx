@@ -73,6 +73,14 @@ export function AssistantExperience() {
   const productsByStepRef = useRef(productsByStep);
   const menuQuantitiesRef = useRef(menuQuantities);
   const panelSyncedThisTurnRef = useRef(false);
+  // Tracks an in-flight syncPanelFromServer() triggered by the PREVIOUS turn's
+  // meta (see onMeta below). getClientState() reads menuRevisionRef synchronously,
+  // so if the user edits the panel and sends a new message while that fetch is
+  // still in flight, the request would go out tagged with the OLD revision —
+  // the backend then rejects the whole edit as stale and silently reverts the
+  // panel to server state, discarding the user's just-made selection. Awaiting
+  // this before a send closes that race.
+  const pendingPanelSyncRef = useRef<Promise<void> | null>(null);
   const stepSuggestionRef = useRef<Message['stepSuggestion']>(undefined);
   // Live selection from the interactive step-toggle card — no submit button, this
   // rides with the user's next chat message (see getClientState / sync_state).
@@ -135,6 +143,15 @@ export function AssistantExperience() {
     },
     [applyPanelState]
   );
+
+  // Awaited right before a chat request is actually sent (see useChatAnswer below) —
+  // guarantees menuRevisionRef is caught up to the last known server state before
+  // getClientState() snapshots it, closing the race described above.
+  const waitForPendingSync = useCallback(async () => {
+    if (pendingPanelSyncRef.current) {
+      await pendingPanelSyncRef.current;
+    }
+  }, []);
 
   const resetPanelToDefault = useCallback(() => {
     setProductsByStep({});
@@ -459,7 +476,9 @@ export function AssistantExperience() {
           (typeof meta.menu_revision === 'number' && meta.menu_revision > menuRevisionRef.current);
         if (needsSync) {
           panelSyncedThisTurnRef.current = true;
-          void syncPanelFromServer(true);
+          pendingPanelSyncRef.current = syncPanelFromServer(true).finally(() => {
+            pendingPanelSyncRef.current = null;
+          });
         }
         if (meta.step_suggestion?.steps?.length) {
           stepSuggestionRef.current = meta.step_suggestion.steps;
@@ -536,7 +555,8 @@ export function AssistantExperience() {
         setQuestion(null);
       }
     },
-    getClientState
+    getClientState,
+    waitForPendingSync
   );
 
   const send = useCallback(

@@ -90,12 +90,15 @@ export function useChatAnswer(
   question: string | null,
   jwt: string | null,
   callbacks: ChatAnswerCallbacks,
-  getClientState?: () => Record<string, unknown> | null
+  getClientState?: () => Record<string, unknown> | null,
+  waitForPendingSync?: () => Promise<void>
 ) {
   const callbacksRef = useRef(callbacks);
   callbacksRef.current = callbacks;
   const getClientStateRef = useRef(getClientState);
   getClientStateRef.current = getClientState;
+  const waitForPendingSyncRef = useRef(waitForPendingSync);
+  waitForPendingSyncRef.current = waitForPendingSync;
 
   useEffect(() => {
     if (!question) return;
@@ -107,6 +110,13 @@ export function useChatAnswer(
       const { onToken, onMeta, onComplete, onError, onJwt, onPhase } = callbacksRef.current;
 
       try {
+        // A panel sync triggered by the PREVIOUS turn's meta may still be in
+        // flight (see AssistantExperience's onMeta) — waiting here guarantees
+        // getClientState() below snapshots an up-to-date menu_revision, instead
+        // of one that's stale relative to the server and gets the whole edit
+        // rejected (see tools.sync_state's revision guard).
+        await waitForPendingSyncRef.current?.();
+
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
           "x-client-id": getClientId(),
