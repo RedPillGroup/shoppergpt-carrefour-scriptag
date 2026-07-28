@@ -131,12 +131,18 @@ export function ShoppingListModal({
       // than assumed to cover just 1 person (that assumption is what caused false
       // "insufficient" warnings on multi-packs with no persons data, e.g. drinks).
       const knownPersonsProducts = products.filter(p => p.persons != null);
+      const hasUnknownPersonsProduct = knownPersonsProducts.length < products.length;
       const knownCoverage = knownPersonsProducts.reduce(
         (sum, p) => sum + (p.persons as number) * (quantities[p.id] ?? 0),
         0
       );
+      // If even ONE product in this step has no persons data, its real coverage is
+      // unknown — it could already cover everyone on its own. Warning on the KNOWN
+      // subset alone would be a guess dressed up as a fact, so skip it entirely
+      // rather than risk a false "insuffisant" for a step that's actually fine.
       const underCovered =
         !COVERAGE_EXEMPT_STEPS.has(step) &&
+        !hasUnknownPersonsProduct &&
         knownPersonsProducts.length > 0 &&
         totalGuests > 0 &&
         knownCoverage < totalGuests;
