@@ -187,6 +187,18 @@ export async function syncMenuState(
 export interface SuggestProductsResponse {
   step?: string;
   items?: unknown[];
+  /** Server menu revision AFTER the picks were persisted. The backend adds one
+   * showcase item per pick and each bump moves the server ahead of us, so the
+   * caller must adopt this value — otherwise our next /answer snapshot looks
+   * stale to sync_state and is discarded along with any panel edit the user
+   * made in between (see tools.py's suggest_products). */
+  menu_revision?: number;
+}
+
+export interface SuggestProductsResult {
+  products: Product[];
+  /** null when the backend didn't report one (older build) — caller keeps its own. */
+  menuRevision: number | null;
 }
 
 /** "Nouvelle proposition de produits" — ask the backend for a couple of new,
@@ -195,7 +207,7 @@ export interface SuggestProductsResponse {
 export async function suggestProducts(
   sessionId: string | null,
   step: string
-): Promise<Product[]> {
+): Promise<SuggestProductsResult> {
   const headers = menuHeaders(sessionId);
 
   const res = await fetch(`${getApiUrl()}/suggest_products`, {
@@ -213,5 +225,11 @@ export async function suggestProducts(
     const product = buildProduct(raw as Record<string, unknown>);
     if (product) products.push(product);
   }
-  return products;
+  return {
+    products,
+    menuRevision:
+      typeof data.menu_revision === "number" && Number.isFinite(data.menu_revision)
+        ? data.menu_revision
+        : null
+  };
 }

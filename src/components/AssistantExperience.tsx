@@ -641,7 +641,14 @@ export function AssistantExperience() {
       if (suggestingStep) return;
       setSuggestingStep(step);
       try {
-        const newProducts = await suggestProducts(sessionId, step);
+        const { products: newProducts, menuRevision } = await suggestProducts(sessionId, step);
+        // Adopt the server's post-add revision BEFORE anything else, and even when no
+        // product came back: the backend persisted showcase items, so it has moved ahead
+        // of us either way. Skipping this leaves us stale, and sync_state then DISCARDS
+        // our next snapshot — silently undoing panel edits the user made in the meantime.
+        if (menuRevision !== null && menuRevision > menuRevisionRef.current) {
+          menuRevisionRef.current = menuRevision;
+        }
         if (newProducts.length === 0) return;
         setProductsByStep(prev => {
           const existingIds = new Set((prev[step] ?? []).map(p => p.id));
@@ -850,7 +857,15 @@ export function AssistantExperience() {
                     // exists" (the user may have asked something unrelated in the
                     // meantime and should still be able to adjust steps afterwards).
                     messages.slice(i + 1).some(msg => msg.stepSuggestion) ||
-                    Object.keys(productsByStep).length > 0
+                    Object.keys(productsByStep).length > 0 ||
+                    // A turn is in flight (composition included): the selection was
+                    // already consumed when that message was sent (pendingStepSelectionRef
+                    // is one-shot), so any further click silently defers to the NEXT
+                    // message while looking like it steers the run in progress. The card's
+                    // own `validated` flag only trips via "Valider la sélection", so
+                    // answering by TEXT ("augmente mon budget à 200") used to leave the
+                    // chips live — letting the user change steps and budget at once.
+                    isLoading
                   }
                   onStepSelectionChange={steps => {
                     pendingStepSelectionRef.current = steps;
