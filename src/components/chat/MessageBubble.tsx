@@ -76,7 +76,7 @@ export function MessageBubble({
           {isUser ? (
             <span>{message.content}</span>
           ) : (
-            <div class="[&_p]:m-0 [&_p+p]:mt-2 [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:mt-1 [&_ul]:mb-0 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:mt-1 [&_ol]:mb-0 [&_li]:mt-0.5 [&_strong]:font-semibold [&_em]:italic [&_code]:bg-[#F0EDE8] [&_code]:rounded [&_code]:px-1 [&_code]:text-[12px]">
+            <div class="[&_p]:m-0 [&_p+p]:mt-3 [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:mt-2 [&_ul]:mb-0 [&_ul+p]:mt-3 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:mt-2 [&_ol]:mb-0 [&_ol+p]:mt-3 [&_li]:mt-1 [&_strong]:font-semibold [&_em]:italic [&_code]:bg-[#F0EDE8] [&_code]:rounded [&_code]:px-1 [&_code]:text-[12px]">
               <ReactMarkdown remarkPlugins={[remarkBreaks]}>{message.content}</ReactMarkdown>
             </div>
           )}

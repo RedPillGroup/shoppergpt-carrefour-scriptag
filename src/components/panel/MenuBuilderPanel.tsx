@@ -61,6 +61,12 @@ interface Props {
    * needs to sit within the chat pane's own bounds. */
   mobileExpanded?: boolean;
   onRetractMobile?: () => void;
+  /** True while an activation-triggered step rebalance (/adjust_step) is in
+   * flight: the WHOLE panel is blocked behind an overlay. Blocking is the
+   * point, not just feedback — during the call the server is re-deriving
+   * quantities from a snapshot we already sent, so any further edit would race
+   * it (the 409 storms this replaced) and be overwritten by the resync. */
+  rebalancing?: boolean;
   /** Fired when the user taps the "Nouvelle proposition de produits" card for a
    * step — parent owns the actual API call (see AssistantExperience). */
   onSuggestMore?: (step: string) => void;
@@ -200,6 +206,7 @@ export function MenuBuilderPanel({
   quantities,
   onQuantityChange,
   syncing = false,
+  rebalancing = false,
   mobileExpanded = false,
   onRetractMobile,
   onSuggestMore,
@@ -270,11 +277,25 @@ export function MenuBuilderPanel({
     if (!stepScrollRequest) return;
     const idx = steps.indexOf(stepScrollRequest.step);
     if (idx === -1) return;
-    goToMobileStep(idx);
-    sectionRefs.current[stepScrollRequest.step]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
+    // Reveal the target on the mobile pager WITHOUT `goToMobileStep`'s own scrollTo(top:0):
+    // that reset is right for manual paging (arrows/swipe — a fresh step should read from
+    // its own top), but here it fired unconditionally, including on desktop where every
+    // step is already stacked — so every server-driven scroll visibly snapped the whole
+    // panel to its absolute top BEFORE animating down to the target, reading as "it always
+    // scrolls from the very top" no matter where the user was looking.
+    setMobileStepIndex(Math.max(0, Math.min(steps.length - 1, idx)));
+    // One frame so a step hidden by the mobile pager (`display:none`) has already become
+    // visible before we ask the browser to scroll to it — scrollIntoView on a still-hidden
+    // element is a silent no-op. `block: 'nearest'` (not 'start') moves the minimum amount
+    // needed to bring the section into view instead of forcing it to the container's top
+    // edge even when it's already mostly visible — smoother and less of a jump.
+    const raf = requestAnimationFrame(() => {
+      sectionRefs.current[stepScrollRequest.step]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
     });
+    return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepScrollRequest]);
 
@@ -348,6 +369,18 @@ export function MenuBuilderPanel({
         syncing ? 'opacity-60 pointer-events-none' : ''
       }`}
     >
+      {rebalancing && (
+        // Strong white wash (/85) AND a strong blur (md): the blur alone left too much
+        // of the busy background image showing through behind the text at lower
+        // opacity, hurting legibility — this needs to read clearly as "the panel is
+        // busy", not as a subtle tint over the photo.
+        <div class="absolute inset-0 z-[60] bg-white/85 backdrop-blur-md flex flex-col items-center justify-center gap-4">
+          <div class="w-12 h-12 rounded-full border-4 border-[#C7B287] border-t-transparent animate-spin" />
+          <span class="text-[16px] md:text-[17px] font-semibold text-[#6B6055]">
+            Réajustement des quantités…
+          </span>
+        </div>
+      )}
       {/* ── Full-panel background image (theme "before" on first screen, "after" with menu).
           The source images themselves are edited (see carrefour_bgs_edited/) with extra
           plain-color canvas so the subject never reaches the zone where the event/date

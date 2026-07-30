@@ -94,9 +94,13 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             </span>
             <button
               onClick={() => onQuantityChange(+1)}
-              disabled={quantity >= MAX_QTY}
+              // A disabled (qty=0) card is a SUGGESTION: +/- are fully inert on it, and
+              // the ONLY way to re-activate is the top-right toggle. Letting + activate
+              // made a stray tap on a greyed card silently trigger the whole rebalance
+              // flow (server call + assistant message) — activation must be deliberate.
+              disabled={!inMenu || quantity >= MAX_QTY}
               class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[14px] md:text-[17px] font-bold transition-colors ${
-                quantity < MAX_QTY ? 'text-[#C7B287] hover:bg-[#F4EFE5]' : 'text-[#D1D5DB] cursor-not-allowed'
+                inMenu && quantity < MAX_QTY ? 'text-[#C7B287] hover:bg-[#F4EFE5]' : 'text-[#D1D5DB] cursor-not-allowed'
               }`}
             >
               +
@@ -205,9 +209,13 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
 
             <button
               onClick={() => onQuantityChange(+1)}
-              disabled={quantity >= MAX_QTY}
+              // A disabled (qty=0) card is a SUGGESTION: +/- are fully inert on it, and
+              // the ONLY way to re-activate is the top-right toggle. Letting + activate
+              // made a stray tap on a greyed card silently trigger the whole rebalance
+              // flow (server call + assistant message) — activation must be deliberate.
+              disabled={!inMenu || quantity >= MAX_QTY}
               class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-sm md:text-base font-bold transition-colors ${
-                quantity < MAX_QTY
+                inMenu && quantity < MAX_QTY
                   ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
                   : 'text-[#D1D5DB] cursor-not-allowed'
               }`}

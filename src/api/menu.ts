@@ -184,6 +184,47 @@ export async function syncMenuState(
   }
 }
 
+
+export interface AdjustStepResult {
+  step?: string;
+  changed?: boolean;
+  menu_revision?: number;
+  message?: string;
+}
+
+/** Rebalance one step's quantities after the user ACTIVATED a suggested product
+ * (qty 0 → ≥1). Deterministic REST action, mirror of /suggest_products — the
+ * orchestrator is not in the loop. The client snapshot rides along so the
+ * activation (panel-only until now) is synced before the engine sizes the step.
+ * A 409 means our snapshot was stale: resync GET /menu, don't retry blindly. */
+export async function adjustStepQuantities(
+  sessionId: string | null,
+  step: string,
+  clientState: Record<string, unknown> | null
+): Promise<AdjustStepResult> {
+  const res = await fetch(`${getApiUrl()}/adjust_step`, {
+    method: "POST",
+    headers: menuHeaders(sessionId),
+    body: JSON.stringify({ step, client_state: clientState })
+  });
+  if (!res.ok) {
+    // On 409 the body's detail carries the server revision (sync_state conflict
+    // shape) — surfaced so the caller can adopt it even when GET /menu 304s.
+    let serverRevision: number | undefined;
+    try {
+      const detail = (await res.json())?.detail;
+      if (typeof detail?.server_revision === 'number') serverRevision = detail.server_revision;
+    } catch {
+      /* body not JSON — keep undefined */
+    }
+    throw Object.assign(new Error(`POST /adjust_step failed: ${res.status}`), {
+      status: res.status,
+      serverRevision
+    });
+  }
+  return (await res.json()) as AdjustStepResult;
+}
+
 export interface SuggestProductsResponse {
   step?: string;
   items?: unknown[];

@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useShopperStore } from '../store';
 import { ALL_MENU_STEPS, EventRequirements, MenuStep, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
-import { fetchServerMenu, menuResponseToPanelState, suggestProducts, syncMenuState } from '../api/menu';
+import { adjustStepQuantities, fetchServerMenu, menuResponseToPanelState, suggestProducts, syncMenuState } from '../api/menu';
 import { confirmCart } from '../api/cart';
 import { getEnv, getMockScreen } from '../api/config';
 import {
@@ -633,13 +633,94 @@ export function AssistantExperience() {
     [send]
   );
 
+  // Per-step debounce timers for the activation-triggered rebalance below.
+  const rebalanceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Step whose rebalance is pending/in-flight — blocks the WHOLE panel (see
+  // MenuBuilderPanel's `rebalancing` overlay). Set the instant a suggestion is
+  // activated, not when the request fires: the gap between the two is exactly
+  // where the user could keep clicking and stack concurrent /adjust_step calls
+  // (the 3-calls-in-10s storm, then 409s, seen in QA).
+  const [rebalancingStep, setRebalancingStep] = useState<string | null>(null);
+
+  /** Auto-rebalance one step after a SUGGESTION was activated (qty 0 → ≥1).
+   *
+   * Trigger boundary (product decision): ONLY the 0→≥1 transition fires this —
+   * ordinary +/- edits on an already-active product are the user's own manual
+   * tuning and stay silent, no rebalance, no assistant message. The debounce
+   * absorbs quick taps (0→1→2→3 = one call) and activate-then-deactivate
+   * (checked again at fire time = zero calls).
+   *
+   * The route syncs our snapshot first (the activation only exists locally),
+   * sizes the step within its logical share of the budget (+10%), then returns
+   * a `message` we ALWAYS surface as an assistant bubble — including the overrun
+   * warning when the menu now exceeds the global budget. A 409 means our
+   * revision was stale: resync silently, never retry blindly. */
+  const scheduleStepRebalance = useCallback((productId: string) => {
+    const step = Object.entries(productsByStepRef.current).find(([, list]) =>
+      list.some(p => p.id === productId)
+    )?.[0];
+    if (!step) return;
+    setRebalancingStep(step);
+    const timers = rebalanceTimersRef.current;
+    if (timers[step]) clearTimeout(timers[step]);
+    timers[step] = setTimeout(async () => {
+      delete timers[step];
+      // Deactivated again before the debounce fired → the activation was undone.
+      if ((menuQuantitiesRef.current[productId] ?? 0) <= 0) {
+        setRebalancingStep(null);
+        return;
+      }
+      try {
+        const result = await adjustStepQuantities(
+          sessionIdRef.current,
+          step,
+          getClientState()
+        );
+        if (typeof result.menu_revision === 'number') {
+          menuRevisionRef.current = Math.max(menuRevisionRef.current, result.menu_revision);
+        }
+        await syncPanelFromServer(true);
+        if (result.message) {
+          addMessage({
+            id: `rebalance-${Date.now()}`,
+            role: 'assistant',
+            content: result.message,
+            timestamp: new Date()
+          });
+        }
+      } catch (err) {
+        const status = (err as { status?: number }).status;
+        if (status === 409) {
+          // Stale snapshot. The 409 body carries the server's revision — ADOPT it
+          // before resyncing: GET /menu may well answer 304 (our cached payload is
+          // current, only our revision counter was behind), in which case
+          // applyPanelState never runs and the ref would stay stale forever — every
+          // later activation then 409s again (the loop seen in QA at 11:44-11:45).
+          const serverRev = (err as { serverRevision?: number }).serverRevision;
+          if (typeof serverRev === 'number') {
+            menuRevisionRef.current = Math.max(menuRevisionRef.current, serverRev);
+          }
+          await syncPanelFromServer(true);
+        } else {
+          console.error('adjust_step failed', err);
+        }
+      } finally {
+        setRebalancingStep(null);
+      }
+    }, 800);
+  }, [addMessage, syncPanelFromServer]);
+
   const handleQuantityChange = useCallback((productId: string, delta: number) => {
+    const wasInactive = (menuQuantitiesRef.current[productId] ?? 0) <= 0;
     setMenuQuantities(prev => {
       const current = prev[productId] ?? 0;
       const next = Math.max(0, current + delta);
       return { ...prev, [productId]: next };
     });
-  }, []);
+    // Activation of a suggestion (0 → ≥1) → schedule the step rebalance. Any other
+    // edit (including deactivation) is manual tuning: silent by design.
+    if (wasInactive && delta > 0) scheduleStepRebalance(productId);
+  }, [scheduleStepRebalance]);
 
   // Saves the user's chosen pieces onto the plateau product itself (not a
   // separate map) — that's what makes it ride along the existing menu sync
@@ -1011,6 +1092,7 @@ export function AssistantExperience() {
               onSuggestMore={handleSuggestMore}
               suggestingStep={suggestingStep}
               onConfirmCart={handleConfirmCart}
+              rebalancing={rebalancingStep !== null}
             />
           ) : (
             <EditorialPanel onSelect={q => send(q)} />
