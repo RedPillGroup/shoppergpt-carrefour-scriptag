@@ -510,6 +510,15 @@ export function AssistantExperience() {
       onPhase: phase => setComposePhase(phase),
       onToken: token => setStreamingText(prev => prev + token),
       onMeta: meta => {
+        // Event wiped server-side (reset_event, user-confirmed) → back to the first screen.
+        // Checked BEFORE needsSync and returning early: clear_live_panel bumps the revision,
+        // so menu_changed is also true here, and syncing would race resetPanelToDefault over
+        // the same refs for an empty state there is no point fetching.
+        if (meta.panel_reset) {
+          resetPanelToDefault();
+          panelSyncedThisTurnRef.current = true;
+          return;
+        }
         const needsSync =
           Boolean(meta.sync_conflict) ||
           meta.menu_changed === true ||

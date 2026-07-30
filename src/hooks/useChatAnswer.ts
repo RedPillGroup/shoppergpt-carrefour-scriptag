@@ -10,6 +10,10 @@ export interface MetaPayload {
   menu_changed?: boolean;
   /** True when the selected store changed this turn (e.g. assistant via manage_store). */
   store_changed?: boolean;
+  /** True when reset_event wiped the event + menu this turn (user confirmed switching to a
+   * completely different occasion). The panel returns to its first screen instead of
+   * syncing — server state is empty by definition, so there is nothing to fetch. */
+  panel_reset?: boolean;
   sync_conflict?: {
     sync_conflict?: boolean;
     client_revision?: number;
