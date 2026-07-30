@@ -35,6 +35,12 @@ function PriceBig({ value, size }: { value: number; size: 'sm' | 'lg' }) {
 export function MenuProductCard({ product, quantity, onQuantityChange, horizontal = false }: Props) {
   const inMenu = quantity > 0;
   const setSelectedProduct = useShopperStore(s => s.setSelectedProduct);
+  // Card price follows the QUANTITY, like Carrefour Traiteur: once the product is in
+  // the menu the figure shown is the line total, so changing the quantity visibly
+  // changes the price. At quantity 0 there is no line to total — the product is a
+  // disabled suggestion — so the unit price is shown instead, explicitly labelled so
+  // the two cases can't be read as the same number (see the `l'unité` tag below).
+  const displayPrice = inMenu ? product.price * quantity : product.price;
 
   if (horizontal) {
     return (
@@ -103,7 +109,10 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             from the bottom). ────────── */}
         <div class="flex-1 min-w-0 flex flex-col justify-start gap-1 px-3 pt-3 pb-2">
           <div class="flex items-center gap-1.5 flex-wrap">
-            <PriceBig value={product.price} size="lg" />
+            <PriceBig value={displayPrice} size="lg" />
+            {!inMenu && (
+              <span class="text-[10px] text-[#B0A898] leading-none">l'unité</span>
+            )}
             {product.is_composable && (
               <span class="px-1.5 py-0.5 rounded-full bg-[#C7B287] text-white text-[9px] font-semibold uppercase tracking-wide leading-none">
                 Composer
@@ -211,7 +220,10 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
         {/* ── Content ─────────────────────────────────────── */}
         <div class="px-2.5 pt-2 pb-3 flex flex-col gap-0.5">
           <div class="flex items-center gap-1.5 flex-wrap">
-            <PriceBig value={product.price} size="sm" />
+            <PriceBig value={displayPrice} size="sm" />
+            {!inMenu && (
+              <span class="text-[10px] text-[#B0A898] leading-none">l'unité</span>
+            )}
             {/* "Build-your-own" plateau (real Carrefour composition data, see
                 is_composable) — clicking the card opens the Composer flow
                 instead of the plain description (see AssistantExperience's

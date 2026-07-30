@@ -206,6 +206,12 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
               {detail.price_eur.toFixed(2).replace('.', ',')} €
             </span>
           )}
+          {/* Explicitly "à l'unité": the card now shows the LINE TOTAL (unit × qty), so
+              this is the only place left where the unit price is readable. Without the
+              label the two figures look like the same thing and disagree. */}
+          {detail.price_eur != null && (
+            <span class="text-[11px] text-[#6B7280]">à l'unité</span>
+          )}
           {detail.persons != null && detail.persons > 0 && (
             <span class="text-[11px] text-[#6B7280]">
               Pour {detail.persons} personne{detail.persons > 1 ? 's' : ''}
