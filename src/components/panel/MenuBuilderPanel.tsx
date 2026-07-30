@@ -1,7 +1,8 @@
 import { h, Fragment } from 'preact';
-import { useRef, useMemo, useState } from 'preact/hooks';
+import { useRef, useMemo, useState, useEffect } from 'preact/hooks';
 import { AnimatePresence } from 'framer-motion';
 import { EventRequirements, Product } from '../../types';
+import { useShopperStore } from '../../store';
 import { getStepIcon } from './icons';
 import { MenuProductCard } from './MenuProductCard';
 import { ShoppingListModal } from './ShoppingListModal';
@@ -256,6 +257,26 @@ export function MenuBuilderPanel({
     setMobileStepIndex(clamped);
     productsScrollRef.current?.scrollTo({ top: 0 });
   };
+
+  // Server-driven navigation: when a sync changed exactly one step (see
+  // AssistantExperience's applyPanelState diff), bring that step into view.
+  // Both navigation modes are driven unconditionally rather than sniffing the
+  // viewport: the mobile pager index is invisible on desktop, and scrollIntoView
+  // on a section the mobile layout isn't showing is a no-op — so each mode's
+  // call is simply inert on the other. Steps not currently confirmed (not in
+  // `steps`) are ignored: there is no section to show.
+  const stepScrollRequest = useShopperStore(s => s.stepScrollRequest);
+  useEffect(() => {
+    if (!stepScrollRequest) return;
+    const idx = steps.indexOf(stepScrollRequest.step);
+    if (idx === -1) return;
+    goToMobileStep(idx);
+    sectionRefs.current[stepScrollRequest.step]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepScrollRequest]);
 
   // Mobile-only: let a horizontal scroll/swipe on the sticky step bar itself
   // change the step too, not just its arrow buttons — the bar has no content

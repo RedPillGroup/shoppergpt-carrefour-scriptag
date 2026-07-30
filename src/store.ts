@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Message, Product, Store } from "./types";
+import { Message, MenuStep, Product, Store } from "./types";
 import type { ConversationSummary } from "./api/conversations";
 
 interface ShopperState {
@@ -17,6 +17,12 @@ interface ShopperState {
   activeTab: "chat" | "products";
   cartItems: string[];
   hasInteracted: boolean;
+  /** One-shot "scroll the panel to this step" signal, set when a server sync
+   * changes exactly one step (see AssistantExperience's applyPanelState diff).
+   * The nonce makes consecutive changes to the SAME step re-fire the panel's
+   * effect — without it, two successive edits of « Plats » would only scroll
+   * the first time. */
+  stepScrollRequest: { step: MenuStep; nonce: number } | null;
 
   setSessionId: (id: string) => void;
   setConversationId: (id: string | null) => void;
@@ -33,6 +39,7 @@ interface ShopperState {
   addToCart: (productId: string) => void;
   removeFromCart: (productId: string) => void;
   markInteracted: () => void;
+  requestStepScroll: (step: MenuStep) => void;
 }
 
 export const useShopperStore = create<ShopperState>((set, get) => ({
@@ -49,6 +56,7 @@ export const useShopperStore = create<ShopperState>((set, get) => ({
   activeTab: "chat",
   cartItems: [],
   hasInteracted: false,
+  stepScrollRequest: null,
 
   setSessionId: (id) => set({ sessionId: id }),
   setConversationId: (id) => set({ conversationId: id }),
@@ -76,6 +84,10 @@ export const useShopperStore = create<ShopperState>((set, get) => ({
   removeFromCart: (productId) =>
     set((state) => ({
       cartItems: state.cartItems.filter((id) => id !== productId),
+    })),
+  requestStepScroll: (step) =>
+    set((state) => ({
+      stepScrollRequest: { step, nonce: (state.stepScrollRequest?.nonce ?? 0) + 1 }
     })),
   markInteracted: () => {
     const { hasInteracted } = get();

@@ -2,7 +2,7 @@ import { h } from 'preact';
 import { useRef, useEffect, useState, useCallback } from 'preact/hooks';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useShopperStore } from '../store';
-import { EventRequirements, Message, Product } from '../types';
+import { ALL_MENU_STEPS, EventRequirements, MenuStep, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
 import { fetchServerMenu, menuResponseToPanelState, suggestProducts, syncMenuState } from '../api/menu';
 import { confirmCart } from '../api/cart';
@@ -94,6 +94,47 @@ export function AssistantExperience() {
   menuQuantitiesRef.current = menuQuantities;
 
   const applyPanelState = useCallback((panel: ReturnType<typeof menuResponseToPanelState>) => {
+    // Server-driven scroll: when THIS sync changes exactly one step (a quantity, an
+    // addition, a removal — whatever tool produced it), bring that step into view.
+    // Diffing what actually changed beats instrumenting each backend tool: it covers
+    // tools that don't exist yet, and compose/optimize exclude themselves naturally
+    // (they touch several steps → ambiguous destination → stay put). Two guards:
+    //  · previous state empty = initial load / conversation switch — never scroll;
+    //  · signatures only count qty > 0 lines, so suggestion (qty=0) churn is invisible.
+    // The user's own panel edits are already IN the previous refs, so the server
+    // echoing them back diffs to nothing — no jump while they're manipulating cards.
+    const prevProducts = productsByStepRef.current;
+    const prevQty = menuQuantitiesRef.current;
+    if (Object.values(prevProducts).some(list => list.length > 0)) {
+      const signature = (
+        products: Product[] | undefined,
+        qty: Record<string, number>
+      ): string =>
+        (products ?? [])
+          .map(p => [p.id, qty[p.id] ?? 0] as const)
+          .filter(([, q]) => q > 0)
+          .map(([id, q]) => `${id}:${q}`)
+          .sort()
+          .join(',');
+      const allSteps = new Set([
+        ...Object.keys(prevProducts),
+        ...Object.keys(panel.productsByStep)
+      ]);
+      const changedSteps = [...allSteps].filter(
+        step =>
+          signature(prevProducts[step], prevQty) !==
+          signature(panel.productsByStep[step], panel.menuQuantities)
+      );
+      // Several steps changed → scroll to the FIRST one in canonical menu order
+      // (not Set iteration order, which follows insertion and would make the
+      // target depend on object key layout). Menu order is also how the panel
+      // lays sections out top-to-bottom, so "first affected" reads naturally as
+      // "the topmost section that changed".
+      const target = ALL_MENU_STEPS.find(step => changedSteps.includes(step));
+      if (target) {
+        useShopperStore.getState().requestStepScroll(target);
+      }
+    }
     setProductsByStep(panel.productsByStep);
     setMenuQuantities(panel.menuQuantities);
     setEventRequirements(panel.eventRequirements);
