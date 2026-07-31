@@ -2,6 +2,7 @@ import { h } from 'preact';
 import { useRef, useEffect, useState, useCallback } from 'preact/hooks';
 import submitIcon from '../../assets/icons/submit.svg?raw';
 import micIcon from '../../assets/icons/mic.svg?raw';
+import historyIcon from '../../assets/icons/history.svg?raw';
 import { transcribeAudio } from '../../api/transcription';
 
 interface Props {
@@ -436,14 +437,30 @@ export function ChatInputBar({
       {showConversationsButton && (
         <button
           type="button"
-          class="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer text-[#1A1A2E] hover:opacity-70 shrink-0"
+          class="relative w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer text-[#1A1A2E] hover:opacity-70 shrink-0 [&_*]:cursor-pointer"
           aria-label="Discussions récentes"
           title="Discussions récentes"
           onClick={onOpenConversations}
         >
-          <svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden="true">
-            <path d="M1 1.5h20M1 8h20M1 14.5h20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-          </svg>
+          <span
+            class="inline-flex w-[24px] h-[24px] items-center justify-center pointer-events-none [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: historyIcon }}
+          />
+          {/* Transparent hit layer covering the whole button. An SVG is only a hit
+              target where it is PAINTED (pointer-events: visiblePainted) and this icon
+              is two thin bars in an otherwise empty box, so the pointer kept crossing
+              painted/unpainted boundaries and the browser re-resolved the hover target
+              each time — the cursor flickered. A plain HTML element, by contrast, is
+              hit-tested across its entire box whether or not it paints anything, so
+              this overlay gives the pointer one single, uniform target. Rendered last,
+              positioned and z-10 so it sits above the icon; clicks land on the parent
+              button by normal bubbling.
+              The button's `[&_*]:cursor-pointer` is the belt to this braces: whatever
+              element the pointer ends up resolving to inside this button, its computed
+              cursor is pointer — so even an unforeseen hit-target switch can no longer
+              produce a visible change. */}
+          <span class="absolute inset-0 z-10 cursor-pointer" aria-hidden="true" />
         </button>
       )}
       <div class="relative flex-1 rounded-3xl min-h-9 md:min-h-10 px-1.5 py-1 flex items-center gap-1 border border-black/50">
