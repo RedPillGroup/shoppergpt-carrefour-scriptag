@@ -286,13 +286,20 @@ export function MenuBuilderPanel({
     setMobileStepIndex(Math.max(0, Math.min(steps.length - 1, idx)));
     // One frame so a step hidden by the mobile pager (`display:none`) has already become
     // visible before we ask the browser to scroll to it — scrollIntoView on a still-hidden
-    // element is a silent no-op. `block: 'nearest'` (not 'start') moves the minimum amount
-    // needed to bring the section into view instead of forcing it to the container's top
-    // edge even when it's already mostly visible — smoother and less of a jump.
+    // element is a silent no-op. `block: 'start'` — same as the stepper's own scrollToStep
+    // above — brings the STEP's own top edge into view, not wherever inside it happens to
+    // already be nearest the viewport. `nearest` was tried here first for a gentler scroll,
+    // but it means "move the minimum amount needed", which can leave the view scrolled to
+    // wherever the CHANGED PRODUCT already sat rather than the step's beginning — the user
+    // ends up looking at a spot mid-list instead of the step they were sent to. The
+    // "scrolls all the way from the top" bug this session previously fixed was caused by
+    // `goToMobileStep`'s own forced `scrollTo({top:0})` reset (removed above, see
+    // setMobileStepIndex), not by this `block` value — so restoring 'start' here doesn't
+    // reintroduce it.
     const raf = requestAnimationFrame(() => {
       sectionRefs.current[stepScrollRequest.step]?.scrollIntoView({
         behavior: 'smooth',
-        block: 'nearest'
+        block: 'start'
       });
     });
     return () => cancelAnimationFrame(raf);
