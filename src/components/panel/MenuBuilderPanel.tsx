@@ -7,7 +7,7 @@ import { getStepIcon } from './icons';
 import { MenuProductCard } from './MenuProductCard';
 import { ShoppingListModal } from './ShoppingListModal';
 import cartIcon from '../../assets/icons/cart.svg?raw';
-import upIcon from '../../assets/icons/up.svg?raw';
+import upIcon from '../../assets/icons/+(up).svg?raw';
 import leftIcon from '../../assets/icons/left.svg?raw';
 import rightIcon from '../../assets/icons/right.svg?raw';
 

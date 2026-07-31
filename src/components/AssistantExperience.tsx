@@ -21,7 +21,7 @@ import { ConversationsDrawer } from './chat/ConversationsDrawer';
 import { MenuBuilderPanel } from './panel/MenuBuilderPanel';
 import { ProductDetailModal } from './panel/ProductDetailModal';
 import { ComposeProductModal } from './panel/ComposeProductModal';
-import downIcon from '../assets/icons/down.svg?raw';
+import downIcon from '../assets/icons/+(down).svg?raw';
 
 export function AssistantExperience() {
   const {
