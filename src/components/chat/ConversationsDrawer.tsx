@@ -13,6 +13,20 @@ interface Props {
   onNewConversation: () => void;
 }
 
+/** "31 juil., 14:32" — always shows both date and time (never just the time, even for
+ * today) so two conversations on different days are never shown with the same
+ * ambiguous label. Kept as a plain short date rather than "Aujourd'hui"/"Hier" so the
+ * label width stays consistent from row to row. */
+function formatConversationDate(iso?: string): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const day = date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  const time = date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return `${day}, ${time}`;
+}
+
 /**
  * Covers the chat column fully — "Discussions récentes" (search + title list).
  * Titles come from the API (event_type / first user question).
@@ -33,6 +47,7 @@ export function ConversationsDrawer({
       .map((c) => ({
         ...c,
         displayTitle: (c.title || "Nouvelle conversation").trim(),
+        displayDate: formatConversationDate(c.updated_at || c.created_at),
       }))
       .filter((c) => !q || c.displayTitle.toLowerCase().includes(q));
   }, [conversations, query]);
@@ -116,14 +131,17 @@ export function ConversationsDrawer({
                 <li key={c.conversation_id} class="border-0">
                   <button
                     type="button"
-                    class={`w-full text-left py-3 px-0 bg-transparent border-0 cursor-pointer text-[16px] leading-[1.4] ${
+                    class={`w-full flex items-baseline gap-3 text-left py-3 px-0 bg-transparent border-0 cursor-pointer text-[16px] leading-[1.4] ${
                       active
                         ? "text-[#C7B287] font-semibold"
                         : "text-[#1A1A2E] font-normal hover:text-[#C7B287]"
                     }`}
                     onClick={() => onSelect(c.conversation_id)}
                   >
-                    {c.displayTitle}
+                    <span class="shrink-0 w-24 text-[13px] text-[#9A958C]">
+                      {c.displayDate}
+                    </span>
+                    <span class="min-w-0 truncate">{c.displayTitle}</span>
                   </button>
                 </li>
               );

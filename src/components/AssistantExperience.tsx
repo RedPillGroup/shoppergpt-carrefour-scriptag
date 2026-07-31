@@ -875,7 +875,7 @@ export function AssistantExperience() {
     id: 'w1',
     role: 'assistant',
     content: store ? storeGreeting : noStoreGreeting,
-    timestamp: new Date(0)
+    timestamp: new Date()
   };
 
   return (
