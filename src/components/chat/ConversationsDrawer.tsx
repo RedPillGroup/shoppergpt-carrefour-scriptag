@@ -1,6 +1,7 @@
 import { h } from "preact";
 import { useMemo, useState } from "preact/hooks";
 import { ConversationSummary } from "../../api/conversations";
+import newChatIcon from "../../assets/icons/new-chat.svg?raw";
 
 interface Props {
   open: boolean;
@@ -8,6 +9,8 @@ interface Props {
   activeConversationId: string | null;
   onClose: () => void;
   onSelect: (conversationId: string) => void;
+  /** Start a fresh thread — clears the chat and the panel, keeps the store. */
+  onNewConversation: () => void;
 }
 
 /**
@@ -20,6 +23,7 @@ export function ConversationsDrawer({
   activeConversationId,
   onClose,
   onSelect,
+  onNewConversation,
 }: Props) {
   const [query, setQuery] = useState("");
 
@@ -43,13 +47,10 @@ export function ConversationsDrawer({
       aria-label="Discussions récentes"
     >
       <aside class="relative z-10 h-full w-full bg-white flex flex-col border-r border-[#E8E4DC]">
-        <div class="flex items-center justify-between px-6 pt-6 pb-4">
-          <h2 class="m-0 text-[20px] md:text-[22px] font-semibold text-[#1A1A2E] tracking-[-0.01em]">
-            Discussions récentes
-          </h2>
+        <div class="flex items-center justify-end px-6 pt-5">
           <button
             type="button"
-            class="w-10 h-10 flex items-center justify-center bg-transparent border-0 text-[#1A1A2E] cursor-pointer text-[24px] leading-none hover:opacity-70"
+            class="w-10 h-10 flex items-center justify-center bg-transparent border-0 text-[#1A1A2E] cursor-pointer text-[24px] leading-none hover:opacity-70 shrink-0"
             aria-label="Fermer"
             onClick={onClose}
           >
@@ -57,7 +58,29 @@ export function ConversationsDrawer({
           </button>
         </div>
 
-        <div class="px-6 pb-4">
+        <div class="px-6 pt-2 pb-6">
+          {/* Same pointer-events-none / full-cover hit-layer pattern as the drawer's
+              own trigger in ChatInputBar: an SVG only hit-tests where it's painted,
+              so leaving it in the hit path makes the cursor flicker as the pointer
+              crosses its transparent parts. */}
+          <button
+            type="button"
+            class="relative inline-flex items-center gap-2.5 bg-transparent border-0 p-0 cursor-pointer text-[#1A1A2E] hover:opacity-70 [&_*]:cursor-pointer"
+            onClick={onNewConversation}
+          >
+            <span
+              class="inline-flex w-[18px] h-[18px] items-center justify-center pointer-events-none [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
+              aria-hidden="true"
+              dangerouslySetInnerHTML={{ __html: newChatIcon }}
+            />
+            <span class="text-[16px] font-semibold tracking-[-0.01em] pointer-events-none">
+              Nouvelle discussion
+            </span>
+            <span class="absolute inset-0 z-10 cursor-pointer" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div class="px-6 pb-6">
           <label class="relative block">
             <span class="sr-only">Rechercher</span>
             <input
@@ -65,7 +88,7 @@ export function ConversationsDrawer({
               value={query}
               onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
               placeholder="Rechercher"
-              class="w-full h-12 rounded-full border border-[#D8D5CF] bg-white pl-5 pr-12 text-[15px] text-[#1A1A2E] placeholder:text-[#9A958C] outline-none focus:border-[#C7B287]"
+              class="w-full h-12 rounded-full border border-[#D8D5CF] bg-white pl-5 pr-12 text-[16px] text-[#1A1A2E] placeholder:text-[#9A958C] outline-none focus:border-[#C7B287]"
             />
             <span
               class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#9A958C]"
@@ -79,9 +102,13 @@ export function ConversationsDrawer({
           </label>
         </div>
 
+        <h2 class="m-0 px-6 pb-3 text-[16px] font-semibold text-[#1A1A2E] tracking-[-0.01em]">
+          Discussions récentes
+        </h2>
+
         <ul class="list-none m-0 px-6 pb-8 overflow-y-auto flex-1">
           {rows.length === 0 ? (
-            <li class="text-[15px] text-[#9A958C] py-4">Aucune discussion</li>
+            <li class="text-[16px] text-[#9A958C] py-3">Aucune discussion</li>
           ) : (
             rows.map((c) => {
               const active = c.conversation_id === activeConversationId;
@@ -89,7 +116,7 @@ export function ConversationsDrawer({
                 <li key={c.conversation_id} class="border-0">
                   <button
                     type="button"
-                    class={`w-full text-left py-4 px-0 bg-transparent border-0 border-b border-[#EEEAE4] cursor-pointer text-[15px] md:text-[16px] leading-[1.4] ${
+                    class={`w-full text-left py-3 px-0 bg-transparent border-0 cursor-pointer text-[16px] leading-[1.4] ${
                       active
                         ? "text-[#C7B287] font-semibold"
                         : "text-[#1A1A2E] font-normal hover:text-[#C7B287]"

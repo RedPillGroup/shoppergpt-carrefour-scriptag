@@ -499,6 +499,37 @@ export function AssistantExperience() {
     ]
   );
 
+  /** Start a fresh thread from the drawer — same end state a page refresh lands on
+   * (empty chat, no conversationId, default panel), minus the reload. Flushes the
+   * outgoing conversation's local-only panel edits first, for exactly the reason
+   * openConversation does: nothing else ever persists them server-side, so leaving
+   * without this silently drops them. */
+  const startNewConversation = useCallback(async () => {
+    setConversationsOpen(false);
+    const leavingId = useShopperStore.getState().conversationId;
+    if (leavingId) {
+      try {
+        await syncMenuState(sessionId, getClientState() ?? {});
+      } catch (err) {
+        console.warn('[shopper-gpt] pre-new-conversation menu sync failed:', err);
+      }
+    }
+    setConversationId(null);
+    setMessages([]);
+    setStreamingText('');
+    setComposePhase(null);
+    setQuestion(null);
+    resetPanelToDefault();
+    menuEtagRef.current = null;
+    void refreshConversations();
+  }, [
+    sessionId,
+    setConversationId,
+    setMessages,
+    resetPanelToDefault,
+    refreshConversations
+  ]);
+
   useChatAnswer(
     question,
     jwt,
@@ -1071,6 +1102,7 @@ export function AssistantExperience() {
             activeConversationId={conversationId}
             onClose={() => setConversationsOpen(false)}
             onSelect={id => void openConversation(id)}
+            onNewConversation={() => void startNewConversation()}
           />
         </div>
 
