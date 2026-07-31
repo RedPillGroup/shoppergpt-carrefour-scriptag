@@ -22,8 +22,16 @@ function formatConversationDate(iso?: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
 
-  const day = date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
-  const time = date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const day = date.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Europe/Paris"
+  });
+  const time = date.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Paris"
+  });
   return `${day}, ${time}`;
 }
 
