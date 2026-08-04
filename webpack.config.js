@@ -8,8 +8,17 @@ module.exports = (env, argv) => {
     output: {
       path: path.resolve(__dirname, "dist"),
       filename: "agent.js",
-      library: { type: "umd", name: "ShopperGPT" },
-      globalObject: "this",
+      // Plain global build (IIFE), NOT UMD. A UMD wrapper checks `define.amd`
+      // first and, on any host page that ships an AMD loader (RequireJS — which
+      // Magento's frontend is built on), takes the AMD branch: it registers
+      // itself via `define([], factory)` instead of running. The factory that
+      // bootstraps and mounts the widget then never executes, so nothing renders
+      // (no shadow root, no panel, no button) — while the file still downloads
+      // fine, which is why it "loads but nothing appears" only on AMD hosts and
+      // works on the plain-HTML sandbox. `type: "window"` just runs the entry and
+      // exposes `window.ShopperGPT` (also a handy "did the bundle boot?" marker).
+      // Do NOT revert to "umd" without re-checking every embedding host for AMD.
+      library: { type: "window", name: "ShopperGPT" },
       clean: true,
     },
     resolve: {

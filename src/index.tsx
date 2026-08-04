@@ -49,6 +49,19 @@ function bootstrap() {
   // Embedded chat mode: host page provides a <div id="shoppergpt-chat"> mount point
   const embeddedChatMount = document.getElementById("shoppergpt-chat");
   if (embeddedChatMount) {
+    // Sizing safety net: the panel inside the shadow root is height:100%, so if
+    // the host container resolves to 0px (integrator added the div but set no
+    // height) the widget mounts but is invisible. Give the host a concrete
+    // default height unless it already has a usable one — so integrators don't
+    // have to hardcode a height on their div.
+    const computedHeight = window.getComputedStyle(embeddedChatMount).height;
+    const hasUsableHeight =
+      !!embeddedChatMount.style.height ||
+      (computedHeight !== "" && computedHeight !== "auto" && computedHeight !== "0px");
+    if (!hasUsableHeight) {
+      embeddedChatMount.style.height = "600px";
+    }
+
     const shadow = embeddedChatMount.attachShadow({ mode: "open" });
     injectStyles(shadow);
     const mountPoint = document.createElement("div");
