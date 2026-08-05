@@ -38,7 +38,7 @@ function useFocusTrap(onEscape: () => void) {
   useEffect(() => {
     const el = panelRef.current;
     if (!el) return;
-    el.focus();
+    el.focus({ preventScroll: true });
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -54,10 +54,10 @@ function useFocusTrap(onEscape: () => void) {
       const last = focusable[focusable.length - 1];
       if (e.shiftKey && active === first) {
         e.preventDefault();
-        last.focus();
+        last.focus({ preventScroll: true });
       } else if (!e.shiftKey && active === last) {
         e.preventDefault();
-        first.focus();
+        first.focus({ preventScroll: true });
       }
     };
 
