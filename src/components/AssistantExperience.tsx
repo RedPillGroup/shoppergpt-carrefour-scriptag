@@ -65,7 +65,7 @@ export function AssistantExperience() {
   // its accessory bar eat a big chunk of it. Simpler to just not compete for
   // space at all than to fight that OS chrome pixel by pixel.
   const [chatFocused, setChatFocused] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
   const jwtRef = useRef(jwt);
   const sessionIdRef = useRef(sessionId);
   const menuRevisionRef = useRef(0);
@@ -204,9 +204,18 @@ export function AssistantExperience() {
     menuEtagRef.current = null;
   }, []);
 
+  // Scroll the chat's OWN container to the bottom — NOT scrollIntoView, which also
+  // scrolls the host PAGE to bring the target into the viewport (that residual page
+  // scroll on Carrefour's tall page). Combined with :host{overflow:hidden} on the
+  // mount (index.tsx), this keeps auto-scroll fully inside the widget.
+  const scrollChatToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    const el = chatScrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading, streamingText]);
+    scrollChatToBottom();
+  }, [messages, isLoading, streamingText, scrollChatToBottom]);
 
   useEffect(() => {
     // Refresh must land on the default editorial screen — do not rehydrate the
@@ -943,6 +952,7 @@ export function AssistantExperience() {
           )}
 
           <div
+            ref={chatScrollRef}
             class={`flex flex-1 overflow-y-auto min-h-0 flex-col [scroll-behavior:smooth] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db] ${
               // A margin (not padding) — this shifts the scrollable box's own top
               // edge down below the drag handle's visible half, so its own
@@ -1056,7 +1066,6 @@ export function AssistantExperience() {
               )}
             </div>
 
-            <div ref={bottomRef} />
           </div>
 
           <ChatInputBar
@@ -1083,11 +1092,11 @@ export function AssistantExperience() {
               // move. Wait a tick, then re-run on the visualViewport's own
               // resize (keyboard finishing its slide) as a second pass in
               // case the first ran before the keyboard's height change had landed.
-              setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 320);
+              setTimeout(() => scrollChatToBottom(), 320);
               const vv = window.visualViewport;
               if (vv) {
                 const onResize = () => {
-                  bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  scrollChatToBottom();
                   vv.removeEventListener('resize', onResize);
                 };
                 vv.addEventListener('resize', onResize);
