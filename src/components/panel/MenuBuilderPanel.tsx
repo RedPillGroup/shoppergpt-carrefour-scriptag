@@ -3,7 +3,6 @@ import { useRef, useMemo, useState, useEffect } from 'preact/hooks';
 import { AnimatePresence } from 'framer-motion';
 import { EventRequirements, Product } from '../../types';
 import { useShopperStore } from '../../store';
-import { scrollChildToContainerTop } from '../../utils/scroll';
 import { getStepIcon } from './icons';
 import { MenuProductCard } from './MenuProductCard';
 import { ShoppingListModal } from './ShoppingListModal';
@@ -251,7 +250,7 @@ export function MenuBuilderPanel({
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const scrollToStep = (step: string) => {
-    scrollChildToContainerTop(productsScrollRef.current, sectionRefs.current[step]);
+    sectionRefs.current[step]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   // Mobile-only: one step shown at a time, paged via the sticky top bar's
@@ -298,10 +297,10 @@ export function MenuBuilderPanel({
     // setMobileStepIndex), not by this `block` value — so restoring 'start' here doesn't
     // reintroduce it.
     const raf = requestAnimationFrame(() => {
-      scrollChildToContainerTop(
-        productsScrollRef.current,
-        sectionRefs.current[stepScrollRequest.step]
-      );
+      sectionRefs.current[stepScrollRequest.step]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
     });
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -30,7 +30,14 @@ function injectDocumentFonts() {
 
 function injectStyles(shadow: ShadowRoot) {
   const styleEl = document.createElement("style");
-  styleEl.textContent = styles as unknown as string;
+  // Make the shadow host (#shoppergpt-chat) a scroll boundary: the widget scrolls
+  // INTERNALLY, so the host must clip. Without this, a host that sets only a height
+  // (e.g. Carrefour's OpenMage page) isn't a boundary — internal scrolls leak to the
+  // HOST PAGE and the inner chat list never becomes the effective scroller. The
+  // sandbox host sets this in its own CSS; `:host` applies it to every embed. This
+  // one rule keeps ALL widget scrolling (chat auto-scroll, step nav, focus) contained.
+  styleEl.textContent =
+    ":host{overflow:hidden;min-height:0;}\n" + (styles as unknown as string);
   shadow.appendChild(styleEl);
 }
 

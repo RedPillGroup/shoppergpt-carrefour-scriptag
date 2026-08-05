@@ -25,7 +25,7 @@ export function useFocusTrap(onEscape: () => void) {
 
     // Move focus into the panel so keyboard users are immediately inside.
     // tabIndex={-1} on the panel div makes it programmatically focusable.
-    el.focus({ preventScroll: true });
+    el.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -46,10 +46,10 @@ export function useFocusTrap(onEscape: () => void) {
 
       if (e.shiftKey && active === first) {
         e.preventDefault();
-        last.focus({ preventScroll: true });
+        last.focus();
       } else if (!e.shiftKey && active === last) {
         e.preventDefault();
-        first.focus({ preventScroll: true });
+        first.focus();
       }
     };
 
