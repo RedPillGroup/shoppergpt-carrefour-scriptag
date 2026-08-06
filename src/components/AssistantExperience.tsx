@@ -204,17 +204,23 @@ export function AssistantExperience() {
     menuEtagRef.current = null;
   }, []);
 
-  // Scroll the chat's OWN container to the bottom — NOT scrollIntoView, which also
-  // scrolls the host PAGE to bring the target into the viewport (that residual page
-  // scroll on Carrefour's tall page). Combined with :host{overflow:hidden} on the
-  // mount (index.tsx), this keeps auto-scroll fully inside the widget.
-  const scrollChatToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+  // Pin the chat list to the bottom on new/streaming messages by scrolling the
+  // container itself — NOT scrollIntoView, which also scrolls the host PAGE to bring
+  // the target into the viewport (with :host{overflow:hidden} on the mount, this
+  // keeps auto-scroll fully inside the widget). Instant (scrollTop), NOT smooth:
+  // during token streaming this fires on every token, and repeated smooth scrolls
+  // interrupt one another and visibly stall (the "no scroll" regression).
+  const scrollChatToBottom = useCallback(() => {
     const el = chatScrollRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior });
+    if (el) el.scrollTop = el.scrollHeight;
   }, []);
 
   useEffect(() => {
     scrollChatToBottom();
+    // Second pass next frame: a new message's enter transition can change its height
+    // after the first layout, so re-pin once that's settled.
+    const raf = requestAnimationFrame(scrollChatToBottom);
+    return () => cancelAnimationFrame(raf);
   }, [messages, isLoading, streamingText, scrollChatToBottom]);
 
   useEffect(() => {
