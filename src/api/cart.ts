@@ -5,6 +5,9 @@ export interface ConfirmCartResult {
   status: "ok" | "skipped" | "error";
   reason?: string;
   detail?: string;
+  /** Rendered `.header-minicart` HTML from Carrefour's /cart/add (see waib-api
+   * cart/confirm passthrough) — forwarded to the host in shoppergpt:cart_updated. */
+  minicart_html?: string;
 }
 
 /** POST /cart/confirm — "Ajouter au panier". Pushes the composed menu to

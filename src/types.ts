@@ -94,8 +94,11 @@ export interface PageContextEvent {
 
 export interface CartUpdatedEvent {
   success: boolean;
-  product_id: string;
-  action: "add" | "remove";
+  product_id?: string;
+  action?: "add" | "remove" | "confirm";
+  /** Rendered `.header-minicart` HTML from Carrefour's /cart/add — present on the
+   * "confirm" event (real cart push). The host injects it, no extra request. */
+  minicart_html?: string;
 }
 
 export interface ChangeShopEvent {

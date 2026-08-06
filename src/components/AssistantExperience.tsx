@@ -7,6 +7,7 @@ import { useChatAnswer } from '../hooks/useChatAnswer';
 import { adjustStepQuantities, fetchServerMenu, menuResponseToPanelState, suggestProducts, syncMenuState } from '../api/menu';
 import { confirmCart } from '../api/cart';
 import { getEnv, getMockScreen } from '../api/config';
+import { dispatchCartUpdated } from '../events';
 import {
   fetchConversation,
   fetchConversations
@@ -204,6 +205,13 @@ export function AssistantExperience() {
     menuEtagRef.current = null;
   }, []);
 
+  // Resume the last active conversation across a page reload (Carrefour triggers
+  // location.reload() after a store change). The active conversation id is persisted
+  // to sessionStorage per session; openConversationRef lets the resume-on-load effect
+  // below call openConversation without a temporal-dead-zone (it's defined later).
+  const openConversationRef = useRef<((id: string) => void) | null>(null);
+  const restoredSessionRef = useRef<string | null>(null);
+
   // Pin the chat list to the bottom on new/streaming messages by scrolling the
   // container itself — NOT scrollIntoView, which also scrolls the host PAGE to bring
   // the target into the viewport (with :host{overflow:hidden} on the mount, this
@@ -224,11 +232,25 @@ export function AssistantExperience() {
   }, [messages, isLoading, streamingText, scrollChatToBottom]);
 
   useEffect(() => {
-    // Refresh must land on the default editorial screen — do not rehydrate the
-    // last session menu into the right panel. Panel sync happens after answers
-    // and when opening a conversation from the drawer.
+    // On (re)load: resume the last active conversation for this session if one was
+    // stored — this survives a page reload (e.g. Carrefour's reload after a store
+    // change) — otherwise land on the default editorial screen. Runs once per
+    // session; openConversation restores messages + panel and falls back to the
+    // default screen on any failure (stale/deleted id).
     if (!sessionId || getMockScreen()) return;
-    resetPanelToDefault();
+    if (restoredSessionRef.current === sessionId) return;
+    restoredSessionRef.current = sessionId;
+    let resumeId: string | null = null;
+    try {
+      resumeId = sessionStorage.getItem('sgpt:active-conv:' + sessionId);
+    } catch {
+      resumeId = null;
+    }
+    if (resumeId && openConversationRef.current) {
+      openConversationRef.current(resumeId);
+    } else {
+      resetPanelToDefault();
+    }
   }, [sessionId, resetPanelToDefault]);
 
   // Dev/testing only — jump straight to a MenuBuilderPanel screen with canned
@@ -513,6 +535,24 @@ export function AssistantExperience() {
       refreshConversations
     ]
   );
+
+  // Keep the ref pointing at the latest openConversation (read by the resume-on-load
+  // effect above). Assigned during render — a standard "latest value" ref.
+  openConversationRef.current = openConversation;
+
+  // Persist / clear the active conversation id (per session) so a page reload can
+  // resume it. sessionStorage → scoped to this tab session, so a brand-new visit
+  // still starts on the welcome screen.
+  useEffect(() => {
+    if (!sessionId) return;
+    const key = 'sgpt:active-conv:' + sessionId;
+    try {
+      if (conversationId) sessionStorage.setItem(key, conversationId);
+      else sessionStorage.removeItem(key);
+    } catch {
+      /* storage disabled / private mode — resume simply won't happen */
+    }
+  }, [conversationId, sessionId]);
 
   /** Start a fresh thread from the drawer — same end state a page refresh lands on
    * (empty chat, no conversationId, default panel), minus the reload. Flushes the
@@ -863,6 +903,15 @@ export function AssistantExperience() {
           content:
             "❌ Impossible d'ajouter le menu à votre panier Carrefour. Veuillez réessayer.",
           timestamp: new Date()
+        });
+      } else if (result.status === 'ok') {
+        // The real Carrefour cart just changed — notify the host page, carrying the
+        // rendered .header-minicart HTML Carrefour returned so it can refresh the
+        // mini-cart with no extra request (see shoppergpt:cart_updated).
+        dispatchCartUpdated({
+          success: true,
+          action: 'confirm',
+          minicart_html: result.minicart_html
         });
       }
     } catch (err) {
