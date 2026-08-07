@@ -6,7 +6,7 @@ import { ALL_MENU_STEPS, EventRequirements, MenuStep, Message, Product } from '.
 import { useChatAnswer } from '../hooks/useChatAnswer';
 import { adjustStepQuantities, fetchServerMenu, menuResponseToPanelState, suggestProducts, syncMenuState } from '../api/menu';
 import { confirmCart } from '../api/cart';
-import { getEnv, getMockScreen } from '../api/config';
+import { getEnv, getInitialSessionId, getMockScreen } from '../api/config';
 import { dispatchCartUpdated } from '../events';
 import {
   fetchConversation,
@@ -209,8 +209,22 @@ export function AssistantExperience() {
   // location.reload() after a store change). The active conversation id is persisted
   // to sessionStorage per session; openConversationRef lets the resume-on-load effect
   // below call openConversation without a temporal-dead-zone (it's defined later).
-  const openConversationRef = useRef<((id: string) => void) | null>(null);
+  const openConversationRef = useRef<((id: string) => Promise<void>) | null>(null);
   const restoredSessionRef = useRef<string | null>(null);
+
+  // First paint after a reload: if a conversation will be resumed (see the effect
+  // below), suppress the welcome screen so it doesn't flash before the thread loads.
+  // Initialised synchronously from sessionStorage so the very first render already
+  // knows a resume is pending — no welcome flash. Stays false for fresh visitors
+  // (no stored id) → their load is completely unchanged.
+  const [restoring, setRestoring] = useState<boolean>(() => {
+    if (getMockScreen()) return false;
+    try {
+      return !!sessionStorage.getItem('sgpt:active-conv:' + getInitialSessionId());
+    } catch {
+      return false;
+    }
+  });
 
   // Pin the chat list to the bottom on new/streaming messages by scrolling the
   // container itself — NOT scrollIntoView, which also scrolls the host PAGE to bring
@@ -247,8 +261,11 @@ export function AssistantExperience() {
       resumeId = null;
     }
     if (resumeId && openConversationRef.current) {
-      openConversationRef.current(resumeId);
+      // Clear `restoring` once the resume settles (success or failure) — openConversation
+      // never rejects (it catches internally and falls back to the default screen).
+      void openConversationRef.current(resumeId).finally(() => setRestoring(false));
     } else {
+      setRestoring(false);
       resetPanelToDefault();
     }
   }, [sessionId, resetPanelToDefault]);
@@ -1030,7 +1047,7 @@ export function AssistantExperience() {
                 (AnimatePresence handles the exit; a plain `&&` would just yank it
                 away with no transition). */}
             <AnimatePresence initial={false}>
-              {messages.length === 0 && (
+              {messages.length === 0 && !restoring && (
                 <motion.div
                   class="shrink-0 overflow-hidden px-5 md:px-8"
                   initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.998 }}
