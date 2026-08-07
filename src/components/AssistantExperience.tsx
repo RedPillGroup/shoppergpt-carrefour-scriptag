@@ -141,33 +141,22 @@ export function AssistantExperience() {
     setEventRequirements(panel.eventRequirements);
     menuRevisionRef.current = panel.menuRevision;
     setEventScreenEnabled(panel.hasMenu);
-    // Store selected server-side (e.g. by the assistant via manage_store) → reflect it
-    // in the store + notify the host page so its header updates (sandbox navbar / Carrefour).
+    // Reflect the server's store into our local store so the panel stays in sync.
+    // We do NOT emit shoppergpt:change_shop here: applyPanelState runs for EVERY
+    // sync — initial load, conversation restore, background re-sync, and genuine
+    // user changes alike — and no store-diff heuristic can tell those apart (a
+    // fresh load has no prior store, which looked like a change and made a
+    // reload-on-change host loop forever; requiring a prior store instead dropped
+    // the event on a first selection). The host notification is driven off the
+    // backend's authoritative store_changed meta (a real select_store) in onMeta.
     if (panel.store && panel.store.store_id) {
       const cur = useShopperStore.getState().store;
-      // A REAL change = we already had a store and it's now a different one (or mode).
-      // Initial population / conversation restore / re-sync (cur empty) is NOT a change.
-      const isRealChange =
-        !!cur &&
-        (String(cur.store_id) !== String(panel.store.store_id) ||
-          cur.mode !== panel.store.mode);
-      if (!cur || isRealChange) {
+      const differs =
+        !cur ||
+        String(cur.store_id) !== String(panel.store.store_id) ||
+        cur.mode !== panel.store.mode;
+      if (differs) {
         useShopperStore.getState().setStore(panel.store);
-      }
-      // Notify the host ONLY on a genuine change — never on load/restore. A host that
-      // reloads on shoppergpt:change_shop (Carrefour) would otherwise loop forever:
-      // every fresh load has no prior store, so the old `!cur` guard looked like a
-      // change on every page load and triggered an endless reload cycle.
-      if (isRealChange) {
-        window.dispatchEvent(
-          new CustomEvent('shoppergpt:change_shop', {
-            detail: {
-              store_id: panel.store.store_id,
-              store_name: panel.store.store_name,
-              mode: panel.store.mode
-            }
-          })
-        );
       }
     }
   }, []);
@@ -637,8 +626,32 @@ export function AssistantExperience() {
           (typeof meta.menu_revision === 'number' && meta.menu_revision > menuRevisionRef.current);
         if (needsSync) {
           panelSyncedThisTurnRef.current = true;
+          // A store was actually SELECTED this turn (select_store ran) and the
+          // selection was finalized — not a needs_mode round-trip (mode_options
+          // present) which will resolve on a following turn. This is the single
+          // authoritative trigger for shoppergpt:change_shop: it fires on every
+          // real store change (including the very first one, when we had no store
+          // yet) and never on load / restore / background re-sync — none of which
+          // set store_changed. Dispatched AFTER the sync so the store detail is
+          // the freshly applied one.
+          const storeFinalizedThisTurn =
+            meta.store_changed === true && !meta.mode_options;
           pendingPanelSyncRef.current = syncPanelFromServer(true).finally(() => {
             pendingPanelSyncRef.current = null;
+            if (storeFinalizedThisTurn) {
+              const s = useShopperStore.getState().store;
+              if (s && s.store_id) {
+                window.dispatchEvent(
+                  new CustomEvent('shoppergpt:change_shop', {
+                    detail: {
+                      store_id: s.store_id,
+                      store_name: s.store_name,
+                      mode: s.mode
+                    }
+                  })
+                );
+              }
+            }
           });
         }
         if (meta.step_suggestion?.steps?.length) {
