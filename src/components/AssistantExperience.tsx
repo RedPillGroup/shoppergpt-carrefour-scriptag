@@ -145,12 +145,20 @@ export function AssistantExperience() {
     // in the store + notify the host page so its header updates (sandbox navbar / Carrefour).
     if (panel.store && panel.store.store_id) {
       const cur = useShopperStore.getState().store;
-      if (
-        !cur ||
-        String(cur.store_id) !== String(panel.store.store_id) ||
-        cur.mode !== panel.store.mode
-      ) {
+      // A REAL change = we already had a store and it's now a different one (or mode).
+      // Initial population / conversation restore / re-sync (cur empty) is NOT a change.
+      const isRealChange =
+        !!cur &&
+        (String(cur.store_id) !== String(panel.store.store_id) ||
+          cur.mode !== panel.store.mode);
+      if (!cur || isRealChange) {
         useShopperStore.getState().setStore(panel.store);
+      }
+      // Notify the host ONLY on a genuine change — never on load/restore. A host that
+      // reloads on shoppergpt:change_shop (Carrefour) would otherwise loop forever:
+      // every fresh load has no prior store, so the old `!cur` guard looked like a
+      // change on every page load and triggered an endless reload cycle.
+      if (isRealChange) {
         window.dispatchEvent(
           new CustomEvent('shoppergpt:change_shop', {
             detail: {
