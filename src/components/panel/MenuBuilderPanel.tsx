@@ -6,6 +6,7 @@ import { useShopperStore } from '../../store';
 import { getStepIcon } from './icons';
 import { MenuProductCard } from './MenuProductCard';
 import { ShoppingListModal } from './ShoppingListModal';
+import { trackCta } from '../../api/track';
 import cartIcon from '../../assets/icons/cart.svg?raw';
 import upIcon from '../../assets/icons/+(up).svg?raw';
 import leftIcon from '../../assets/icons/left.svg?raw';
@@ -808,7 +809,10 @@ export function MenuBuilderPanel({
               {/* cart.svg now bakes in its own white circle background, so this
                   is just the icon itself — no extra button chrome/wrapper. */}
               <button
-                onClick={() => setShoppingListOpen(true)}
+                onClick={() => {
+                  trackCta('valider_mon_menu');
+                  setShoppingListOpen(true);
+                }}
                 aria-label="Valider mon menu"
                 class="min-[1000px]:hidden shrink-0 flex items-center justify-center border-0 bg-transparent p-0 cursor-pointer transition-opacity hover:opacity-90"
               >
@@ -818,7 +822,10 @@ export function MenuBuilderPanel({
                 />
               </button>
               <button
-                onClick={() => setShoppingListOpen(true)}
+                onClick={() => {
+                  trackCta('valider_mon_menu');
+                  setShoppingListOpen(true);
+                }}
                 class="hidden min-[1000px]:flex shrink-0 items-center justify-center cursor-pointer bg-white hover:bg-[#F7F2E6] transition-colors border-2 border-[#AAAAAA] rounded-30px py-1 px-3 rounded-full"
               >
                 <span class="text-[9px] font-[500] uppercase tracking-wide text-[#8D7A4E] whitespace-nowrap">

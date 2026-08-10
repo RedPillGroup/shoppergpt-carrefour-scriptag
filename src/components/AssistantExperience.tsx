@@ -8,6 +8,7 @@ import { adjustStepQuantities, fetchServerMenu, menuResponseToPanelState, sugges
 import { confirmCart } from '../api/cart';
 import { getEnv, getInitialSessionId, getMockScreen } from '../api/config';
 import { dispatchCartUpdated } from '../events';
+import { trackSession, trackCta } from '../api/track';
 import {
   fetchConversation,
   fetchConversations
@@ -208,6 +209,7 @@ export function AssistantExperience() {
   // below call openConversation without a temporal-dead-zone (it's defined later).
   const openConversationRef = useRef<((id: string) => Promise<void>) | null>(null);
   const restoredSessionRef = useRef<string | null>(null);
+  const trackedSessionRef = useRef<string | null>(null);
 
   // First paint after a reload: if a conversation will be resumed (see the effect
   // below), suppress the welcome screen so it doesn't flash before the thread loads.
@@ -266,6 +268,17 @@ export function AssistantExperience() {
       resetPanelToDefault();
     }
   }, [sessionId, resetPanelToDefault]);
+
+  // Fire the one-time session-tracking event as soon as the session id is known
+  // (it can arrive after mount via the shoppergpt:session event). Guarded by a ref
+  // so it fires exactly once per session id, never on re-render; skipped in mock
+  // mode. trackSession() is fail-soft and never throws.
+  useEffect(() => {
+    if (!sessionId || getMockScreen()) return;
+    if (trackedSessionRef.current === sessionId) return;
+    trackedSessionRef.current = sessionId;
+    trackSession();
+  }, [sessionId]);
 
   // Dev/testing only — jump straight to a MenuBuilderPanel screen with canned
   // data via data-mock-screen="event"|"products" on the script tag, instead of
@@ -943,6 +956,8 @@ export function AssistantExperience() {
           timestamp: new Date()
         });
       } else if (result.status === 'ok') {
+        // Count a confirmed add-to-cart as a lead (BO "ajouter au panier" KPI).
+        trackCta('ajouter_au_panier');
         // The real Carrefour cart just changed — notify the host page, carrying the
         // rendered .header-minicart HTML Carrefour returned so it can refresh the
         // mini-cart with no extra request (see shoppergpt:cart_updated).
@@ -1135,9 +1150,10 @@ export function AssistantExperience() {
                   onStepSelectionChange={steps => {
                     pendingStepSelectionRef.current = steps;
                   }}
-                  onValidateSteps={() =>
-                    send('Ces étapes me conviennent, vous pouvez composer le menu.')
-                  }
+                  onValidateSteps={() => {
+                    trackCta('composition_menu');
+                    send('Ces étapes me conviennent, vous pouvez composer le menu.');
+                  }}
                   choiceCardsDisabled={
                     // Same principle as stepSelectionDisabled above: only freeze once
                     // the flow has actually moved past THIS card (a newer store/mode
@@ -1149,7 +1165,10 @@ export function AssistantExperience() {
                       .slice(i + 1)
                       .some(msg => msg.storeOptions || msg.modeOptions || msg.storeResolved)
                   }
-                  onSelectStore={storeName => send(storeName)}
+                  onSelectStore={storeName => {
+                    trackCta('magasin');
+                    send(storeName);
+                  }}
                   onSelectMode={modeLabel => send(modeLabel)}
                 />
               ))}
