@@ -1186,7 +1186,11 @@ export function AssistantExperience() {
             onInputChange={setInput}
             onSend={() => send()}
             onKeyDown={handleKey}
-            showConversationsButton={true}
+            // Hidden while the menu is full-screen on mobile: the chat pane is
+            // collapsed to a sliver then, so opening the drawer would render it
+            // into a 64px box (unusable). The user retracts the panel first, which
+            // brings the chat + this button back, then opens history normally.
+            showConversationsButton={!mobilePanelExpanded}
             onOpenConversations={() => setConversationsOpen(true)}
             // Mobile: while typing, show only the chat (see chatFocused above)
             // instead of fighting the iOS keyboard + accessory bar for space.
