@@ -1029,6 +1029,18 @@ export function AssistantExperience() {
             flexBasis: mobilePanelExpanded ? '64px' : '62%'
           }}
         >
+          {/* Resuming a conversation on page load (see the resume-on-load effect
+              above) reuses `isLoading`/`isWaiting`, which would otherwise render
+              the "Cathia is writing" bubble below while we're really just
+              fetching history — misleading, since nothing is being composed.
+              A plain opaque spinner reads correctly as "loading a page", not
+              "the assistant is thinking". */}
+          {restoring && (
+            <div class="absolute inset-0 z-[70] bg-white flex flex-col items-center justify-center gap-4">
+              <div class="w-12 h-12 rounded-full border-4 border-[#C7B287] border-t-transparent animate-spin" />
+            </div>
+          )}
+
           {/* Mobile-only "expand" trigger — sits at the chat pane's own top edge
               (the seam with the panel above), extending down into the chat pane's
               own bounds only, so it never needs to reach over into the panel's
@@ -1172,7 +1184,7 @@ export function AssistantExperience() {
                   onSelectMode={modeLabel => send(modeLabel)}
                 />
               ))}
-              {isWaiting && (composePhase ? <ComposingIndicator /> : <TypingIndicator />)}
+              {isWaiting && !restoring && (composePhase ? <ComposingIndicator /> : <TypingIndicator />)}
               {isStreaming && (
                 <StreamingBubble text={streamingText.replace(/__NEWLINE__/g, '\n')} />
               )}
