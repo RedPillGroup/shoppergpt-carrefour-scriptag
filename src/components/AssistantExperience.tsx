@@ -218,6 +218,11 @@ export function AssistantExperience() {
   // (no stored id) → their load is completely unchanged.
   const [restoring, setRestoring] = useState<boolean>(() => {
     if (getMockScreen()) return false;
+    // A real Carrefour visit always needs the store-hydration fetch below (the
+    // visitor may already have a store selected on the site) even with no
+    // conversation to resume — so it must start true here too, or the overlay
+    // added for that fetch would never actually show on a brand-new session.
+    if (getEnv() === 'carrefour') return true;
     try {
       return !!sessionStorage.getItem('sgpt:active-conv:' + getInitialSessionId());
     } catch {
@@ -263,11 +268,22 @@ export function AssistantExperience() {
       // Clear `restoring` once the resume settles (success or failure) — openConversation
       // never rejects (it catches internally and falls back to the default screen).
       void openConversationRef.current(resumeId).finally(() => setRestoring(false));
+    } else if (getEnv() === 'carrefour') {
+      // Real Carrefour visit, no conversation to resume — the visitor may already
+      // have a store selected on the real site (Carrefour's own Cart API). Fetch
+      // it (GET /menu now reconciles with the Cart API for a store-less session —
+      // see waib-api's get_menu) before releasing `restoring`, so the very first
+      // greeting bubble — which reads `store` to decide whether to ask for a
+      // postcode — never flashes that question when a store is already known.
+      // Sandbox is untouched: there's no real Cart API to reconcile with there,
+      // so it keeps the previous instant behaviour in the branch below.
+      resetPanelToDefault();
+      void syncPanelFromServer(true).finally(() => setRestoring(false));
     } else {
       setRestoring(false);
       resetPanelToDefault();
     }
-  }, [sessionId, resetPanelToDefault]);
+  }, [sessionId, resetPanelToDefault, syncPanelFromServer]);
 
   // Fire the one-time session-tracking event as soon as the session id is known
   // (it can arrive after mount via the shoppergpt:session event). Guarded by a ref
