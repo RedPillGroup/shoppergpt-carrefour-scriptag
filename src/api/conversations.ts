@@ -33,6 +33,12 @@ export interface ConversationDetail {
   title?: string | null;
   menu?: ServerMenuResponse;
   scopes?: { left?: string; right?: string };
+  /** Which greeting the widget showed before this conversation's first
+   * message — "store" or "no_store" (or null for a thread predating this
+   * field, or one that never got a first message). Frozen server-side so
+   * reopening this thread shows the same greeting the visitor actually
+   * replied to, not whatever the CURRENT store happens to be. */
+  initial_greeting_kind?: "store" | "no_store" | null;
 }
 
 function sessionHeaders(): Record<string, string> {

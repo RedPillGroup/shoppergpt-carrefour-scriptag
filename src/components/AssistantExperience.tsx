@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useRef, useEffect, useState, useCallback } from 'preact/hooks';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'preact/hooks';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useShopperStore } from '../store';
 import { ALL_MENU_STEPS, EventRequirements, MenuStep, Message, Product } from '../types';
@@ -229,6 +229,13 @@ export function AssistantExperience() {
       return false;
     }
   });
+
+  // Server-frozen greeting kind for the currently open conversation (set by
+  // openConversation from GET /conversations/{id}'s initial_greeting_kind,
+  // cleared by startNewConversation) — takes priority over the live `store`
+  // check below so reopening/resuming a thread always shows the same greeting
+  // its first message actually replied to, not whatever the store is NOW.
+  const [serverGreetingKind, setServerGreetingKind] = useState<'store' | 'no_store' | null>(null);
 
   // Pin the chat list to the bottom on new/streaming messages by scrolling the
   // container itself — NOT scrollIntoView, which also scrolls the host PAGE to bring
@@ -536,6 +543,7 @@ export function AssistantExperience() {
           leavingConversationId: leavingId
         });
         setConversationId(id);
+        setServerGreetingKind(data.initial_greeting_kind ?? null);
         const mapped: Message[] = (data.messages || [])
           .filter(m => m.role === 'user' || m.role === 'assistant')
           .map((m, i) => ({
@@ -548,16 +556,20 @@ export function AssistantExperience() {
         setStreamingText('');
         setComposePhase(null);
         setQuestion(null);
-        // Right panel is per-conversation. Usable snapshot → render it.
-        // Otherwise show the default editorial screen.
+        // Right panel is per-conversation. Usable snapshot → render it — always
+        // via applyPanelState, even when panel.hasMenu is false (no menu/event
+        // yet): applyPanelState already resets everything else to the same
+        // empty state resetPanelToDefault would, but it ALSO reflects
+        // panel.store into useShopperStore, which resetPanelToDefault never
+        // touches. A conversation started before the visitor picked a store on
+        // Carrefour's real site (so its own user_state.store was empty at the
+        // time) needs that store to still reach the greeting/rest of the app —
+        // the backend's GET /conversations/{id} reconciles with the live Cart
+        // API for exactly this (see waib-api's get_conversation), so skipping
+        // applyPanelState here silently dropped that reconciled value.
         if (data.has_panel_snapshot && data.menu) {
-          const panel = menuResponseToPanelState(data.menu);
-          if (panel.hasMenu) {
-            applyPanelState(panel);
-            menuEtagRef.current = null;
-          } else {
-            resetPanelToDefault();
-          }
+          applyPanelState(menuResponseToPanelState(data.menu));
+          menuEtagRef.current = null;
         } else {
           resetPanelToDefault();
         }
@@ -613,6 +625,7 @@ export function AssistantExperience() {
       }
     }
     setConversationId(null);
+    setServerGreetingKind(null);
     setMessages([]);
     setStreamingText('');
     setComposePhase(null);
@@ -1004,10 +1017,34 @@ export function AssistantExperience() {
   const storeGreeting =
     'Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n' +
     "Pour commencer... quel est l'heureux événement que vous souhaitez célébrer ?";
+  // Frozen per conversationId, NOT recomputed on every render — otherwise a
+  // visitor who replies to "pourriez-vous m'indiquer votre code postal ?" and
+  // later gets a store selected (mid-conversation) would see this bubble
+  // silently rewrite itself to "quel est l'heureux événement ?", which no
+  // longer matches what they actually replied to earlier in the same thread.
+  // serverGreetingKind (set by openConversation from the backend's
+  // initial_greeting_kind, itself frozen server-side at the conversation's
+  // first message — see waib-api's tools.stamp_initial_greeting_kind) takes
+  // priority whenever known: it's what survives a page reload / reopening this
+  // thread later, which a purely in-memory freeze on `store` cannot. Falling
+  // back to a live `store` check only applies before ANY message has been
+  // sent in this mount (conversationId still null, nothing stamped yet) or for
+  // a thread that predates this field. conversationId stays null until the
+  // FIRST /answer reply mints one (see useChatAnswer) and never changes again
+  // within that conversation, so this only re-evaluates when a genuinely NEW
+  // conversation starts (startNewConversation → both null) or an existing one
+  // is opened (openConversation → its own conversationId + serverGreetingKind)
+  // — never mid-conversation.
+  const greetingContent = useMemo(() => {
+    if (serverGreetingKind === 'store') return storeGreeting;
+    if (serverGreetingKind === 'no_store') return noStoreGreeting;
+    return store ? storeGreeting : noStoreGreeting;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, serverGreetingKind]);
   const initialGreeting: import('../types').Message = {
     id: 'w1',
     role: 'assistant',
-    content: store ? storeGreeting : noStoreGreeting,
+    content: greetingContent,
     timestamp: new Date()
   };
 
@@ -1144,7 +1181,7 @@ export function AssistantExperience() {
               {/* Initial greeting — rendered outside the messages array so it stays
                   reactive to store state without polluting chat history. */}
               <MessageBubble
-                key={initialGreeting.id + (store ? '-store' : '-nostore')}
+                key={initialGreeting.id + (greetingContent === storeGreeting ? '-store' : '-nostore')}
                 message={initialGreeting}
                 showSender={true}
                 fadeInOnMount={true}
