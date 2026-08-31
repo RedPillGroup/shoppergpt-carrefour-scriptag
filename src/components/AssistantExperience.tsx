@@ -969,8 +969,31 @@ export function AssistantExperience() {
         addMessage({
           id: Date.now().toString(),
           role: 'assistant',
-          content: "❌ Impossible d'ajouter le menu à votre panier Carrefour. Veuillez réessayer.",
+          // The backend sends a usable French `detail` for the cases the USER can
+          // act on (e.g. a plateau still to compose) — surface it instead of the
+          // generic retry line, which would just leave them stuck re-clicking.
+          content: result.uncomposed_products?.length
+            ? `❌ ${result.detail}`
+            : "❌ Impossible d'ajouter le menu à votre panier Carrefour. Veuillez réessayer.",
           timestamp: new Date()
+        });
+      } else if (result.status === 'partial') {
+        // Carrefour accepted the call but rejected some lines. Deliberately NOT
+        // counted as a lead: the cart isn't what the user validated. Still refresh
+        // the minicart — the items that DID land are really in the cart now.
+        console.warn('[shopper-gpt] cart/confirm partial:', result.results);
+        addMessage({
+          id: Date.now().toString(),
+          role: 'assistant',
+          content:
+            `⚠️ ${result.detail ?? "Une partie du menu n'a pas pu être ajoutée."} ` +
+            'Vérifiez votre panier Carrefour avant de valider votre commande.',
+          timestamp: new Date()
+        });
+        dispatchCartUpdated({
+          success: true,
+          action: 'confirm',
+          minicart_html: result.minicart_html
         });
       } else if (result.status === 'ok') {
         // Count a confirmed add-to-cart as a lead (BO "ajouter au panier" KPI).

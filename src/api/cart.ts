@@ -2,12 +2,22 @@ import { getApiUrl, getClientId } from './config';
 import { useShopperStore } from '../store';
 
 export interface ConfirmCartResult {
-  status: 'ok' | 'skipped' | 'error';
+  /** "partial" = the call succeeded but Carrefour rejected SOME items (they
+   * report per-item failures inside a 200 — see waib-api's cart/confirm).
+   * Treating that as "ok" is how a half-empty cart got announced as a success. */
+  status: 'ok' | 'partial' | 'skipped' | 'error';
   reason?: string;
   detail?: string;
   /** Rendered `.header-minicart` HTML from Carrefour's /cart/add (see waib-api
    * cart/confirm passthrough) — forwarded to the host in shoppergpt:cart_updated. */
   minicart_html?: string;
+  /** Per-item outcomes from Carrefour, passed through untouched. */
+  results?: unknown[];
+  sent_count?: number;
+  failed_count?: number;
+  /** Build-your-own plateaux still missing their composition — the backend
+   * refuses the whole call rather than pushing 0€ lines (status "error"). */
+  uncomposed_products?: string[];
 }
 
 /** POST /cart/confirm — "Ajouter au panier". Pushes the composed menu to
