@@ -23,11 +23,11 @@ const _scriptData: DOMStringMap =
  * API base URL. Priority: script data-api-url → window.SHOPPERGPT_CONFIG.apiUrl → dev default.
  */
 export function getApiUrl(): string {
-  return _scriptData.apiUrl ?? window.SHOPPERGPT_CONFIG?.apiUrl ?? "http://127.0.0.1:8000";
+  return _scriptData.apiUrl ?? window.SHOPPERGPT_CONFIG?.apiUrl ?? 'http://127.0.0.1:8000';
 }
 
 export function getClientId(): string {
-  return _scriptData.clientId ?? window.SHOPPERGPT_CONFIG?.clientId ?? "carrefour_traiteur";
+  return _scriptData.clientId ?? window.SHOPPERGPT_CONFIG?.clientId ?? 'carrefour_traiteur';
 }
 
 /**
@@ -49,7 +49,7 @@ export function getInitialSessionId(): string | null {
  * ignored server-side, so a typo here just silently stays sandbox-safe.
  */
 export function getEnv(): string {
-  return _scriptData.env ?? window.SHOPPERGPT_CONFIG?.env ?? "sandbox";
+  return _scriptData.env ?? window.SHOPPERGPT_CONFIG?.env ?? 'sandbox';
 }
 
 /**
@@ -63,4 +63,3 @@ export function getMockScreen(): 'event' | 'products' | null {
   const raw = _scriptData.mockScreen ?? window.SHOPPERGPT_CONFIG?.mockScreen;
   return raw === 'event' || raw === 'products' ? raw : null;
 }
-

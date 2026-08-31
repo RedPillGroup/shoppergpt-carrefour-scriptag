@@ -20,7 +20,7 @@ export async function transcribeAudio(blob: Blob): Promise<string> {
   const res = await fetch(`${getApiUrl()}/transcription`, {
     method: 'POST',
     headers: { 'x-client-id': getClientId() }, // no Content-Type — the browser sets the multipart boundary
-    body: form,
+    body: form
   });
   if (!res.ok) throw new Error(`Transcription HTTP ${res.status}`);
   const data = (await res.json()) as { text?: string };

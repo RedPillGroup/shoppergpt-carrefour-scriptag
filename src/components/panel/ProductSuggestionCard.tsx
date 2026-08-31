@@ -40,7 +40,9 @@ export function ProductSuggestionCard({ product }: Props) {
           src={product.image || PLACEHOLDER}
           alt={product.name}
           loading="lazy"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
+          onError={e => {
+            (e.currentTarget as HTMLImageElement).src = PLACEHOLDER;
+          }}
         />
         <div class="absolute top-2 left-2 md:top-2.5 md:left-2.5 bg-[#C7B287] text-white text-[9px] md:text-[10px] font-semibold px-2 py-[3px] md:px-2.5 rounded-[20px]">
           {product.category}

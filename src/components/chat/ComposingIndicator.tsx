@@ -27,7 +27,7 @@ const STAGES: Stage[] = [
   { at: 0, label: 'Je recherche les meilleurs produits' },
   { at: 3000, label: 'Je compose votre menu' },
   { at: 11000, label: 'J’affine les accords et la cohérence' },
-  { at: 20000, label: 'Je vérifie le budget' },
+  { at: 20000, label: 'Je vérifie le budget' }
 ];
 
 export function ComposingIndicator() {
@@ -54,7 +54,7 @@ export function ComposingIndicator() {
         WebkitBackgroundClip: 'text',
         backgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
-        color: 'transparent',
+        color: 'transparent'
       };
 
   return (

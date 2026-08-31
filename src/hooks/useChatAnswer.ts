@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "preact/hooks";
-import { getApiUrl, getClientId } from "../api/config";
-import { useShopperStore } from "../store";
+import { useEffect, useRef } from 'preact/hooks';
+import { getApiUrl, getClientId } from '../api/config';
+import { useShopperStore } from '../store';
 
 export interface MetaPayload {
   tool_calls?: Array<{ name: string; params: Record<string, unknown> }>;
@@ -28,7 +28,13 @@ export interface MetaPayload {
   };
   /** Store candidates from find_stores — drives the interactive store-selection card. */
   store_options?: {
-    stores: Array<{ store_id: string; name: string; address: string; distance_km: number; modes: string[] }>;
+    stores: Array<{
+      store_id: string;
+      name: string;
+      address: string;
+      distance_km: number;
+      modes: string[];
+    }>;
   };
   /** Pending mode choice from select_store's needs_mode — drives the interactive
    * mode-selection card (retrait/drive/livraison chips). */
@@ -57,30 +63,30 @@ export interface ChatAnswerCallbacks {
  * Accumulates a buffer across reads and fires the callback on each complete event.
  */
 class SSEParser {
-  private buffer = "";
-  private currentEvent = "";
-  private currentData = "";
+  private buffer = '';
+  private currentEvent = '';
+  private currentData = '';
 
   feed(chunk: string, callback: (event: string, data: string) => void) {
     this.buffer += chunk;
 
     // Process all complete lines (split on \n, keep trailing partial line in buffer)
-    const lines = this.buffer.split("\n");
-    this.buffer = lines.pop() ?? "";
+    const lines = this.buffer.split('\n');
+    this.buffer = lines.pop() ?? '';
 
     for (const rawLine of lines) {
-      const line = rawLine.replace(/\r$/, "");
+      const line = rawLine.replace(/\r$/, '');
 
-      if (line.startsWith("event: ")) {
+      if (line.startsWith('event: ')) {
         this.currentEvent = line.slice(7).trim();
-      } else if (line.startsWith("data: ")) {
-        this.currentData += (this.currentData ? "\n" : "") + line.slice(6);
-      } else if (line === "") {
+      } else if (line.startsWith('data: ')) {
+        this.currentData += (this.currentData ? '\n' : '') + line.slice(6);
+      } else if (line === '') {
         if (this.currentData) {
-          callback(this.currentEvent || "message", this.currentData);
+          callback(this.currentEvent || 'message', this.currentData);
         }
-        this.currentEvent = "";
-        this.currentData = "";
+        this.currentEvent = '';
+        this.currentData = '';
       }
     }
   }
@@ -108,7 +114,7 @@ export function useChatAnswer(
     if (!question) return;
 
     let cancelled = false;
-    let accumulated = "";
+    let accumulated = '';
 
     const run = async () => {
       const { onToken, onMeta, onComplete, onError, onJwt, onPhase } = callbacksRef.current;
@@ -122,41 +128,41 @@ export function useChatAnswer(
         await waitForPendingSyncRef.current?.();
 
         const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          "x-client-id": getClientId(),
+          'Content-Type': 'application/json',
+          'x-client-id': getClientId()
         };
         // Session = X-Session-Id (Carrefour PHPSESSID). Backend keys state/history
         // on it and ignores the JWT when present. Authorization kept as fallback.
         const sessionId = useShopperStore.getState().sessionId;
         if (sessionId) {
-          headers["X-Session-Id"] = sessionId;
+          headers['X-Session-Id'] = sessionId;
         }
         const conversationId = useShopperStore.getState().conversationId;
         if (conversationId) {
-          headers["X-Conversation-Id"] = conversationId;
+          headers['X-Conversation-Id'] = conversationId;
         }
         if (jwt) {
-          headers["Authorization"] = `Bearer ${jwt}`;
+          headers['Authorization'] = `Bearer ${jwt}`;
         }
 
         const res = await fetch(`${getApiUrl()}/answer`, {
-          method: "POST",
+          method: 'POST',
           headers,
           body: JSON.stringify({
             query: question,
             client_id: getClientId(),
-            client_state: getClientStateRef.current?.() ?? undefined,
-          }),
+            client_state: getClientStateRef.current?.() ?? undefined
+          })
         });
 
         if (!res.ok || !res.body) {
           throw new Error(`API error ${res.status}: ${await res.text()}`);
         }
 
-        const newToken = res.headers.get("X-Session-Token");
+        const newToken = res.headers.get('X-Session-Token');
         if (newToken && !cancelled) onJwt?.(newToken);
 
-        const returnedConversationId = res.headers.get("X-Conversation-Id");
+        const returnedConversationId = res.headers.get('X-Conversation-Id');
         if (returnedConversationId && !cancelled) {
           useShopperStore.getState().setConversationId(returnedConversationId);
         }
@@ -174,7 +180,7 @@ export function useChatAnswer(
           parser.feed(chunk, (event, data) => {
             if (cancelled) return;
 
-            if (event === "meta") {
+            if (event === 'meta') {
               try {
                 const meta: MetaPayload = JSON.parse(data);
                 if (meta.conversation_id) {
@@ -184,7 +190,7 @@ export function useChatAnswer(
               } catch {
                 // Malformed meta — ignore
               }
-            } else if (event === "phase") {
+            } else if (event === 'phase') {
               try {
                 onPhase?.(JSON.parse(data) as string);
               } catch {
@@ -198,11 +204,11 @@ export function useChatAnswer(
         }
 
         if (!cancelled) {
-          onComplete(accumulated.replace(/__NEWLINE__/g, "\n"));
+          onComplete(accumulated.replace(/__NEWLINE__/g, '\n'));
         }
       } catch (err: unknown) {
         if (!cancelled) {
-          const msg = err instanceof Error ? err.message : "Unknown error";
+          const msg = err instanceof Error ? err.message : 'Unknown error';
           onError(msg);
         }
       }

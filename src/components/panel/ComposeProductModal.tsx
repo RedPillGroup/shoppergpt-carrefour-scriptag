@@ -350,7 +350,9 @@ function ComposeContent({
                         {piece.name}
                       </span>
                       {piece.conditionnement && (
-                        <span class="text-[9px] text-[#9A8C78] mt-0.5">{piece.conditionnement}</span>
+                        <span class="text-[9px] text-[#9A8C78] mt-0.5">
+                          {piece.conditionnement}
+                        </span>
                       )}
                       <div class="flex items-center gap-1 mt-1.5 bg-white rounded-full shadow-sm px-1 py-0.5">
                         <button

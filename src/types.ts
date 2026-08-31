@@ -56,7 +56,7 @@ export interface ModeOptions {
 
 export interface Message {
   id: string;
-  role: "user" | "assistant";
+  role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
   /** Present on the assistant message that just ran recommend_menu_steps — renders
@@ -95,7 +95,7 @@ export interface PageContextEvent {
 export interface CartUpdatedEvent {
   success: boolean;
   product_id?: string;
-  action?: "add" | "remove" | "confirm";
+  action?: 'add' | 'remove' | 'confirm';
   /** Rendered `.header-minicart` HTML from Carrefour's /cart/add — present on the
    * "confirm" event (real cart push). The host injects it, no extra request. */
   minicart_html?: string;
@@ -105,9 +105,30 @@ export interface ChangeShopEvent {
   store_id: string;
 }
 
-export type MenuStep = 'Apéritifs' | 'Entrées' | 'Plats' | 'Sauces' | 'Fromages' | 'Desserts' | 'Boissons' | 'Pains' | 'Petit Déj' | 'Table & Déco';
+export type MenuStep =
+  | 'Apéritifs'
+  | 'Entrées'
+  | 'Plats'
+  | 'Sauces'
+  | 'Fromages'
+  | 'Desserts'
+  | 'Boissons'
+  | 'Pains'
+  | 'Petit Déj'
+  | 'Table & Déco';
 
-export const ALL_MENU_STEPS: MenuStep[] = ['Apéritifs', 'Entrées', 'Plats', 'Sauces', 'Fromages', 'Desserts', 'Boissons', 'Pains', 'Petit Déj', 'Table & Déco'];
+export const ALL_MENU_STEPS: MenuStep[] = [
+  'Apéritifs',
+  'Entrées',
+  'Plats',
+  'Sauces',
+  'Fromages',
+  'Desserts',
+  'Boissons',
+  'Pains',
+  'Petit Déj',
+  'Table & Déco'
+];
 
 export interface EventRequirements {
   event_name?: string;

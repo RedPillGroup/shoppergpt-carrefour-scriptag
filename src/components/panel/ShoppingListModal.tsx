@@ -19,7 +19,9 @@ interface Props {
 
 /** Format a number as "1 234,56 €" (French locale). */
 function fmtEur(value: number): string {
-  return value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  return (
+    value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+  );
 }
 
 // ── Focus trap (mirrors ProductDetailModal.tsx) ────────────────────────────────
@@ -48,7 +50,10 @@ function useFocusTrap(onEscape: () => void) {
       }
       if (e.key !== 'Tab') return;
       const focusable = getFocusable(el);
-      if (!focusable.length) { e.preventDefault(); return; }
+      if (!focusable.length) {
+        e.preventDefault();
+        return;
+      }
       const active = e.composedPath()[0] as HTMLElement;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -82,7 +87,7 @@ export function ShoppingListModal({
   totalGuests,
   incompleteComposableProducts = [],
   onClose,
-  onValidate,
+  onValidate
 }: Props) {
   const panelRef = useFocusTrap(onClose);
 
@@ -159,7 +164,9 @@ export function ShoppingListModal({
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <motion.div
         class="absolute inset-0 bg-black/40"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       />
 
@@ -187,7 +194,12 @@ export function ShoppingListModal({
             aria-label="Fermer"
           >
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              <path
+                d="M2 2l10 10M12 2L2 12"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
             </svg>
           </button>
         </div>
@@ -207,16 +219,30 @@ export function ShoppingListModal({
                   </h3>
                   {underCovered && (
                     <div class="flex items-start gap-1.5 mb-2 text-[#D14343]">
-                      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" class="shrink-0 mt-[1px]">
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        class="shrink-0 mt-[1px]"
+                      >
                         <circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.4" />
-                        <path d="M10 6v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                        <path
+                          d="M10 6v5"
+                          stroke="currentColor"
+                          stroke-width="1.4"
+                          stroke-linecap="round"
+                        />
                         <circle cx="10" cy="13.6" r="0.9" fill="currentColor" />
                       </svg>
                       <span class="text-[11px] leading-snug">
-                        Nombre {step.toLowerCase().startsWith('a') || step.toLowerCase().startsWith('e')
+                        Nombre{' '}
+                        {step.toLowerCase().startsWith('a') || step.toLowerCase().startsWith('e')
                           ? "d'"
                           : 'de '}
-                        {step.toLowerCase()} {FEMININE_PLURAL_STEPS.has(step) ? 'inférieures' : 'inférieurs'} au nombre de convives
+                        {step.toLowerCase()}{' '}
+                        {FEMININE_PLURAL_STEPS.has(step) ? 'inférieures' : 'inférieurs'} au nombre
+                        de convives
                       </span>
                     </div>
                   )}
@@ -236,9 +262,26 @@ export function ShoppingListModal({
                         </div>
                         {incompleteIds.has(item.id) && (
                           <div class="flex items-start gap-1.5 text-[#D14343]">
-                            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" class="shrink-0 mt-[1px]">
-                              <circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.4" />
-                              <path d="M10 6v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 20 20"
+                              fill="none"
+                              class="shrink-0 mt-[1px]"
+                            >
+                              <circle
+                                cx="10"
+                                cy="10"
+                                r="8.5"
+                                stroke="currentColor"
+                                stroke-width="1.4"
+                              />
+                              <path
+                                d="M10 6v5"
+                                stroke="currentColor"
+                                stroke-width="1.4"
+                                stroke-linecap="round"
+                              />
                               <circle cx="10" cy="13.6" r="0.9" fill="currentColor" />
                             </svg>
                             <span class="text-[11px] leading-snug">
@@ -277,7 +320,9 @@ export function ShoppingListModal({
               disabled={rows.length === 0}
               aria-disabled={!canAddToCart}
               class={`rounded-[30px] px-4 py-1 border border-[#AAAAAA] text-[#8D7A4E] text-[10px] md:text-[11px] font-bold uppercase tracking-wide transition-opacity disabled:cursor-not-allowed disabled:opacity-50 ${
-                canAddToCart ? 'bg-white cursor-pointer hover:opacity-90' : 'bg-[#F0EDE8] cursor-not-allowed opacity-70'
+                canAddToCart
+                  ? 'bg-white cursor-pointer hover:opacity-90'
+                  : 'bg-[#F0EDE8] cursor-not-allowed opacity-70'
               }`}
             >
               Ajouter au panier

@@ -28,8 +28,8 @@ const ALL_TOGGLEABLE_STEPS = ALL_MENU_STEPS.filter(s => !EXCLUDED_STEPS.has(s));
 
 export function StepToggleCard({ items, onChange, disabled = false, onValidate }: Props) {
   const recommended = new Set(items.map(i => i.step));
-  const [enabled, setEnabled] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(ALL_TOGGLEABLE_STEPS.map(s => [s, recommended.has(s)]))
+  const [enabled, setEnabled] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(ALL_TOGGLEABLE_STEPS.map(s => [s, recommended.has(s)]))
   );
   // Freezes the card the instant "Valider" is clicked — the parent's `disabled` prop
   // only flips once the composed menu actually comes back (or a newer step card

@@ -1,26 +1,26 @@
-import { h } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
-import EmblaCarousel, { EmblaCarouselType } from "embla-carousel";
-import { EVENTS_TILES, HERO_SLIDES } from "./editorialData";
-import leftSliderIcon from "../../assets/icons/left-slider.svg?raw";
-import rightSliderIcon from "../../assets/icons/right-slider.svg?raw";
+import { h } from 'preact';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import EmblaCarousel, { EmblaCarouselType } from 'embla-carousel';
+import { EVENTS_TILES, HERO_SLIDES } from './editorialData';
+import leftSliderIcon from '../../assets/icons/left-slider.svg?raw';
+import rightSliderIcon from '../../assets/icons/right-slider.svg?raw';
 
 interface Props {
   onSelect: (query: string) => void;
 }
 
 const EVENT_TILE_OVERLAY_CLASS =
-  "absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,.18)] via-[rgba(0,0,0,.35)] to-[rgba(0,0,0,.72)]";
+  'absolute inset-0 bg-gradient-to-b from-[rgba(0,0,0,.18)] via-[rgba(0,0,0,.35)] to-[rgba(0,0,0,.72)]';
 const EVENT_TILE_TEXT_WRAP_CLASS =
-  "absolute bottom-0 left-0 right-0 px-2.5 py-2 md:px-3.5 md:py-3 flex flex-col gap-0.5";
+  'absolute bottom-0 left-0 right-0 px-2.5 py-2 md:px-3.5 md:py-3 flex flex-col gap-0.5';
 const EVENT_TILE_BADGE_CLASS =
-  "text-[10px] md:text-[12px] font-semibold tracking-[0.08em] uppercase text-[rgba(255,255,255,.85)]";
+  'text-[10px] md:text-[12px] font-semibold tracking-[0.08em] uppercase text-[rgba(255,255,255,.85)]';
 const EVENT_TILE_TITLE_CLASS =
   "m-0 text-[16px] md:text-[22px] font-['Satisfy'] font-normal text-white ";
 
 function EventEditorialTile({
   tile,
-  onSelect,
+  onSelect
 }: {
   tile: { img: string; badge: string; title: string; query: string };
   onSelect: (query: string) => void;
@@ -58,13 +58,16 @@ function HeroCarousel({ onSelect }: Props) {
   // this again to push the next auto-advance back out by a full interval —
   // otherwise a manual change right before the interval fires would get
   // immediately overridden by the autoplay, feeling like it fought the user.
-  const scheduleAutoplay = () => {
+  // useCallback (stable identity, no deps — only touches refs) so the mount-only
+  // effect below can legitimately list it as a dependency without actually
+  // re-running on every render.
+  const scheduleAutoplay = useCallback(() => {
     if (autoplayTimerRef.current != null) clearTimeout(autoplayTimerRef.current);
     autoplayTimerRef.current = setTimeout(() => {
       emblaApiRef.current?.scrollNext();
       scheduleAutoplay();
     }, AUTOPLAY_INTERVAL_MS);
-  };
+  }, []);
 
   useEffect(() => {
     if (!viewportRef.current) return;
@@ -74,25 +77,25 @@ function HeroCarousel({ onSelect }: Props) {
 
     const syncSelectedSlide = () => setIdx(embla.selectedScrollSnap());
     syncSelectedSlide();
-    embla.on("select", syncSelectedSlide);
-    embla.on("reInit", syncSelectedSlide);
+    embla.on('select', syncSelectedSlide);
+    embla.on('reInit', syncSelectedSlide);
     // "pointerDown" fires on the user's own drag/swipe of the slide (not on
     // programmatic scrollNext() calls) — reschedule autoplay from here too,
     // otherwise dragging the carousel wouldn't pause it the way the arrow/dot
     // clicks below do.
-    embla.on("pointerDown", scheduleAutoplay);
+    embla.on('pointerDown', scheduleAutoplay);
 
     scheduleAutoplay();
 
     return () => {
-      embla.off("select", syncSelectedSlide);
-      embla.off("reInit", syncSelectedSlide);
-      embla.off("pointerDown", scheduleAutoplay);
+      embla.off('select', syncSelectedSlide);
+      embla.off('reInit', syncSelectedSlide);
+      embla.off('pointerDown', scheduleAutoplay);
       if (autoplayTimerRef.current != null) clearTimeout(autoplayTimerRef.current);
       embla.destroy();
       emblaApiRef.current = null;
     };
-  }, []);
+  }, [scheduleAutoplay]);
 
   const prev = (e: MouseEvent) => {
     e.stopPropagation();
@@ -170,8 +173,12 @@ function HeroCarousel({ onSelect }: Props) {
         {HERO_SLIDES.map((_, i) => (
           <button
             key={i}
-            class={`w-[7px] h-[7px] rounded-full border-0 p-0 cursor-pointer transition-all duration-200 ${i === idx ? "bg-white scale-[1.3]" : "bg-[rgba(255,255,255,.5)]"}`}
-            onClick={(e) => { (e as MouseEvent).stopPropagation(); emblaApiRef.current?.scrollTo(i); scheduleAutoplay(); }}
+            class={`w-[7px] h-[7px] rounded-full border-0 p-0 cursor-pointer transition-all duration-200 ${i === idx ? 'bg-white scale-[1.3]' : 'bg-[rgba(255,255,255,.5)]'}`}
+            onClick={e => {
+              (e as MouseEvent).stopPropagation();
+              emblaApiRef.current?.scrollTo(i);
+              scheduleAutoplay();
+            }}
           />
         ))}
       </div>

@@ -21,7 +21,15 @@ function normalizeKey(step: string): string {
  * `petit dej.svg` is a stroke-only line icon (fill="none" at the root), so it
  * needs `stroke-current` instead — forcing fill-current on it would override
  * the inherited fill="none" and turn the outline into a solid blob. */
-function RawIcon({ svg, size, mode = 'fill' }: { svg: string; size: number; mode?: 'fill' | 'stroke' }) {
+function RawIcon({
+  svg,
+  size,
+  mode = 'fill'
+}: {
+  svg: string;
+  size: number;
+  mode?: 'fill' | 'stroke';
+}) {
   return (
     <span
       class={`inline-flex [&_svg]:block [&_svg]:w-full [&_svg]:h-full ${
@@ -37,16 +45,16 @@ function RawIcon({ svg, size, mode = 'fill' }: { svg: string; size: number; mode
 export function getStepIcon(step: string, size = 22): h.JSX.Element | null {
   const key = normalizeKey(step);
   const map: Record<string, h.JSX.Element> = {
-    aperitifs:      <RawIcon svg={pictoApero} size={size} />,
-    entrees:        <RawIcon svg={pictoEntrees} size={size} />,
-    plats:          <RawIcon svg={pictoPlats} size={size} />,
-    sauces:         <RawIcon svg={pictoSauces} size={size} />,
-    fromages:       <RawIcon svg={pictoFromages} size={size} />,
-    desserts:       <RawIcon svg={pictoDessert} size={size} />,
-    boissons:       <RawIcon svg={pictoBoissons} size={size} />,
-    pains:          <RawIcon svg={pictoBread} size={size} />,
-    'petit dej':    <RawIcon svg={pictoPetitDej} size={size} mode="stroke" />,
-    'table & deco': <RawIcon svg={pictoDeco} size={size} />,
+    aperitifs: <RawIcon svg={pictoApero} size={size} />,
+    entrees: <RawIcon svg={pictoEntrees} size={size} />,
+    plats: <RawIcon svg={pictoPlats} size={size} />,
+    sauces: <RawIcon svg={pictoSauces} size={size} />,
+    fromages: <RawIcon svg={pictoFromages} size={size} />,
+    desserts: <RawIcon svg={pictoDessert} size={size} />,
+    boissons: <RawIcon svg={pictoBoissons} size={size} />,
+    pains: <RawIcon svg={pictoBread} size={size} />,
+    'petit dej': <RawIcon svg={pictoPetitDej} size={size} mode="stroke" />,
+    'table & deco': <RawIcon svg={pictoDeco} size={size} />
   };
   return map[key] ?? null;
 }

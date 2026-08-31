@@ -1,7 +1,7 @@
-import { h } from "preact";
-import { useMemo, useState } from "preact/hooks";
-import { ConversationSummary } from "../../api/conversations";
-import newChatIcon from "../../assets/icons/new-chat.svg?raw";
+import { h } from 'preact';
+import { useMemo, useState } from 'preact/hooks';
+import { ConversationSummary } from '../../api/conversations';
+import newChatIcon from '../../assets/icons/new-chat.svg?raw';
 
 interface Props {
   open: boolean;
@@ -18,19 +18,19 @@ interface Props {
  * ambiguous label. Kept as a plain short date rather than "Aujourd'hui"/"Hier" so the
  * label width stays consistent from row to row. */
 function formatConversationDate(iso?: string): string {
-  if (!iso) return "";
+  if (!iso) return '';
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
+  if (Number.isNaN(date.getTime())) return '';
 
-  const day = date.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    timeZone: "Europe/Paris"
+  const day = date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Europe/Paris'
   });
-  const time = date.toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Paris"
+  const time = date.toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Paris'
   });
   return `${day}, ${time}`;
 }
@@ -45,19 +45,19 @@ export function ConversationsDrawer({
   activeConversationId,
   onClose,
   onSelect,
-  onNewConversation,
+  onNewConversation
 }: Props) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return conversations
-      .map((c) => ({
+      .map(c => ({
         ...c,
-        displayTitle: (c.title || "Nouvelle conversation").trim(),
-        displayDate: formatConversationDate(c.updated_at || c.created_at),
+        displayTitle: (c.title || 'Nouvelle conversation').trim(),
+        displayDate: formatConversationDate(c.updated_at || c.created_at)
       }))
-      .filter((c) => !q || c.displayTitle.toLowerCase().includes(q));
+      .filter(c => !q || c.displayTitle.toLowerCase().includes(q));
   }, [conversations, query]);
 
   if (!open) return null;
@@ -109,7 +109,7 @@ export function ConversationsDrawer({
             <input
               type="search"
               value={query}
-              onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
+              onInput={e => setQuery((e.target as HTMLInputElement).value)}
               placeholder="Rechercher"
               class="w-full h-12 rounded-full border border-[#D8D5CF] bg-white pl-5 pr-12 text-[16px] text-[#1A1A2E] placeholder:text-[#9A958C] outline-none focus:border-[#C7B287]"
             />
@@ -117,7 +117,14 @@ export function ConversationsDrawer({
               class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#9A958C]"
               aria-hidden="true"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <circle cx="11" cy="11" r="7" />
                 <path d="M20 20l-3.5-3.5" stroke-linecap="round" />
               </svg>
@@ -133,7 +140,7 @@ export function ConversationsDrawer({
           {rows.length === 0 ? (
             <li class="text-[16px] text-[#9A958C] py-3">Aucune discussion</li>
           ) : (
-            rows.map((c) => {
+            rows.map(c => {
               const active = c.conversation_id === activeConversationId;
               return (
                 <li key={c.conversation_id} class="border-0">
@@ -141,14 +148,12 @@ export function ConversationsDrawer({
                     type="button"
                     class={`w-full flex items-baseline gap-3 text-left py-3 px-0 bg-transparent border-0 cursor-pointer text-[16px] leading-[1.4] ${
                       active
-                        ? "text-[#C7B287] font-semibold"
-                        : "text-[#1A1A2E] font-normal hover:text-[#C7B287]"
+                        ? 'text-[#C7B287] font-semibold'
+                        : 'text-[#1A1A2E] font-normal hover:text-[#C7B287]'
                     }`}
                     onClick={() => onSelect(c.conversation_id)}
                   >
-                    <span class="shrink-0 w-24 text-[13px] text-[#9A958C]">
-                      {c.displayDate}
-                    </span>
+                    <span class="shrink-0 w-24 text-[13px] text-[#9A958C]">{c.displayDate}</span>
                     <span class="min-w-0 truncate">{c.displayTitle}</span>
                   </button>
                 </li>

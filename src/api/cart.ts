@@ -1,8 +1,8 @@
-import { getApiUrl, getClientId } from "./config";
-import { useShopperStore } from "../store";
+import { getApiUrl, getClientId } from './config';
+import { useShopperStore } from '../store';
 
 export interface ConfirmCartResult {
-  status: "ok" | "skipped" | "error";
+  status: 'ok' | 'skipped' | 'error';
   reason?: string;
   detail?: string;
   /** Rendered `.header-minicart` HTML from Carrefour's /cart/add (see waib-api
@@ -18,15 +18,15 @@ export interface ConfirmCartResult {
  * explicit user confirm — never mirrors individual quantity/product edits. */
 export async function confirmCart(sessionId: string | null): Promise<ConfirmCartResult> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "x-client-id": getClientId()
+    'Content-Type': 'application/json',
+    'x-client-id': getClientId()
   };
-  if (sessionId) headers["X-Session-Id"] = sessionId;
+  if (sessionId) headers['X-Session-Id'] = sessionId;
   const conversationId = useShopperStore.getState().conversationId;
-  if (conversationId) headers["X-Conversation-Id"] = conversationId;
+  if (conversationId) headers['X-Conversation-Id'] = conversationId;
 
   const res = await fetch(`${getApiUrl()}/cart/confirm`, {
-    method: "POST",
+    method: 'POST',
     headers
   });
   if (!res.ok) {

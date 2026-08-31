@@ -32,7 +32,12 @@ function PriceBig({ value, size }: { value: number; size: 'sm' | 'lg' }) {
   );
 }
 
-export function MenuProductCard({ product, quantity, onQuantityChange, horizontal = false }: Props) {
+export function MenuProductCard({
+  product,
+  quantity,
+  onQuantityChange,
+  horizontal = false
+}: Props) {
   const inMenu = quantity > 0;
   const setSelectedProduct = useShopperStore(s => s.setSelectedProduct);
   // Card price follows the QUANTITY, like Carrefour Traiteur: once the product is in
@@ -54,80 +59,84 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
             wrapper just below), not this background layer. The toggle button
             is a further sibling outside both, so it stays fully clear too. */}
         <div class="overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] bg-white flex flex-row flex-1 min-w-0 h-full">
-        <div class={`flex flex-row flex-1 min-w-0 h-full transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}>
-        {/* ── Image + overlays — aspect-square, width derived from height (no
+          <div
+            class={`flex flex-row flex-1 min-w-0 h-full transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}
+          >
+            {/* ── Image + overlays — aspect-square, width derived from height (no
             fixed px) so it's always a true square. object-cover still crops
             the photo cleanly. ── */}
-        <div class="relative shrink-0 h-full aspect-square">
-          <img
-            class="w-full h-full object-cover block"
-            src={product.image || PLACEHOLDER}
-            alt={product.name}
-            loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
-          />
+            <div class="relative shrink-0 h-full aspect-square">
+              <img
+                class="w-full h-full object-cover block"
+                src={product.image || PLACEHOLDER}
+                alt={product.name}
+                loading="lazy"
+                onError={e => {
+                  (e.currentTarget as HTMLImageElement).src = PLACEHOLDER;
+                }}
+              />
 
-          {/* Straddles the image/content seam — anchored to this column's own
+              {/* Straddles the image/content seam — anchored to this column's own
               right edge (left-full) then pulled back by half its own width
               (-translate-x-1/2), same trick as elsewhere: no need to know the
               exact pixel boundary, it just centers on wherever this column ends. */}
-          <div
-            class="absolute top-[85%] left-full -translate-x-1/2 -translate-y-1/2 z-10 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-1"
-            onClick={e => e.stopPropagation()}
-          >
-            <button
-              onClick={() => onQuantityChange(-1)}
-              disabled={quantity === 0}
-              class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[14px] md:text-[17px] font-bold transition-colors ${
-                quantity > 0 ? 'text-[#C7B287] hover:bg-[#F4EFE5]' : 'text-[#D1D5DB] cursor-not-allowed'
-              }`}
-            >
-              −
-            </button>
-            {/* Qty display only — not editable by keyboard input, only via the
+              <div
+                class="absolute top-[85%] left-full -translate-x-1/2 -translate-y-1/2 z-10 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-1"
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => onQuantityChange(-1)}
+                  disabled={quantity === 0}
+                  class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[14px] md:text-[17px] font-bold transition-colors ${
+                    quantity > 0
+                      ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
+                      : 'text-[#D1D5DB] cursor-not-allowed'
+                  }`}
+                >
+                  −
+                </button>
+                {/* Qty display only — not editable by keyboard input, only via the
                 −/+ buttons on either side (a typed value could bypass stock/
                 budget checks the increment path enforces). */}
-            <span
-              class={`min-w-[24px] text-center text-[13px] md:text-[14px] font-bold tabular-nums ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
-            >
-              {quantity}
-            </span>
-            <button
-              onClick={() => onQuantityChange(+1)}
-              // A disabled (qty=0) card is a SUGGESTION: +/- are fully inert on it, and
-              // the ONLY way to re-activate is the top-right toggle. Letting + activate
-              // made a stray tap on a greyed card silently trigger the whole rebalance
-              // flow (server call + assistant message) — activation must be deliberate.
-              disabled={!inMenu || quantity >= MAX_QTY}
-              class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[14px] md:text-[17px] font-bold transition-colors ${
-                inMenu && quantity < MAX_QTY ? 'text-[#C7B287] hover:bg-[#F4EFE5]' : 'text-[#D1D5DB] cursor-not-allowed'
-              }`}
-            >
-              +
-            </button>
-          </div>
-        </div>
+                <span
+                  class={`min-w-[24px] text-center text-[13px] md:text-[14px] font-bold tabular-nums ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
+                >
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => onQuantityChange(+1)}
+                  // A disabled (qty=0) card is a SUGGESTION: +/- are fully inert on it, and
+                  // the ONLY way to re-activate is the top-right toggle. Letting + activate
+                  // made a stray tap on a greyed card silently trigger the whole rebalance
+                  // flow (server call + assistant message) — activation must be deliberate.
+                  disabled={!inMenu || quantity >= MAX_QTY}
+                  class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[14px] md:text-[17px] font-bold transition-colors ${
+                    inMenu && quantity < MAX_QTY
+                      ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
+                      : 'text-[#D1D5DB] cursor-not-allowed'
+                  }`}
+                >
+                  +
+                </button>
+              </div>
+            </div>
 
-        {/* ── Content — price + name, right of the image, sitting near the top
+            {/* ── Content — price + name, right of the image, sitting near the top
             (just a small pt-3 for breathing room, no big pb pushing them down
             from the bottom). ────────── */}
-        <div class="flex-1 min-w-0 flex flex-col justify-start gap-1 px-3 pt-3 pb-2">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <PriceBig value={displayPrice} size="lg" />
-            {!inMenu && (
-              <span class="text-[10px] text-[#B0A898] leading-none">l'unité</span>
-            )}
-            {product.is_composable && (
-              <span class="px-1.5 py-0.5 rounded-full bg-[#C7B287] text-white text-[9px] font-semibold uppercase tracking-wide leading-none">
-                Composer
-              </span>
-            )}
+            <div class="flex-1 min-w-0 flex flex-col justify-start gap-1 px-3 pt-3 pb-2">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <PriceBig value={displayPrice} size="lg" />
+                {!inMenu && <span class="text-[10px] text-[#B0A898] leading-none">l'unité</span>}
+                {product.is_composable && (
+                  <span class="px-1.5 py-0.5 rounded-full bg-[#C7B287] text-white text-[9px] font-semibold uppercase tracking-wide leading-none">
+                    Composer
+                  </span>
+                )}
+              </div>
+              <div class="text-[12px] font-[400] leading-snug line-clamp-3">{product.name}</div>
+            </div>
           </div>
-          <div class="text-[12px] font-[400] leading-snug line-clamp-3">
-            {product.name}
-          </div>
-        </div>
-        </div>
         </div>
 
         {/* Toggle button — top-right of the image column, outside the dimmed
@@ -150,7 +159,13 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
           >
             {inMenu && (
               <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                <path d="M2 5.5l2.5 2.5L9 2.5" stroke="#B2CF0C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M2 5.5l2.5 2.5L9 2.5"
+                  stroke="#B2CF0C"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             )}
           </button>
@@ -171,85 +186,87 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
           toggle button is a further sibling outside both, so it stays fully
           clear too. */}
       <div class="overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,.07)] bg-white flex flex-col flex-1">
-      <div class={`flex flex-col flex-1 transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}>
-        <div class="relative shrink-0">
-          <img
-            class="w-full aspect-square object-cover block"
-            src={product.image || PLACEHOLDER}
-            alt={product.name}
-            loading="lazy"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
-          />
+        <div
+          class={`flex flex-col flex-1 transition-opacity duration-200 ${!inMenu ? 'opacity-40' : ''}`}
+        >
+          <div class="relative shrink-0">
+            <img
+              class="w-full aspect-square object-cover block"
+              src={product.image || PLACEHOLDER}
+              alt={product.name}
+              loading="lazy"
+              onError={e => {
+                (e.currentTarget as HTMLImageElement).src = PLACEHOLDER;
+              }}
+            />
 
-          {/* Quantity pill — anchored at image bottom, centred */}
-          <div
-            class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-0.5 gap-0"
-            onClick={e => e.stopPropagation()}
-          >
-            <button
-              onClick={() => onQuantityChange(-1)}
-              disabled={quantity === 0}
-              class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-sm md:text-base font-bold transition-colors ${
-                quantity > 0
-                  ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
-                  : 'text-[#D1D5DB] cursor-not-allowed'
-              }`}
+            {/* Quantity pill — anchored at image bottom, centred */}
+            <div
+              class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,.15)] px-1 py-0.5 gap-0"
+              onClick={e => e.stopPropagation()}
             >
-              −
-            </button>
+              <button
+                onClick={() => onQuantityChange(-1)}
+                disabled={quantity === 0}
+                class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-sm md:text-base font-bold transition-colors ${
+                  quantity > 0
+                    ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
+                    : 'text-[#D1D5DB] cursor-not-allowed'
+                }`}
+              >
+                −
+              </button>
 
-            {/* Qty display only — not editable by keyboard input, only via the
+              {/* Qty display only — not editable by keyboard input, only via the
                 −/+ buttons on either side (a typed value could bypass stock/
                 budget checks the increment path enforces). */}
-            <span
-              class={`min-w-[24px] text-center text-[12px] md:text-[13px] font-bold tabular-nums ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
-            >
-              {quantity}
-            </span>
+              <span
+                class={`min-w-[24px] text-center text-[12px] md:text-[13px] font-bold tabular-nums ${inMenu ? 'text-[#C7B287]' : 'text-[#9A8C78]'}`}
+              >
+                {quantity}
+              </span>
 
-            <button
-              onClick={() => onQuantityChange(+1)}
-              // A disabled (qty=0) card is a SUGGESTION: +/- are fully inert on it, and
-              // the ONLY way to re-activate is the top-right toggle. Letting + activate
-              // made a stray tap on a greyed card silently trigger the whole rebalance
-              // flow (server call + assistant message) — activation must be deliberate.
-              disabled={!inMenu || quantity >= MAX_QTY}
-              class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-sm md:text-base font-bold transition-colors ${
-                inMenu && quantity < MAX_QTY
-                  ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
-                  : 'text-[#D1D5DB] cursor-not-allowed'
-              }`}
-            >
-              +
-            </button>
+              <button
+                onClick={() => onQuantityChange(+1)}
+                // A disabled (qty=0) card is a SUGGESTION: +/- are fully inert on it, and
+                // the ONLY way to re-activate is the top-right toggle. Letting + activate
+                // made a stray tap on a greyed card silently trigger the whole rebalance
+                // flow (server call + assistant message) — activation must be deliberate.
+                disabled={!inMenu || quantity >= MAX_QTY}
+                class={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-sm md:text-base font-bold transition-colors ${
+                  inMenu && quantity < MAX_QTY
+                    ? 'text-[#C7B287] hover:bg-[#F4EFE5]'
+                    : 'text-[#D1D5DB] cursor-not-allowed'
+                }`}
+              >
+                +
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* ── Content ─────────────────────────────────────── */}
-        <div class="px-2.5 pt-2 pb-3 flex flex-col gap-0.5">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <PriceBig value={displayPrice} size="sm" />
-            {!inMenu && (
-              <span class="text-[10px] text-[#B0A898] leading-none">l'unité</span>
-            )}
-            {/* "Build-your-own" plateau (real Carrefour composition data, see
+          {/* ── Content ─────────────────────────────────────── */}
+          <div class="px-2.5 pt-2 pb-3 flex flex-col gap-0.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <PriceBig value={displayPrice} size="sm" />
+              {!inMenu && <span class="text-[10px] text-[#B0A898] leading-none">l'unité</span>}
+              {/* "Build-your-own" plateau (real Carrefour composition data, see
                 is_composable) — clicking the card opens the Composer flow
                 instead of the plain description (see AssistantExperience's
                 selectedProduct branch), this badge is just the visual cue. */}
-            {product.is_composable && (
-              <span class="px-1.5 py-0.5 rounded-full bg-[#C7B287] text-white text-[9px] font-semibold uppercase tracking-wide leading-none">
-                Composer
-              </span>
-            )}
-          </div>
-          {/* min-h reserves space for 2 lines (leading-snug ≈ 1.375 × font-size)
+              {product.is_composable && (
+                <span class="px-1.5 py-0.5 rounded-full bg-[#C7B287] text-white text-[9px] font-semibold uppercase tracking-wide leading-none">
+                  Composer
+                </span>
+              )}
+            </div>
+            {/* min-h reserves space for 2 lines (leading-snug ≈ 1.375 × font-size)
               even when the name only wraps to 1 — otherwise cards with short vs
               long names end up different heights in the same row. */}
-          <div class="text-[11px] md:text-[11px] leading-snug line-clamp-2 min-h-[2.75em] font-[400]">
-            {product.name}
+            <div class="text-[11px] md:text-[11px] leading-snug line-clamp-2 min-h-[2.75em] font-[400]">
+              {product.name}
+            </div>
           </div>
         </div>
-      </div>
       </div>
 
       {/* Toggle button — top-right, outside the dimmed wrapper above (see
@@ -271,7 +288,13 @@ export function MenuProductCard({ product, quantity, onQuantityChange, horizonta
       >
         {inMenu && (
           <svg width="13" height="13" viewBox="0 0 11 11" fill="none">
-            <path d="M2 5.5l2.5 2.5L9 2.5" stroke="#B2CF0C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path
+              d="M2 5.5l2.5 2.5L9 2.5"
+              stroke="#B2CF0C"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         )}
       </button>

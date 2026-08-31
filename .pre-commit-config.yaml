@@ -1,0 +1,50 @@
+repos:
+  # Pre-commit hooks: Ensure configuration integrity
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: "^(dist|node_modules)/"
+      - id: end-of-file-fixer
+        exclude: "^(dist|node_modules)/"
+
+  # Local hooks (formatting, linting, type-checking, commitlint)
+  - repo: local
+    hooks:
+      # Prettier: Code Formatter (mirrors waib-api's black — auto-fixes in
+      # place; if it modifies a file, the hook reports "failed" once so you
+      # re-stage and commit again, same UX as black).
+      - id: prettier
+        name: prettier
+        entry: npx prettier --write
+        language: system
+        files: "\\.(ts|tsx|css)$"
+        exclude: "^(dist|node_modules)/"
+
+      # ESLint: Linter (Preact-aware — see eslint.config.js for why
+      # react/no-unknown-property and react/no-unescaped-entities are off)
+      - id: eslint
+        name: eslint
+        entry: npx eslint --fix
+        language: system
+        files: "\\.(ts|tsx)$"
+        exclude: "^(dist|node_modules)/"
+
+      # TypeScript: type-check the whole project (can't meaningfully run
+      # per-file — a type error anywhere can be caused by a change to a
+      # file not itself in this commit).
+      - id: typecheck
+        name: typescript type-check
+        entry: npx tsc --noEmit
+        language: system
+        files: "\\.(ts|tsx)$"
+        exclude: "^(dist|node_modules)/"
+        pass_filenames: false
+
+      # Local hook to run commitlint
+      - id: commit-msg-linter
+        name: commit message linter
+        entry: python3 scripts/commitlint.py
+        language: system
+        stages: [commit-msg]
+        always_run: true

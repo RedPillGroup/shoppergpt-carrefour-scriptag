@@ -35,7 +35,7 @@ function candidateMimeTypes(): string[] {
     'audio/webm',
     'audio/mp4;codecs=mp4a.40.2',
     'audio/mp4',
-    'audio/ogg;codecs=opus',
+    'audio/ogg;codecs=opus'
   ];
   const MR = typeof MediaRecorder !== 'undefined' ? MediaRecorder : undefined;
   if (!MR?.isTypeSupported) return [];
@@ -95,6 +95,11 @@ const WAVE_BAR_MAX_HEIGHT = 22; // px, matches this pill's ~28-32px inner height
 // after the shrink (`w-[133.333%]` in the JSX). Desktop needs none of this
 // (13.5px there never triggers the zoom), so scale/width both reset via `md:`.
 const MOBILE_TEXT_SCALE = 12 / 16;
+
+// Safari/older iOS exposes AudioContext only under this vendor prefix — not
+// part of the standard `Window` typings, so a plain cast needs a real shape
+// instead of `any`.
+type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
 // Tailwind's default `md` breakpoint — kept in sync with the `md:` classes on
 // the textarea below, since the wrapper's height math (JS) needs to know
 // whether the scale is actually active, which pure CSS can't tell it.
@@ -108,7 +113,7 @@ function useChime() {
 
   const getCtx = useCallback(() => {
     if (!ctxRef.current) {
-      const Ctor = window.AudioContext || (window as any).webkitAudioContext;
+      const Ctor = window.AudioContext || (window as WindowWithWebkitAudio).webkitAudioContext;
       if (!Ctor) return null;
       ctxRef.current = new Ctor();
     }
@@ -118,26 +123,29 @@ function useChime() {
     return ctxRef.current;
   }, []);
 
-  const play = useCallback((freqFrom: number, freqTo: number) => {
-    const ctx = getCtx();
-    if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freqFrom, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(freqTo, ctx.currentTime + 0.11);
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.13);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.14);
-  }, [getCtx]);
+  const play = useCallback(
+    (freqFrom: number, freqTo: number) => {
+      const ctx = getCtx();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freqFrom, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(freqTo, ctx.currentTime + 0.11);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.13);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.14);
+    },
+    [getCtx]
+  );
 
   return {
     playStart: useCallback(() => play(600, 900), [play]),
-    playStop: useCallback(() => play(700, 450), [play]),
+    playStop: useCallback(() => play(700, 450), [play])
   };
 }
 
@@ -150,7 +158,7 @@ export function ChatInputBar({
   onFocus,
   onBlur,
   showConversationsButton = false,
-  onOpenConversations,
+  onOpenConversations
 }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Wraps the textarea; its height is set (in JS, see the resize effect
@@ -268,7 +276,7 @@ export function ChatInputBar({
 
   const startSilenceWatch = useCallback((stream: MediaStream) => {
     smoothedRmsRef.current = 0;
-    const Ctor = window.AudioContext || (window as any).webkitAudioContext;
+    const Ctor = window.AudioContext || (window as WindowWithWebkitAudio).webkitAudioContext;
     if (!Ctor) return; // no Web Audio support — silence auto-stop just won't trigger, recording still works
     const ctx = new Ctor();
     silenceAudioCtxRef.current = ctx;
@@ -380,7 +388,9 @@ export function ChatInputBar({
     }
 
     chunksRef.current = [];
-    recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    recorder.ondataavailable = e => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
     recorder.onstop = async () => {
       stream.getTracks().forEach(t => t.stop());
       stopSilenceWatch();
@@ -481,7 +491,9 @@ export function ChatInputBar({
             {Array.from({ length: barCount }).map((_, i) => (
               <div
                 key={i}
-                ref={el => { waveBarRefs.current[i] = el; }}
+                ref={el => {
+                  waveBarRefs.current[i] = el;
+                }}
                 class="flex-1 min-w-[1px] bg-[#E2422B]"
                 style={{ height: `${WAVE_BAR_MIN_HEIGHT}px` }}
               />

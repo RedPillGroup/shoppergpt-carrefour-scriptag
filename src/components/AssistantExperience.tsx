@@ -2,17 +2,20 @@ import { h } from 'preact';
 import { useRef, useEffect, useState, useCallback, useMemo } from 'preact/hooks';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useShopperStore } from '../store';
-import { ALL_MENU_STEPS, EventRequirements, MenuStep, Message, Product } from '../types';
+import { ALL_MENU_STEPS, EventRequirements, Message, Product } from '../types';
 import { useChatAnswer } from '../hooks/useChatAnswer';
-import { adjustStepQuantities, fetchServerMenu, menuResponseToPanelState, suggestProducts, syncMenuState } from '../api/menu';
+import {
+  adjustStepQuantities,
+  fetchServerMenu,
+  menuResponseToPanelState,
+  suggestProducts,
+  syncMenuState
+} from '../api/menu';
 import { confirmCart } from '../api/cart';
 import { getEnv, getInitialSessionId, getMockScreen } from '../api/config';
 import { dispatchCartUpdated } from '../events';
 import { trackSession, trackCta } from '../api/track';
-import {
-  fetchConversation,
-  fetchConversations
-} from '../api/conversations';
+import { fetchConversation, fetchConversations } from '../api/conversations';
 import { EditorialPanel } from './panel/EditorialPanel';
 import { MessageBubble } from './chat/MessageBubble';
 import { TypingIndicator } from './chat/TypingIndicator';
@@ -61,12 +64,6 @@ export function AssistantExperience() {
   // Collapsed (default) gives the chat most of the height; expanded flips the ratio
   // so the panel can show a full menu without the user scrolling a tiny viewport.
   const [mobilePanelExpanded, setMobilePanelExpanded] = useState(false);
-  // Mobile-only: while the chat input is focused, show ONLY the chat (the
-  // panel shrinks to 0 — see the chat pane's flexBasis below) instead of
-  // trying to still share the screen with the panel while iOS's keyboard +
-  // its accessory bar eat a big chunk of it. Simpler to just not compete for
-  // space at all than to fight that OS chrome pixel by pixel.
-  const [chatFocused, setChatFocused] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const jwtRef = useRef(jwt);
   const sessionIdRef = useRef(sessionId);
@@ -108,10 +105,7 @@ export function AssistantExperience() {
     const prevProducts = productsByStepRef.current;
     const prevQty = menuQuantitiesRef.current;
     if (Object.values(prevProducts).some(list => list.length > 0)) {
-      const signature = (
-        products: Product[] | undefined,
-        qty: Record<string, number>
-      ): string =>
+      const signature = (products: Product[] | undefined, qty: Record<string, number>): string =>
         (products ?? [])
           .map(p => [p.id, qty[p.id] ?? 0] as const)
           .filter(([, q]) => q > 0)
@@ -633,13 +627,7 @@ export function AssistantExperience() {
     resetPanelToDefault();
     menuEtagRef.current = null;
     void refreshConversations();
-  }, [
-    sessionId,
-    setConversationId,
-    setMessages,
-    resetPanelToDefault,
-    refreshConversations
-  ]);
+  }, [sessionId, setConversationId, setMessages, resetPanelToDefault, refreshConversations]);
 
   useChatAnswer(
     question,
@@ -676,8 +664,7 @@ export function AssistantExperience() {
           // yet) and never on load / restore / background re-sync — none of which
           // set store_changed. Dispatched AFTER the sync so the store detail is
           // the freshly applied one.
-          const storeFinalizedThisTurn =
-            meta.store_changed === true && !meta.mode_options;
+          const storeFinalizedThisTurn = meta.store_changed === true && !meta.mode_options;
           pendingPanelSyncRef.current = syncPanelFromServer(true).finally(() => {
             pendingPanelSyncRef.current = null;
             if (storeFinalizedThisTurn) {
@@ -830,72 +817,74 @@ export function AssistantExperience() {
    * a `message` we ALWAYS surface as an assistant bubble — including the overrun
    * warning when the menu now exceeds the global budget. A 409 means our
    * revision was stale: resync silently, never retry blindly. */
-  const scheduleStepRebalance = useCallback((productId: string) => {
-    const step = Object.entries(productsByStepRef.current).find(([, list]) =>
-      list.some(p => p.id === productId)
-    )?.[0];
-    if (!step) return;
-    setRebalancingStep(step);
-    const timers = rebalanceTimersRef.current;
-    if (timers[step]) clearTimeout(timers[step]);
-    timers[step] = setTimeout(async () => {
-      delete timers[step];
-      // Deactivated again before the debounce fired → the activation was undone.
-      if ((menuQuantitiesRef.current[productId] ?? 0) <= 0) {
-        setRebalancingStep(null);
-        return;
-      }
-      try {
-        const result = await adjustStepQuantities(
-          sessionIdRef.current,
-          step,
-          getClientState()
-        );
-        if (typeof result.menu_revision === 'number') {
-          menuRevisionRef.current = Math.max(menuRevisionRef.current, result.menu_revision);
+  const scheduleStepRebalance = useCallback(
+    (productId: string) => {
+      const step = Object.entries(productsByStepRef.current).find(([, list]) =>
+        list.some(p => p.id === productId)
+      )?.[0];
+      if (!step) return;
+      setRebalancingStep(step);
+      const timers = rebalanceTimersRef.current;
+      if (timers[step]) clearTimeout(timers[step]);
+      timers[step] = setTimeout(async () => {
+        delete timers[step];
+        // Deactivated again before the debounce fired → the activation was undone.
+        if ((menuQuantitiesRef.current[productId] ?? 0) <= 0) {
+          setRebalancingStep(null);
+          return;
         }
-        await syncPanelFromServer(true);
-        if (result.message) {
-          addMessage({
-            id: `rebalance-${Date.now()}`,
-            role: 'assistant',
-            content: result.message,
-            timestamp: new Date()
-          });
-        }
-      } catch (err) {
-        const status = (err as { status?: number }).status;
-        if (status === 409) {
-          // Stale snapshot. The 409 body carries the server's revision — ADOPT it
-          // before resyncing: GET /menu may well answer 304 (our cached payload is
-          // current, only our revision counter was behind), in which case
-          // applyPanelState never runs and the ref would stay stale forever — every
-          // later activation then 409s again (the loop seen in QA at 11:44-11:45).
-          const serverRev = (err as { serverRevision?: number }).serverRevision;
-          if (typeof serverRev === 'number') {
-            menuRevisionRef.current = Math.max(menuRevisionRef.current, serverRev);
+        try {
+          const result = await adjustStepQuantities(sessionIdRef.current, step, getClientState());
+          if (typeof result.menu_revision === 'number') {
+            menuRevisionRef.current = Math.max(menuRevisionRef.current, result.menu_revision);
           }
           await syncPanelFromServer(true);
-        } else {
-          console.error('adjust_step failed', err);
+          if (result.message) {
+            addMessage({
+              id: `rebalance-${Date.now()}`,
+              role: 'assistant',
+              content: result.message,
+              timestamp: new Date()
+            });
+          }
+        } catch (err) {
+          const status = (err as { status?: number }).status;
+          if (status === 409) {
+            // Stale snapshot. The 409 body carries the server's revision — ADOPT it
+            // before resyncing: GET /menu may well answer 304 (our cached payload is
+            // current, only our revision counter was behind), in which case
+            // applyPanelState never runs and the ref would stay stale forever — every
+            // later activation then 409s again (the loop seen in QA at 11:44-11:45).
+            const serverRev = (err as { serverRevision?: number }).serverRevision;
+            if (typeof serverRev === 'number') {
+              menuRevisionRef.current = Math.max(menuRevisionRef.current, serverRev);
+            }
+            await syncPanelFromServer(true);
+          } else {
+            console.error('adjust_step failed', err);
+          }
+        } finally {
+          setRebalancingStep(null);
         }
-      } finally {
-        setRebalancingStep(null);
-      }
-    }, 800);
-  }, [addMessage, syncPanelFromServer]);
+      }, 800);
+    },
+    [addMessage, syncPanelFromServer]
+  );
 
-  const handleQuantityChange = useCallback((productId: string, delta: number) => {
-    const wasInactive = (menuQuantitiesRef.current[productId] ?? 0) <= 0;
-    setMenuQuantities(prev => {
-      const current = prev[productId] ?? 0;
-      const next = Math.max(0, current + delta);
-      return { ...prev, [productId]: next };
-    });
-    // Activation of a suggestion (0 → ≥1) → schedule the step rebalance. Any other
-    // edit (including deactivation) is manual tuning: silent by design.
-    if (wasInactive && delta > 0) scheduleStepRebalance(productId);
-  }, [scheduleStepRebalance]);
+  const handleQuantityChange = useCallback(
+    (productId: string, delta: number) => {
+      const wasInactive = (menuQuantitiesRef.current[productId] ?? 0) <= 0;
+      setMenuQuantities(prev => {
+        const current = prev[productId] ?? 0;
+        const next = Math.max(0, current + delta);
+        return { ...prev, [productId]: next };
+      });
+      // Activation of a suggestion (0 → ≥1) → schedule the step rebalance. Any other
+      // edit (including deactivation) is manual tuning: silent by design.
+      if (wasInactive && delta > 0) scheduleStepRebalance(productId);
+    },
+    [scheduleStepRebalance]
+  );
 
   // Saves the user's chosen pieces onto the plateau product itself (not a
   // separate map) — that's what makes it ride along the existing menu sync
@@ -980,8 +969,7 @@ export function AssistantExperience() {
         addMessage({
           id: Date.now().toString(),
           role: 'assistant',
-          content:
-            "❌ Impossible d'ajouter le menu à votre panier Carrefour. Veuillez réessayer.",
+          content: "❌ Impossible d'ajouter le menu à votre panier Carrefour. Veuillez réessayer.",
           timestamp: new Date()
         });
       } else if (result.status === 'ok') {
@@ -1001,8 +989,7 @@ export function AssistantExperience() {
       addMessage({
         id: Date.now().toString(),
         role: 'assistant',
-        content:
-          "❌ Impossible d'ajouter le menu à votre panier Carrefour. Veuillez réessayer.",
+        content: "❌ Impossible d'ajouter le menu à votre panier Carrefour. Veuillez réessayer.",
         timestamp: new Date()
       });
     }
@@ -1013,7 +1000,7 @@ export function AssistantExperience() {
 
   const noStoreGreeting =
     'Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n' +
-    'Pour vous garantir la disponibilité de nos meilleurs produits traiteur, pourriez-vous m\'indiquer votre code postal ?';
+    "Pour vous garantir la disponibilité de nos meilleurs produits traiteur, pourriez-vous m'indiquer votre code postal ?";
   const storeGreeting =
     'Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n' +
     "Pour commencer... quel est l'heureux événement que vous souhaitez célébrer ?";
@@ -1181,7 +1168,9 @@ export function AssistantExperience() {
               {/* Initial greeting — rendered outside the messages array so it stays
                   reactive to store state without polluting chat history. */}
               <MessageBubble
-                key={initialGreeting.id + (greetingContent === storeGreeting ? '-store' : '-nostore')}
+                key={
+                  initialGreeting.id + (greetingContent === storeGreeting ? '-store' : '-nostore')
+                }
                 message={initialGreeting}
                 showSender={true}
                 fadeInOnMount={true}
@@ -1237,12 +1226,13 @@ export function AssistantExperience() {
                   onSelectMode={modeLabel => send(modeLabel)}
                 />
               ))}
-              {isWaiting && !restoring && (composePhase ? <ComposingIndicator /> : <TypingIndicator />)}
+              {isWaiting &&
+                !restoring &&
+                (composePhase ? <ComposingIndicator /> : <TypingIndicator />)}
               {isStreaming && (
                 <StreamingBubble text={streamingText.replace(/__NEWLINE__/g, '\n')} />
               )}
             </div>
-
           </div>
 
           <ChatInputBar
@@ -1257,16 +1247,10 @@ export function AssistantExperience() {
             // brings the chat + this button back, then opens history normally.
             showConversationsButton={!mobilePanelExpanded}
             onOpenConversations={() => setConversationsOpen(true)}
-            // Mobile: while typing, show only the chat (see chatFocused above)
-            // instead of fighting the iOS keyboard + accessory bar for space.
-            // Also drop any panel expansion so the layout returns to normal
-            // collapsed proportions once focus/typing is done.
+            // Mobile: while typing, drop any panel expansion so the layout
+            // returns to normal collapsed proportions instead of fighting the
+            // iOS keyboard + accessory bar for space.
             onFocus={() => {
-              // chatFocused now only hides the mobile expand trigger (see its
-              // `!chatFocused` check below) — it no longer grows the chat pane
-              // to 100% (flexBasis stays at its normal collapsed/expanded
-              // values regardless of focus; see the flexBasis style below).
-              setChatFocused(true);
               setMobilePanelExpanded(false);
               // The keyboard sliding in still takes a moment to settle, so
               // scrolling immediately would jump to a bottom that's about to
@@ -1283,7 +1267,6 @@ export function AssistantExperience() {
                 vv.addEventListener('resize', onResize);
               }
             }}
-            onBlur={() => setChatFocused(false)}
           />
 
           <ConversationsDrawer
@@ -1330,7 +1313,6 @@ export function AssistantExperience() {
           )}
         </div>
       </div>
-
 
       {/* Product detail modal — rendered above everything else inside the widget.
           "Composer" plateaux (is_composable) open the dedicated composition

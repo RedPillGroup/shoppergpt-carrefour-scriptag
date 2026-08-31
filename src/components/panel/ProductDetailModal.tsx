@@ -77,7 +77,7 @@ export function ProductDetailModal({ productId, onClose }: Props) {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'x-client-id': getClientId(),
+      'x-client-id': getClientId()
     };
     if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
 
@@ -86,7 +86,12 @@ export function ProductDetailModal({ productId, onClose }: Props) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<ProductDetail>;
       })
-      .then(data => { if (!cancelled) { setDetail(data); setLoading(false); } })
+      .then(data => {
+        if (!cancelled) {
+          setDetail(data);
+          setLoading(false);
+        }
+      })
       .catch(err => {
         // err.message here is either "HTTP 404" (ours) or the browser's own raw
         // fetch error ("Failed to fetch" in Chrome, etc.) — never in French. Show
@@ -98,7 +103,9 @@ export function ProductDetailModal({ productId, onClose }: Props) {
         }
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [productId, jwt]);
 
   return (
@@ -106,7 +113,9 @@ export function ProductDetailModal({ productId, onClose }: Props) {
       {/* Backdrop */}
       <motion.div
         class="absolute inset-0 bg-black/40"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       />
 
@@ -131,7 +140,12 @@ export function ProductDetailModal({ productId, onClose }: Props) {
           aria-label="Fermer"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <path
+              d="M2 2l10 10M12 2L2 12"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
           </svg>
         </button>
 
@@ -183,7 +197,9 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
           src={detail.image_url || PLACEHOLDER}
           alt={detail.name}
           loading="lazy"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
+          onError={e => {
+            (e.currentTarget as HTMLImageElement).src = PLACEHOLDER;
+          }}
         />
         {detail.menu_step && (
           <span class="absolute bottom-2 left-2 text-[10px] font-semibold bg-white/90 text-[#C7B287] px-2 py-0.5 rounded-full shadow-sm">
@@ -193,11 +209,8 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
       </div>
 
       <div class="px-4 pt-3 pb-5 flex flex-col gap-3">
-
         {/* Name */}
-        <h2 class="m-0 text-[15px] font-bold text-[#1A1A2E] leading-snug pr-6">
-          {detail.name}
-        </h2>
+        <h2 class="m-0 text-[15px] font-bold text-[#1A1A2E] leading-snug pr-6">{detail.name}</h2>
 
         {/* Price + persons */}
         <div class="flex items-baseline gap-2 flex-wrap">
@@ -209,9 +222,7 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
           {/* Explicitly "à l'unité": the card now shows the LINE TOTAL (unit × qty), so
               this is the only place left where the unit price is readable. Without the
               label the two figures look like the same thing and disagree. */}
-          {detail.price_eur != null && (
-            <span class="text-[11px] text-[#6B7280]">à l'unité</span>
-          )}
+          {detail.price_eur != null && <span class="text-[11px] text-[#6B7280]">à l'unité</span>}
           {detail.persons != null && detail.persons > 0 && (
             <span class="text-[11px] text-[#6B7280]">
               Pour {detail.persons} personne{detail.persons > 1 ? 's' : ''}
@@ -249,7 +260,10 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
         {chips.length > 0 && (
           <div class="flex flex-wrap gap-1">
             {chips.map(chip => (
-              <span key={chip} class="text-[10px] font-medium bg-[#F0EDE8] text-[#6B7280] px-2 py-0.5 rounded-full">
+              <span
+                key={chip}
+                class="text-[10px] font-medium bg-[#F0EDE8] text-[#6B7280] px-2 py-0.5 rounded-full"
+              >
                 {chip}
               </span>
             ))}
@@ -298,7 +312,9 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
                       src={piece.image_url}
                       alt=""
                       class="w-9 h-9 rounded-lg object-cover shrink-0 mt-0.5"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      onError={e => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
                     />
                   )}
                   <span class="text-[11px] text-[#1A1A2E] leading-snug flex-1">
@@ -324,11 +340,20 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
             >
               <span>Ingrédients</span>
               <svg
-                width="14" height="14" viewBox="0 0 14 14" fill="none"
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
                 class={`transition-transform duration-200 ${ingredientsOpen ? 'rotate-180' : ''}`}
                 aria-hidden="true"
               >
-                <path d="M2 5l5 5 5-5" stroke="#9A8C78" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M2 5l5 5 5-5"
+                  stroke="#9A8C78"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </button>
             {ingredientsOpen && (
@@ -339,7 +364,6 @@ function DetailContent({ detail }: { detail: ProductDetail }) {
             )}
           </div>
         )}
-
       </div>
     </div>
   );

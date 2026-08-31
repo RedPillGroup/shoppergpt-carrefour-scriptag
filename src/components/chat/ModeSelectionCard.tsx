@@ -5,7 +5,7 @@ import { ModeOptions } from '../../types';
 const MODE_LABELS: Record<string, string> = {
   retrait: 'Retrait en magasin',
   drive: 'Drive',
-  livraison: 'Livraison',
+  livraison: 'Livraison'
 };
 
 interface Props {

@@ -1,39 +1,39 @@
-declare module "*.css" {
+declare module '*.css' {
   const content: string;
   export default content;
 }
 
-declare module "*.png" {
+declare module '*.png' {
   const src: string;
   export default src;
 }
 
-declare module "*.jpg" {
+declare module '*.jpg' {
   const src: string;
   export default src;
 }
 
-declare module "*.webp" {
+declare module '*.webp' {
   const src: string;
   export default src;
 }
 
-declare module "*.svg" {
+declare module '*.svg' {
   const src: string;
   export default src;
 }
 
-declare module "*.svg?raw" {
+declare module '*.svg?raw' {
   const content: string;
   export default content;
 }
 
-declare module "*.woff2" {
+declare module '*.woff2' {
   const src: string;
   export default src;
 }
 
-declare module "*.ttf" {
+declare module '*.ttf' {
   const src: string;
   export default src;
 }

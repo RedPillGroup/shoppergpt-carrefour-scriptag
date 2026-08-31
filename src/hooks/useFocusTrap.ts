@@ -37,12 +37,15 @@ export function useFocusTrap(onEscape: () => void) {
       if (e.key !== 'Tab') return;
 
       const focusable = getFocusable(el);
-      if (!focusable.length) { e.preventDefault(); return; }
+      if (!focusable.length) {
+        e.preventDefault();
+        return;
+      }
 
       // composedPath()[0] is the real focused element even inside a Shadow root.
       const active = e.composedPath()[0] as HTMLElement;
       const first = focusable[0];
-      const last  = focusable[focusable.length - 1];
+      const last = focusable[focusable.length - 1];
 
       if (e.shiftKey && active === first) {
         e.preventDefault();

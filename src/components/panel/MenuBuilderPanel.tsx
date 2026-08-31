@@ -455,40 +455,40 @@ export function MenuBuilderPanel({
               onTouchStart={handleStepBarTouchStart}
               onTouchEnd={handleStepBarTouchEnd}
             >
-                <button
-                  type="button"
-                  onClick={() => currentMobileIndex > 0 && goToMobileStep(currentMobileIndex - 1)}
-                  disabled={currentMobileIndex === 0}
-                  aria-label="Étape précédente"
-                  class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
-                >
-                  <span
-                    class="inline-flex w-[18px] h-[18px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
-                    dangerouslySetInnerHTML={{ __html: leftIcon }}
-                  />
-                </button>
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="h-[26px] w-[26px] flex items-center justify-center shrink-0 [&_svg]:h-full [&_svg]:w-full">
-                    {getStepIcon(steps[currentMobileIndex], 26)}
-                  </span>
-                  <span class="font-semibold uppercase tracking-wide text-[13px] text-[##878787] leading-none pt-2">
-                    {steps[currentMobileIndex]}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    currentMobileIndex < steps.length - 1 && goToMobileStep(currentMobileIndex + 1)
-                  }
-                  disabled={currentMobileIndex === steps.length - 1}
-                  aria-label="Étape suivante"
-                  class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
-                >
-                  <span
-                    class="inline-flex w-[18px] h-[18px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
-                    dangerouslySetInnerHTML={{ __html: rightIcon }}
-                  />
-                </button>
+              <button
+                type="button"
+                onClick={() => currentMobileIndex > 0 && goToMobileStep(currentMobileIndex - 1)}
+                disabled={currentMobileIndex === 0}
+                aria-label="Étape précédente"
+                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
+              >
+                <span
+                  class="inline-flex w-[18px] h-[18px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
+                  dangerouslySetInnerHTML={{ __html: leftIcon }}
+                />
+              </button>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="h-[26px] w-[26px] flex items-center justify-center shrink-0 [&_svg]:h-full [&_svg]:w-full">
+                  {getStepIcon(steps[currentMobileIndex], 26)}
+                </span>
+                <span class="font-semibold uppercase tracking-wide text-[13px] text-[##878787] leading-none pt-2">
+                  {steps[currentMobileIndex]}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  currentMobileIndex < steps.length - 1 && goToMobileStep(currentMobileIndex + 1)
+                }
+                disabled={currentMobileIndex === steps.length - 1}
+                aria-label="Étape suivante"
+                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border-0 bg-transparent disabled:opacity-30 cursor-pointer disabled:cursor-default"
+              >
+                <span
+                  class="inline-flex w-[18px] h-[18px] items-center justify-center [&_svg]:block [&_svg]:w-full [&_svg]:h-full"
+                  dangerouslySetInnerHTML={{ __html: rightIcon }}
+                />
+              </button>
             </div>
           )}
 
@@ -581,7 +581,10 @@ export function MenuBuilderPanel({
                       // without needing align-items to do anything.
                       <div class="flex flex-wrap justify-center gap-3">
                         {products.map(p => (
-                          <div key={p.id} class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]">
+                          <div
+                            key={p.id}
+                            class="flex-[0_0_calc(50%-6px)] md:flex-[0_0_calc(25%-9px)]"
+                          >
                             <MenuProductCard
                               product={p}
                               quantity={quantities[p.id] ?? 0}
@@ -784,7 +787,9 @@ export function MenuBuilderPanel({
               {totalCost > 0 ? <PriceBig value={totalCost} /> : <span class="text-white">—</span>}
             </div>
             <div class="hidden md:flex items-center h-7 gap-2">
-              <span class="w-[78px] text-[11px] font-[500] uppercase text-white shrink-0">Prix/pers.</span>
+              <span class="w-[78px] text-[11px] font-[500] uppercase text-white shrink-0">
+                Prix/pers.
+              </span>
               {pricePerPerson !== undefined ? (
                 <PriceBig value={pricePerPerson} />
               ) : (

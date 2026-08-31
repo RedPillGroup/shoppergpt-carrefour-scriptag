@@ -2,8 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-*, *::before, *::after { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 :host {
-  font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 }

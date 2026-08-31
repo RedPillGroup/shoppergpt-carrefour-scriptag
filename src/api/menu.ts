@@ -1,7 +1,7 @@
-import { getApiUrl, getClientId } from "./config";
-import { EventRequirements, Product } from "../types";
-import { buildProduct } from "../utils/productExtractor";
-import { useShopperStore } from "../store";
+import { getApiUrl, getClientId } from './config';
+import { EventRequirements, Product } from '../types';
+import { buildProduct } from '../utils/productExtractor';
+import { useShopperStore } from '../store';
 
 export interface ServerMenuResponse {
   products?: unknown[];
@@ -33,32 +33,32 @@ export interface FetchServerMenuResult {
 
 function menuHeaders(sessionId: string | null): Record<string, string> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "x-client-id": getClientId(),
+    'Content-Type': 'application/json',
+    'x-client-id': getClientId()
   };
-  if (sessionId) headers["X-Session-Id"] = sessionId;
+  if (sessionId) headers['X-Session-Id'] = sessionId;
   const conversationId = useShopperStore.getState().conversationId;
-  if (conversationId) headers["X-Conversation-Id"] = conversationId;
+  if (conversationId) headers['X-Conversation-Id'] = conversationId;
   return headers;
 }
 
 function parseString(value: unknown): string | undefined {
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     const normalized = value.trim();
     return normalized.length > 0 ? normalized : undefined;
   }
-  if (typeof value === "number" && Number.isFinite(value)) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
     return `${value}`;
   }
   return undefined;
 }
 
 function parseNumber(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value)) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
   }
-  if (typeof value === "string") {
-    const normalized = value.trim().replace(",", ".");
+  if (typeof value === 'string') {
+    const normalized = value.trim().replace(',', '.');
     if (!normalized) return undefined;
     const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : undefined;
@@ -85,7 +85,7 @@ function parseEventRequirements(raw: Record<string, unknown>): EventRequirements
   if (budget !== undefined) next.budget = budget;
 
   const steps = raw.menu_steps;
-  if (Array.isArray(steps) && steps.length > 0 && steps.every(s => typeof s === "string")) {
+  if (Array.isArray(steps) && steps.length > 0 && steps.every(s => typeof s === 'string')) {
     next.menu_steps = steps as string[];
   }
 
@@ -99,7 +99,7 @@ function parseEventRequirements(raw: Record<string, unknown>): EventRequirements
 export function menuResponseToPanelState(data: ServerMenuResponse): MenuPanelState {
   const products: Product[] = [];
   for (const raw of data.products ?? []) {
-    if (!raw || typeof raw !== "object") continue;
+    if (!raw || typeof raw !== 'object') continue;
     const product = buildProduct(raw as Record<string, unknown>);
     if (product) products.push(product);
   }
@@ -108,18 +108,17 @@ export function menuResponseToPanelState(data: ServerMenuResponse): MenuPanelSta
   const menuQuantities: Record<string, number> = {};
 
   for (const p of products) {
-    const step = p.menu_step?.trim() || "Autres";
+    const step = p.menu_step?.trim() || 'Autres';
     (productsByStep[step] ??= []).push(p);
     const qtyRaw = p.recommended_quantity;
-    menuQuantities[p.id] =
-      qtyRaw != null && Number.isFinite(qtyRaw) ? Math.max(0, qtyRaw) : 0;
+    menuQuantities[p.id] = qtyRaw != null && Number.isFinite(qtyRaw) ? Math.max(0, qtyRaw) : 0;
   }
 
   const eventRequirements = parseEventRequirements(data.event_requirements ?? {});
   const hasMenu = products.length > 0;
   const hasEvent = Object.keys(eventRequirements).length > 0;
   const menuRevision =
-    typeof data.menu_revision === "number" && Number.isFinite(data.menu_revision)
+    typeof data.menu_revision === 'number' && Number.isFinite(data.menu_revision)
       ? data.menu_revision
       : 0;
 
@@ -128,8 +127,8 @@ export function menuResponseToPanelState(data: ServerMenuResponse): MenuPanelSta
     rawStore && rawStore.store_id != null
       ? {
           store_id: String(rawStore.store_id),
-          store_name: String(rawStore.store_name ?? ""),
-          mode: rawStore.mode ?? rawStore.withdrawal_mode,
+          store_name: String(rawStore.store_name ?? ''),
+          mode: rawStore.mode ?? rawStore.withdrawal_mode
         }
       : null;
 
@@ -139,7 +138,7 @@ export function menuResponseToPanelState(data: ServerMenuResponse): MenuPanelSta
     eventRequirements,
     store,
     hasMenu: hasMenu || hasEvent,
-    menuRevision,
+    menuRevision
   };
 }
 
@@ -149,16 +148,16 @@ export async function fetchServerMenu(
   options?: { ifNoneMatch?: string | null }
 ): Promise<FetchServerMenuResult> {
   const headers = menuHeaders(sessionId);
-  if (options?.ifNoneMatch) headers["If-None-Match"] = options.ifNoneMatch;
+  if (options?.ifNoneMatch) headers['If-None-Match'] = options.ifNoneMatch;
 
   const res = await fetch(`${getApiUrl()}/menu`, { headers });
   if (res.status === 304) {
-    return { data: null, etag: options?.ifNoneMatch ?? res.headers.get("ETag"), notModified: true };
+    return { data: null, etag: options?.ifNoneMatch ?? res.headers.get('ETag'), notModified: true };
   }
   if (!res.ok) {
     throw new Error(`GET /menu failed: ${res.status}`);
   }
-  const etag = res.headers.get("ETag");
+  const etag = res.headers.get('ETag');
   const data = (await res.json()) as ServerMenuResponse;
   return { data, etag, notModified: false };
 }
@@ -175,7 +174,7 @@ export async function syncMenuState(
   clientState: Record<string, unknown>
 ): Promise<void> {
   const res = await fetch(`${getApiUrl()}/menu/sync`, {
-    method: "POST",
+    method: 'POST',
     headers: menuHeaders(sessionId),
     body: JSON.stringify(clientState)
   });
@@ -183,7 +182,6 @@ export async function syncMenuState(
     throw new Error(`POST /menu/sync failed: ${res.status}`);
   }
 }
-
 
 export interface AdjustStepResult {
   step?: string;
@@ -203,7 +201,7 @@ export async function adjustStepQuantities(
   clientState: Record<string, unknown> | null
 ): Promise<AdjustStepResult> {
   const res = await fetch(`${getApiUrl()}/adjust_step`, {
-    method: "POST",
+    method: 'POST',
     headers: menuHeaders(sessionId),
     body: JSON.stringify({ step, client_state: clientState })
   });
@@ -252,7 +250,7 @@ export async function suggestProducts(
   const headers = menuHeaders(sessionId);
 
   const res = await fetch(`${getApiUrl()}/suggest_products`, {
-    method: "POST",
+    method: 'POST',
     headers,
     body: JSON.stringify({ step })
   });
@@ -262,14 +260,14 @@ export async function suggestProducts(
   const data = (await res.json()) as SuggestProductsResponse;
   const products: Product[] = [];
   for (const raw of data.items ?? []) {
-    if (!raw || typeof raw !== "object") continue;
+    if (!raw || typeof raw !== 'object') continue;
     const product = buildProduct(raw as Record<string, unknown>);
     if (product) products.push(product);
   }
   return {
     products,
     menuRevision:
-      typeof data.menu_revision === "number" && Number.isFinite(data.menu_revision)
+      typeof data.menu_revision === 'number' && Number.isFinite(data.menu_revision)
         ? data.menu_revision
         : null
   };

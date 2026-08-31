@@ -21,47 +21,47 @@ export interface EventTile {
 export const HERO_SLIDES: HeroSlide[] = [
   {
     img: `${EDITORIAL_BASE_URL}/mariage-1-v7.webp`,
-    title: "Repas de mariage,\nou pacs",
-    query: "Je prépare un repas pour un mariage ou un PACS",
+    title: 'Repas de mariage,\nou pacs',
+    query: 'Je prépare un repas pour un mariage ou un PACS'
   },
   {
     img: `${EDITORIAL_BASE_URL}/apero-1-v7.webp`,
-    title: "Pots de\ndépart",
-    query: "Je prépare un pot de départ",
+    title: 'Pots de\ndépart',
+    query: 'Je prépare un pot de départ'
   },
   {
     img: `${EDITORIAL_BASE_URL}/buffet-1-v10.webp`,
-    title: "Apéro\ndînatoire",
-    query: "Je prépare un apéro dînatoire",
+    title: 'Apéro\ndînatoire',
+    query: 'Je prépare un apéro dînatoire'
   },
   {
     img: `${EDITORIAL_BASE_URL}/bapteme-1-v7.webp`,
-    title: "Repas de\nbaptême",
-    query: "Je prépare un repas pour un baptême",
+    title: 'Repas de\nbaptême',
+    query: 'Je prépare un repas pour un baptême'
   },
   {
     img: `${EDITORIAL_BASE_URL}/gouter-1-v7.webp`,
     title: "Goûters\nd'enfants",
-    query: "Je prépare un goûter d'anniversaire pour enfant",
+    query: "Je prépare un goûter d'anniversaire pour enfant"
   },
   {
     img: `${EDITORIAL_BASE_URL}/anniv-1-v8.webp`,
-    title: "Anniversaires\nà fêter",
-    query: "Je prépare un anniversaire",
-  },
+    title: 'Anniversaires\nà fêter',
+    query: 'Je prépare un anniversaire'
+  }
 ];
 
 export const EVENTS_TILES: EventTile[] = [
   {
     img: grillades,
-    badge: "SUGGESTION DU MOMENT",
-    title: "A vos grillades\nprofitez",
-    query: "Je prépare un barbecue, montrez-moi vos suggestions de grillades",
+    badge: 'SUGGESTION DU MOMENT',
+    title: 'A vos grillades\nprofitez',
+    query: 'Je prépare un barbecue, montrez-moi vos suggestions de grillades'
   },
   {
     img: plateauSupporters,
-    badge: "100% CONVIVIAL",
-    title: "Le plateau des\nsupporters",
-    query: "Montrez-moi vos suggestions de plateaux apéro pour regarder un match",
-  },
+    badge: '100% CONVIVIAL',
+    title: 'Le plateau des\nsupporters',
+    query: 'Montrez-moi vos suggestions de plateaux apéro pour regarder un match'
+  }
 ];

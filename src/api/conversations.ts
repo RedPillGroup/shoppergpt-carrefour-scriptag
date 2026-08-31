@@ -1,6 +1,6 @@
-import { getApiUrl, getClientId } from "./config";
-import { useShopperStore } from "../store";
-import type { ServerMenuResponse } from "./menu";
+import { getApiUrl, getClientId } from './config';
+import { useShopperStore } from '../store';
+import type { ServerMenuResponse } from './menu';
 
 export interface ConversationSummary {
   conversation_id: string;
@@ -38,25 +38,25 @@ export interface ConversationDetail {
    * field, or one that never got a first message). Frozen server-side so
    * reopening this thread shows the same greeting the visitor actually
    * replied to, not whatever the CURRENT store happens to be. */
-  initial_greeting_kind?: "store" | "no_store" | null;
+  initial_greeting_kind?: 'store' | 'no_store' | null;
 }
 
 function sessionHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
-    Accept: "application/json",
-    "x-client-id": getClientId(),
+    Accept: 'application/json',
+    'x-client-id': getClientId()
   };
   const sessionId = useShopperStore.getState().sessionId;
-  if (sessionId) headers["X-Session-Id"] = sessionId;
+  if (sessionId) headers['X-Session-Id'] = sessionId;
   const jwt = useShopperStore.getState().jwt;
-  if (jwt) headers["Authorization"] = `Bearer ${jwt}`;
+  if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
   return headers;
 }
 
 /** Sidebar list — metadata only (no full messages). */
 export async function fetchConversations(): Promise<ConversationSummary[]> {
   const res = await fetch(`${getApiUrl()}/conversations`, {
-    headers: sessionHeaders(),
+    headers: sessionHeaders()
   });
   if (!res.ok) {
     throw new Error(`GET /conversations failed: ${res.status}`);
@@ -74,12 +74,11 @@ export async function fetchConversation(
   const headers = sessionHeaders();
   const leaving = options?.leavingConversationId?.trim();
   if (leaving && leaving !== conversationId) {
-    headers["X-Leaving-Conversation-Id"] = leaving;
+    headers['X-Leaving-Conversation-Id'] = leaving;
   }
-  const res = await fetch(
-    `${getApiUrl()}/conversations/${encodeURIComponent(conversationId)}`,
-    { headers }
-  );
+  const res = await fetch(`${getApiUrl()}/conversations/${encodeURIComponent(conversationId)}`, {
+    headers
+  });
   if (!res.ok) {
     throw new Error(`GET /conversations/${conversationId} failed: ${res.status}`);
   }
