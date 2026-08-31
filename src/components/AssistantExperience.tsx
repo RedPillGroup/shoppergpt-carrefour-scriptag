@@ -886,6 +886,34 @@ export function AssistantExperience() {
     [scheduleStepRebalance]
   );
 
+  // Set by handleComposeValidate, consumed by the effect below — see there for
+  // why the persist can't just happen inline in the handler.
+  const pendingComposeSyncRef = useRef(false);
+
+  // Persist a just-validated composition to MongoDB right away, instead of
+  // waiting for the next chat message to carry it along. Two things broke while
+  // it lived only in local state: "Ajouter au panier" built its payload from
+  // SERVER state (so the plateau went up with no options.plateau → 0€), and
+  // reloading the page lost the composition entirely — GET /menu round-trips
+  // plateau_selection/plateau_target_qty fine (see menu.ts + productExtractor),
+  // there was simply nothing stored to send back.
+  //
+  // Runs as an EFFECT, not inline in the handler: getClientState() reads
+  // productsByStepRef/menuQuantitiesRef, and those are only reassigned during
+  // render — syncing straight after the setState calls would ship the state
+  // from BEFORE the composition. By the time this effect runs, the render has
+  // happened and both refs are current.
+  useEffect(() => {
+    if (!pendingComposeSyncRef.current) return;
+    pendingComposeSyncRef.current = false;
+    // Best-effort: the composition is already visible locally, and the flush in
+    // handleConfirmCart re-sends it before any real cart call — so a transient
+    // failure here costs nothing the user can see.
+    void syncMenuState(sessionId, getClientState() ?? {}).catch(err =>
+      console.warn('[shopper-gpt] compose sync failed:', err)
+    );
+  }, [productsByStep, menuQuantities, sessionId]);
+
   // Saves the user's chosen pieces onto the plateau product itself (not a
   // separate map) — that's what makes it ride along the existing menu sync
   // (getClientState → sync_state → state.py) instead of being lost the moment
@@ -893,6 +921,7 @@ export function AssistantExperience() {
   // panier" to build the real POST /cart/add {options:{plateau:{...}}} payload.
   const handleComposeValidate = useCallback(
     (productId: string, step: string, selection: Record<string, number>, targetQty: number) => {
+      pendingComposeSyncRef.current = true;
       setProductsByStep(prev => {
         const list = prev[step];
         if (!list) return prev;
@@ -963,6 +992,19 @@ export function AssistantExperience() {
   // error message so the user knows the real cart wasn't updated and can retry.
   const handleConfirmCart = useCallback(async () => {
     try {
+      // Flush local-only panel edits BEFORE the cart call — /cart/confirm builds
+      // its payload from SERVER state, not from what's on screen. Composing a
+      // plateau (ComposeProductModal → handleComposeValidate) only writes to
+      // local state, expecting the next chat message to carry it along; but the
+      // natural flow is compose → "Ajouter au panier" with no message in between,
+      // so the server still had plateau_selection=None and sent the line WITHOUT
+      // options.plateau — Carrefour then priced that plateau at 0€ / dropped it.
+      // Same flush openConversation/startNewConversation already do before
+      // navigating away, for exactly the same reason.
+      // Deliberately NOT best-effort: a failed sync means the server's menu isn't
+      // what the user validated, so pushing it to the real cart would build a
+      // wrong order. Fail loudly instead (caught below).
+      await syncMenuState(sessionId, getClientState() ?? {});
       const result = await confirmCart(sessionId);
       if (result.status === 'error') {
         console.warn('[shopper-gpt] cart/confirm failed:', result.detail);
