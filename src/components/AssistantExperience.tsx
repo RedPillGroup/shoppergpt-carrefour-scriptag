@@ -1004,30 +1004,29 @@ export function AssistantExperience() {
   const storeGreeting =
     'Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n' +
     "Pour commencer... quel est l'heureux événement que vous souhaitez célébrer ?";
-  // Frozen per conversationId, NOT recomputed on every render — otherwise a
-  // visitor who replies to "pourriez-vous m'indiquer votre code postal ?" and
-  // later gets a store selected (mid-conversation) would see this bubble
-  // silently rewrite itself to "quel est l'heureux événement ?", which no
-  // longer matches what they actually replied to earlier in the same thread.
   // serverGreetingKind (set by openConversation from the backend's
   // initial_greeting_kind, itself frozen server-side at the conversation's
   // first message — see waib-api's tools.stamp_initial_greeting_kind) takes
-  // priority whenever known: it's what survives a page reload / reopening this
-  // thread later, which a purely in-memory freeze on `store` cannot. Falling
-  // back to a live `store` check only applies before ANY message has been
-  // sent in this mount (conversationId still null, nothing stamped yet) or for
-  // a thread that predates this field. conversationId stays null until the
-  // FIRST /answer reply mints one (see useChatAnswer) and never changes again
-  // within that conversation, so this only re-evaluates when a genuinely NEW
-  // conversation starts (startNewConversation → both null) or an existing one
-  // is opened (openConversation → its own conversationId + serverGreetingKind)
-  // — never mid-conversation.
+  // priority whenever known — otherwise a visitor who replied to "pourriez-vous
+  // m'indiquer votre code postal ?" and later got a store selected
+  // (mid-conversation) would see this bubble silently rewrite itself to "quel
+  // est l'heureux événement ?", no longer matching what they actually replied
+  // to. It's also what survives a page reload / reopening this thread later,
+  // which a purely in-memory check on `store` cannot.
+  // Before ANY message has been sent (serverGreetingKind still null — nothing
+  // stamped yet) — or for a thread that predates this field — `store` decides
+  // instead, and MUST stay reactive here: a real page reload starts with
+  // `store` null and only learns the visitor's actual store moments later, via
+  // the async fetch in the resume-on-load effect above. A previous version of
+  // this memo omitted `store` from its deps, so it silently kept whatever
+  // `store` was at the very first render (always null on a cold reload) even
+  // after that fetch resolved — the exact bug this comment is now warning
+  // against reintroducing.
   const greetingContent = useMemo(() => {
     if (serverGreetingKind === 'store') return storeGreeting;
     if (serverGreetingKind === 'no_store') return noStoreGreeting;
     return store ? storeGreeting : noStoreGreeting;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId, serverGreetingKind]);
+  }, [serverGreetingKind, store, storeGreeting, noStoreGreeting]);
   const initialGreeting: import('../types').Message = {
     id: 'w1',
     role: 'assistant',
