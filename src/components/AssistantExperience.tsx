@@ -515,6 +515,23 @@ export function AssistantExperience() {
     void refreshConversations();
   }, [sessionId, refreshConversations]);
 
+  /** Sync the panel's local edits and keep menuRevisionRef in step.
+   *
+   * An accepted sync bumps the server revision, so NOT reading it back leaves
+   * our snapshot stale the moment our own sync lands — every later edit is then
+   * refused server-side as "stale client_revision", silently (the call still
+   * returns 200). */
+  const syncPanelState = useCallback(async () => {
+    const result = await syncMenuState(sessionId, getClientState() ?? {});
+    if (result.menuRevision !== null) {
+      menuRevisionRef.current = Math.max(menuRevisionRef.current, result.menuRevision);
+    }
+    if (result.conflict) {
+      console.warn('[shopper-gpt] menu sync refused as stale — local edits were dropped');
+    }
+    return result;
+  }, [sessionId]);
+
   const openConversation = useCallback(
     async (id: string) => {
       try {
@@ -528,7 +545,7 @@ export function AssistantExperience() {
         // Best-effort: a sync failure must never block the actual switch.
         if (leavingId) {
           try {
-            await syncMenuState(sessionId, getClientState() ?? {});
+            await syncPanelState();
           } catch (err) {
             console.warn('[shopper-gpt] pre-switch menu sync failed:', err);
           }
@@ -575,13 +592,13 @@ export function AssistantExperience() {
       }
     },
     [
-      sessionId,
       setConversationId,
       setMessages,
       setIsLoading,
       applyPanelState,
       resetPanelToDefault,
-      refreshConversations
+      refreshConversations,
+      syncPanelState
     ]
   );
 
@@ -613,7 +630,7 @@ export function AssistantExperience() {
     const leavingId = useShopperStore.getState().conversationId;
     if (leavingId) {
       try {
-        await syncMenuState(sessionId, getClientState() ?? {});
+        await syncPanelState();
       } catch (err) {
         console.warn('[shopper-gpt] pre-new-conversation menu sync failed:', err);
       }
@@ -627,7 +644,7 @@ export function AssistantExperience() {
     resetPanelToDefault();
     menuEtagRef.current = null;
     void refreshConversations();
-  }, [sessionId, setConversationId, setMessages, resetPanelToDefault, refreshConversations]);
+  }, [setConversationId, setMessages, resetPanelToDefault, refreshConversations, syncPanelState]);
 
   useChatAnswer(
     question,
@@ -909,10 +926,8 @@ export function AssistantExperience() {
     // Best-effort: the composition is already visible locally, and the flush in
     // handleConfirmCart re-sends it before any real cart call — so a transient
     // failure here costs nothing the user can see.
-    void syncMenuState(sessionId, getClientState() ?? {}).catch(err =>
-      console.warn('[shopper-gpt] compose sync failed:', err)
-    );
-  }, [productsByStep, menuQuantities, sessionId]);
+    void syncPanelState().catch(err => console.warn('[shopper-gpt] compose sync failed:', err));
+  }, [productsByStep, menuQuantities, sessionId, syncPanelState]);
 
   // Saves the user's chosen pieces onto the plateau product itself (not a
   // separate map) — that's what makes it ride along the existing menu sync
@@ -991,6 +1006,13 @@ export function AssistantExperience() {
   // never touched here regardless of outcome; a failure just shows a French
   // error message so the user knows the real cart wasn't updated and can retry.
   const handleConfirmCart = useCallback(async () => {
+    // Tracked on the CLICK, like the three other CTA categories. It used to fire
+    // only when /cart/confirm answered status === 'ok', but that route is a
+    // deliberate no-op returning status 'skipped' outside the real Carrefour
+    // context — so the lead was never counted anywhere else, and the funnel's
+    // last step read zero however many times the button was pressed. A lead is
+    // the intent; whether the real cart accepted it is a separate outcome.
+    trackCta('ajouter_au_panier');
     try {
       // Flush local-only panel edits BEFORE the cart call — /cart/confirm builds
       // its payload from SERVER state, not from what's on screen. Composing a
@@ -1004,7 +1026,7 @@ export function AssistantExperience() {
       // Deliberately NOT best-effort: a failed sync means the server's menu isn't
       // what the user validated, so pushing it to the real cart would build a
       // wrong order. Fail loudly instead (caught below).
-      await syncMenuState(sessionId, getClientState() ?? {});
+      await syncPanelState();
       const result = await confirmCart(sessionId);
       if (result.status === 'error') {
         console.warn('[shopper-gpt] cart/confirm failed:', result.detail);
@@ -1038,8 +1060,6 @@ export function AssistantExperience() {
           minicart_html: result.minicart_html
         });
       } else if (result.status === 'ok') {
-        // Count a confirmed add-to-cart as a lead (BO "ajouter au panier" KPI).
-        trackCta('ajouter_au_panier');
         // The real Carrefour cart just changed — notify the host page, carrying the
         // rendered .header-minicart HTML Carrefour returned so it can refresh the
         // mini-cart with no extra request (see shoppergpt:cart_updated).
@@ -1058,7 +1078,7 @@ export function AssistantExperience() {
         timestamp: new Date()
       });
     }
-  }, [sessionId, addMessage]);
+  }, [sessionId, addMessage, syncPanelState]);
 
   const isStreaming = isLoading && streamingText.length > 0;
   const isWaiting = isLoading && streamingText.length === 0;

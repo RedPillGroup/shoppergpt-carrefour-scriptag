@@ -31,7 +31,13 @@ export interface FetchServerMenuResult {
   notModified: boolean;
 }
 
-function menuHeaders(sessionId: string | null): Record<string, string> {
+/**
+ * Headers every session-scoped call must carry. X-Session-Id is what lets the
+ * API resolve the selected store — without it a route silently answers with
+ * store-agnostic data (the median price, the global lead time) instead of what
+ * this customer's store actually charges and promises.
+ */
+export function sessionHeaders(sessionId: string | null): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-client-id': getClientId()
@@ -147,7 +153,7 @@ export async function fetchServerMenu(
   sessionId: string | null,
   options?: { ifNoneMatch?: string | null }
 ): Promise<FetchServerMenuResult> {
-  const headers = menuHeaders(sessionId);
+  const headers = sessionHeaders(sessionId);
   if (options?.ifNoneMatch) headers['If-None-Match'] = options.ifNoneMatch;
 
   const res = await fetch(`${getApiUrl()}/menu`, { headers });
@@ -169,18 +175,41 @@ export async function fetchServerMenu(
  * message are lost the moment the user switches conversations or refreshes —
  * GET /menu and conversation-restore only ever reflect what was last WRITTEN
  * to user_state, and until now only a chat turn ever wrote there. */
+export interface SyncMenuResult {
+  /** Authoritative revision AFTER this sync, or null when the server omits it. */
+  menuRevision: number | null;
+  /** Set when the server REFUSED the snapshot as stale — the edits were dropped. */
+  conflict: boolean;
+}
+
 export async function syncMenuState(
   sessionId: string | null,
   clientState: Record<string, unknown>
-): Promise<void> {
+): Promise<SyncMenuResult> {
   const res = await fetch(`${getApiUrl()}/menu/sync`, {
     method: 'POST',
-    headers: menuHeaders(sessionId),
+    headers: sessionHeaders(sessionId),
     body: JSON.stringify(clientState)
   });
   if (!res.ok) {
     throw new Error(`POST /menu/sync failed: ${res.status}`);
   }
+  // The response used to be discarded. An ACCEPTED sync bumps the server
+  // revision, so the caller's snapshot goes stale the instant its own sync
+  // lands — and every later edit is refused as "stale client_revision", with
+  // no visible sign since the status stays 200. Callers must feed the returned
+  // revision back into menuRevisionRef.
+  const data = (await res.json().catch(() => ({}))) as {
+    menu_revision?: number;
+    warning?: { sync_conflict?: boolean } | null;
+  };
+  return {
+    menuRevision:
+      typeof data.menu_revision === 'number' && Number.isFinite(data.menu_revision)
+        ? data.menu_revision
+        : null,
+    conflict: data.warning?.sync_conflict === true
+  };
 }
 
 export interface AdjustStepResult {
@@ -202,7 +231,7 @@ export async function adjustStepQuantities(
 ): Promise<AdjustStepResult> {
   const res = await fetch(`${getApiUrl()}/adjust_step`, {
     method: 'POST',
-    headers: menuHeaders(sessionId),
+    headers: sessionHeaders(sessionId),
     body: JSON.stringify({ step, client_state: clientState })
   });
   if (!res.ok) {
@@ -247,7 +276,7 @@ export async function suggestProducts(
   sessionId: string | null,
   step: string
 ): Promise<SuggestProductsResult> {
-  const headers = menuHeaders(sessionId);
+  const headers = sessionHeaders(sessionId);
 
   const res = await fetch(`${getApiUrl()}/suggest_products`, {
     method: 'POST',

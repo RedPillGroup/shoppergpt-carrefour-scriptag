@@ -1,7 +1,8 @@
 import { h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { motion } from 'framer-motion';
-import { getApiUrl, getClientId } from '../../api/config';
+import { getApiUrl } from '../../api/config';
+import { sessionHeaders } from '../../api/menu';
 import { useShopperStore } from '../../store';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
@@ -63,6 +64,7 @@ const PLACEHOLDER =
  */
 export function ProductDetailModal({ productId, onClose }: Props) {
   const jwt = useShopperStore(s => s.jwt);
+  const sessionId = useShopperStore(s => s.sessionId);
   const [detail, setDetail] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,10 +77,11 @@ export function ProductDetailModal({ productId, onClose }: Props) {
     setError(null);
     setDetail(null);
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'x-client-id': getClientId()
-    };
+    // X-Session-Id must ride along: GET /product/{id} resolves the selected
+    // store from it, and without it the API answers with the cross-store median
+    // price and the global lead time — so the modal contradicted the very menu
+    // it was opened from, for the exact same sku.
+    const headers = sessionHeaders(sessionId);
     if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
 
     fetch(`${getApiUrl()}/product/${productId}`, { headers })
@@ -106,7 +109,7 @@ export function ProductDetailModal({ productId, onClose }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [productId, jwt]);
+  }, [productId, jwt, sessionId]);
 
   return (
     <div class="absolute inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
