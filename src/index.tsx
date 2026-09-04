@@ -36,7 +36,16 @@ function injectStyles(shadow: ShadowRoot) {
   // HOST PAGE and the inner chat list never becomes the effective scroller. The
   // sandbox host sets this in its own CSS; `:host` applies it to every embed. This
   // one rule keeps ALL widget scrolling (chat auto-scroll, step nav, focus) contained.
-  styleEl.textContent = ':host{overflow:hidden;min-height:0;}\n' + (styles as unknown as string);
+  // `.sg-mount > *` makes the panel FILL the mount point instead of shrinking to
+  // its content. The panel sizes itself with height:100%, which needs a DEFINITE
+  // parent height to resolve — and the mount point's height now comes from
+  // `min-height` (see bootstrap), which percentages do not resolve against. The
+  // panel fell back to its content height and left an empty strip below the input
+  // bar. Growing it as a flex item works whether the height is definite or floored.
+  styleEl.textContent =
+    ':host{overflow:hidden;min-height:0;}\n' +
+    '.sg-mount>*{flex:1 1 auto;min-height:0;}\n' +
+    (styles as unknown as string);
   shadow.appendChild(styleEl);
 }
 
@@ -75,6 +84,7 @@ function bootstrap() {
     // `min-height: inherit` picks up the host's floor across the shadow boundary,
     // so height:100% still has something to resolve against when the host itself
     // has no definite height.
+    mountPoint.className = 'sg-mount';
     mountPoint.style.cssText = 'height:100%;min-height:inherit;display:flex;flex-direction:column;';
     shadow.appendChild(mountPoint);
     render(
