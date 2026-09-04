@@ -53,6 +53,23 @@ export function getEnv(): string {
 }
 
 /**
+ * Minimum height applied to the host's mount div, via `data-height` on the
+ * script tag. Any CSS length works (`700px`, `80vh`, `min(80vh,900px)`), and
+ * `none` opts out entirely.
+ *
+ * It is a FLOOR, not a fixed height: the panel inside the shadow root is
+ * height:100%, so a mount div that resolves to 0px — which is what an empty div
+ * measures before layout, and what `height:100%` resolves to when no ancestor
+ * has a definite height — would mount the widget invisibly. The floor keeps it
+ * visible without ever overriding a real height the integrator provides.
+ */
+export function getMinHeight(): string | null {
+  const raw = (_scriptData.height ?? '').trim();
+  if (raw === 'none') return null;
+  return raw || '600px';
+}
+
+/**
  * Dev/testing only — `data-mock-screen="event"` or `"products"` on the script
  * tag skips straight to that MenuBuilderPanel screen with canned data, so you
  * don't have to re-chat through the whole flow on every reload to check a
