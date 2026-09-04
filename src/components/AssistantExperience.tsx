@@ -1060,6 +1060,22 @@ export function AssistantExperience() {
           minicart_html: result.minicart_html
         });
       } else if (result.status === 'ok') {
+        // Success used to be the ONLY silent branch — the error and partial cases
+        // each said something, but a cart that went through said nothing, so a
+        // successful add was indistinguishable from a click that did nothing.
+        // The confirmation text comes from the API (waib-api's cart/confirm,
+        // CART_CONFIRMED_MESSAGE) so the SAME wording is persisted to chat
+        // history. Building it here instead would vanish on refresh or thread
+        // switch, stay out of the back-office transcript, and leave the model
+        // unaware the cart exists.
+        if (result.confirmation) {
+          addMessage({
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: result.confirmation,
+            timestamp: new Date()
+          });
+        }
         // The real Carrefour cart just changed — notify the host page, carrying the
         // rendered .header-minicart HTML Carrefour returned so it can refresh the
         // mini-cart with no extra request (see shoppergpt:cart_updated).

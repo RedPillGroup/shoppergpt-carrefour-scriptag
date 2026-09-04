@@ -15,6 +15,9 @@ export interface ConfirmCartResult {
   results?: unknown[];
   sent_count?: number;
   failed_count?: number;
+  /** Confirmation text to show in the thread on success. Comes from the API so
+   * the exact same wording is persisted to chat history — one source of truth. */
+  confirmation?: string;
   /** Build-your-own plateaux still missing their composition — the backend
    * refuses the whole call rather than pushing 0€ lines (status "error"). */
   uncomposed_products?: string[];
