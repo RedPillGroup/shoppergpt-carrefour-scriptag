@@ -1,7 +1,7 @@
 import { h, render } from 'preact';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AssistantExperience } from './components/AssistantExperience';
-import { getInitialSessionId, getMinHeight } from './api/config';
+import { getInitialSessionId } from './api/config';
 import { initDOMEventListeners } from './events';
 import { useShopperStore } from './store';
 import styles from './styles/tailwind.css';
@@ -36,16 +36,7 @@ function injectStyles(shadow: ShadowRoot) {
   // HOST PAGE and the inner chat list never becomes the effective scroller. The
   // sandbox host sets this in its own CSS; `:host` applies it to every embed. This
   // one rule keeps ALL widget scrolling (chat auto-scroll, step nav, focus) contained.
-  // `.sg-mount > *` makes the panel FILL the mount point instead of shrinking to
-  // its content. The panel sizes itself with height:100%, which needs a DEFINITE
-  // parent height to resolve — and the mount point's height now comes from
-  // `min-height` (see bootstrap), which percentages do not resolve against. The
-  // panel fell back to its content height and left an empty strip below the input
-  // bar. Growing it as a flex item works whether the height is definite or floored.
-  styleEl.textContent =
-    ':host{overflow:hidden;min-height:0;}\n' +
-    '.sg-mount>*{flex:1 1 auto;min-height:0;}\n' +
-    (styles as unknown as string);
+  styleEl.textContent = ':host{overflow:hidden;min-height:0;}\n' + (styles as unknown as string);
   shadow.appendChild(styleEl);
 }
 
@@ -63,29 +54,22 @@ function bootstrap() {
   // Embedded chat mode: host page provides a <div id="shoppergpt-chat"> mount point
   const embeddedChatMount = document.getElementById('shoppergpt-chat');
   if (embeddedChatMount) {
-    // Sizing safety net: the panel inside the shadow root is height:100%, so a
-    // mount div resolving to 0px mounts the widget invisibly.
+    // The host owns the height. We deliberately write NOTHING on their mount
+    // div: the panel below is height:100%, so the height must come from their
+    // own CSS — a definite height on this div or on one of its ancestors.
     //
-    // Applied as `min-height`, never `height`: an inline `height` beats the
-    // integrator's own stylesheet, so the net turned into a hard 600px they
-    // could not override without `!important` — `height: 100%` on their div was
-    // measured at 0px (an empty div, or a percentage with no definite ancestor
-    // height) and silently replaced. A floor keeps the widget visible while
-    // leaving any real height they provide in charge. Configurable through
-    // `data-height` on the script tag; `data-height="none"` opts out.
-    const minHeight = getMinHeight();
-    if (minHeight) {
-      embeddedChatMount.style.minHeight = minHeight;
-    }
-
+    // We used to stamp a height (then a min-height) as a safety net. Both were
+    // worse than nothing: an inline `height` beat their stylesheet and pinned
+    // the widget at 600px, and a `min-height` left an empty strip because
+    // percentages do not resolve against it. Sizing is the integrator's call.
+    //
+    // Without a height anywhere up the chain, height:100% resolves to auto and
+    // the widget grows to its unclipped content — so this is a real integration
+    // requirement, not a nicety.
     const shadow = embeddedChatMount.attachShadow({ mode: 'open' });
     injectStyles(shadow);
     const mountPoint = document.createElement('div');
-    // `min-height: inherit` picks up the host's floor across the shadow boundary,
-    // so height:100% still has something to resolve against when the host itself
-    // has no definite height.
-    mountPoint.className = 'sg-mount';
-    mountPoint.style.cssText = 'height:100%;min-height:inherit;display:flex;flex-direction:column;';
+    mountPoint.style.cssText = 'height:100%;display:flex;flex-direction:column;';
     shadow.appendChild(mountPoint);
     render(
       h(QueryClientProvider, { client: queryClient }, h(AssistantExperience, null)),
