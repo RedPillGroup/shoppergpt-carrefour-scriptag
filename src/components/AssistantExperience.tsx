@@ -939,15 +939,26 @@ export function AssistantExperience() {
       pendingComposeSyncRef.current = true;
       setProductsByStep(prev => {
         const list = prev[step];
-        if (!list) return prev;
-        const idx = list.findIndex(p => p.id === productId);
-        if (idx === -1) return prev;
+        const idx = list?.findIndex(p => p.id === productId) ?? -1;
+        if (idx === -1) {
+          // Silent until now: the modal closed as if the composition had been
+          // saved, but productId didn't match anything in `step`'s current
+          // list (stale step, or the product moved) — plateau_selection was
+          // never written, and "Ajouter au panier" only discovers that later
+          // via the backend's generic "must be composed" refusal, with nothing
+          // here pointing back to why.
+          console.warn(
+            `[shopper-gpt] compose validate: product ${productId} not found in step "${step}" — selection not saved`
+          );
+          return prev;
+        }
+        const list2 = list as NonNullable<typeof list>;
         const updated = {
-          ...list[idx],
+          ...list2[idx],
           plateau_selection: selection,
           plateau_target_qty: targetQty
         };
-        const nextList = [...list];
+        const nextList = [...list2];
         nextList[idx] = updated;
         return { ...prev, [step]: nextList };
       });
