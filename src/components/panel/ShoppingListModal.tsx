@@ -2,6 +2,7 @@ import { h } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { motion } from 'framer-motion';
 import { Product } from '../../types';
+import { remainingPlateauCount } from '../../utils/plateau';
 
 interface Props {
   productsByStep: Record<string, Product[]>;
@@ -92,6 +93,15 @@ export function ShoppingListModal({
   const panelRef = useFocusTrap(onClose);
 
   const incompleteIds = new Set(incompleteComposableProducts.map(p => p.id));
+  // How many of each product's plateaux still need composing — every ordered
+  // unit is prepared separately, so "3 of your 5 plateaux left" is the only
+  // honest way to say it. Read per row below.
+  const missingByProduct = new Map(
+    incompleteComposableProducts.map(p => [
+      p.id,
+      remainingPlateauCount(p, quantities[p.id] ?? 0)
+    ])
+  );
   const canAddToCart = incompleteComposableProducts.length === 0;
   const addToCartTooltip = canAddToCart
     ? undefined
@@ -285,7 +295,15 @@ export function ShoppingListModal({
                               <circle cx="10" cy="13.6" r="0.9" fill="currentColor" />
                             </svg>
                             <span class="text-[11px] leading-snug">
-                              Plateau pas encore composé — ouvrez-le pour choisir vos produits
+                              {missingByProduct.get(item.id) === item.qty
+                                ? item.qty > 1
+                                  ? `${item.qty} plateaux à composer — ouvrez-les pour choisir vos produits`
+                                  : 'Plateau pas encore composé — ouvrez-le pour choisir vos produits'
+                                : `${missingByProduct.get(item.id)} plateau${
+                                    (missingByProduct.get(item.id) ?? 0) > 1 ? 'x' : ''
+                                  } sur ${item.qty} encore à composer — ouvrez-${
+                                    (missingByProduct.get(item.id) ?? 0) > 1 ? 'les' : 'le'
+                                  } pour terminer`}
                             </span>
                           </div>
                         )}

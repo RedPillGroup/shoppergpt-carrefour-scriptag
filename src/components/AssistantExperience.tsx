@@ -480,8 +480,10 @@ export function AssistantExperience() {
           // Rides along so the backend keeps it on the menu item (see
           // tools.sync_state) — otherwise a composed plateau's chosen pieces
           // (and the total needed to judge it complete) would be silently
-          // dropped on the very next chat turn.
-          ...(p.plateau_selection ? { plateau_selection: p.plateau_selection } : {}),
+          // dropped on the very next chat turn. One selection per ordered
+          // plateau, order-significant: the backend turns each into its own
+          // cart line.
+          ...(p.plateau_selections ? { plateau_selections: p.plateau_selections } : {}),
           ...(p.plateau_target_qty != null ? { plateau_target_qty: p.plateau_target_qty } : {})
         };
       })
@@ -912,7 +914,7 @@ export function AssistantExperience() {
   // it lived only in local state: "Ajouter au panier" built its payload from
   // SERVER state (so the plateau went up with no options.plateau → 0€), and
   // reloading the page lost the composition entirely — GET /menu round-trips
-  // plateau_selection/plateau_target_qty fine (see menu.ts + productExtractor),
+  // plateau_selections/plateau_target_qty fine (see menu.ts + productExtractor),
   // there was simply nothing stored to send back.
   //
   // Runs as an EFFECT, not inline in the handler: getClientState() reads
@@ -935,7 +937,12 @@ export function AssistantExperience() {
   // this modal closes, so it's already sitting there ready for "Ajouter au
   // panier" to build the real POST /cart/add {options:{plateau:{...}}} payload.
   const handleComposeValidate = useCallback(
-    (productId: string, step: string, selection: Record<string, number>, targetQty: number) => {
+    (
+      productId: string,
+      step: string,
+      selections: Record<string, number>[],
+      targetQty: number
+    ) => {
       pendingComposeSyncRef.current = true;
       setProductsByStep(prev => {
         const list = prev[step];
@@ -943,7 +950,7 @@ export function AssistantExperience() {
         if (idx === -1) {
           // Silent until now: the modal closed as if the composition had been
           // saved, but productId didn't match anything in `step`'s current
-          // list (stale step, or the product moved) — plateau_selection was
+          // list (stale step, or the product moved) — plateau_selections was
           // never written, and "Ajouter au panier" only discovers that later
           // via the backend's generic "must be composed" refusal, with nothing
           // here pointing back to why.
@@ -955,7 +962,7 @@ export function AssistantExperience() {
         const list2 = list as NonNullable<typeof list>;
         const updated = {
           ...list2[idx],
-          plateau_selection: selection,
+          plateau_selections: selections,
           plateau_target_qty: targetQty
         };
         const nextList = [...list2];
@@ -1030,7 +1037,7 @@ export function AssistantExperience() {
       // plateau (ComposeProductModal → handleComposeValidate) only writes to
       // local state, expecting the next chat message to carry it along; but the
       // natural flow is compose → "Ajouter au panier" with no message in between,
-      // so the server still had plateau_selection=None and sent the line WITHOUT
+      // so the server still had no plateau_selections and sent the line WITHOUT
       // options.plateau — Carrefour then priced that plateau at 0€ / dropped it.
       // Same flush openConversation/startNewConversation already do before
       // navigating away, for exactly the same reason.
@@ -1433,12 +1440,17 @@ export function AssistantExperience() {
           <ComposeProductModal
             productId={selectedProduct.id}
             onClose={() => setSelectedProduct(null)}
-            initialSelection={selectedProduct.plateau_selection}
-            onValidate={(selection, targetQty) =>
+            initialSelections={selectedProduct.plateau_selections}
+            // Each ordered plateau is composed separately, so the modal needs
+            // how many are in the menu. A plateau opened straight from a
+            // suggestion sits at qty 0 until validated (handleComposeValidate
+            // activates it) — compose one, not zero.
+            unitCount={Math.max(1, menuQuantities[selectedProduct.id] ?? 0)}
+            onValidate={(selections, targetQty) =>
               handleComposeValidate(
                 selectedProduct.id,
                 selectedProduct.menu_step ?? '',
-                selection,
+                selections,
                 targetQty
               )
             }

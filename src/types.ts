@@ -21,19 +21,26 @@ export interface Product {
    * is_composable), never guessed from the name. Drives the "Composer" flow
    * instead of the plain description modal. */
   is_composable?: boolean;
-  /** The user's chosen pieces for an is_composable product — code ("0-0", per
-   * Carrefour's composition_plateau.groups[].pieces[].code) → qty. Saved on
-   * the product itself (not a separate map) so it rides along the normal
-   * menu sync to the backend, and is ready to build the real cart payload
-   * (POST /cart/add {options:{plateau:{...}}}) once that integration lands —
-   * without this, "Valider" would only mark qty=1 with the actual choice lost. */
-  plateau_selection?: Record<string, number>;
-  /** The plateau's required total piece count (composition_plateau.qty at the
-   * time it was composed) — needed alongside plateau_selection to tell a
-   * genuinely COMPLETE plateau apart from a partial one (sum(plateau_selection)
-   * === plateau_target_qty). Without this, the panel can't gate "Valider mon
-   * menu" on composition completeness — it would only know a selection
-   * exists, not whether it's the full one. */
+  /** The user's chosen pieces for an is_composable product — ONE selection per
+   * ordered unit, each mapping a piece code ("0-0", per Carrefour's
+   * composition_plateau.groups[].pieces[].code) → qty. Index i is the i-th
+   * plateau, and the backend turns each entry into its own cart line.
+   *
+   * A LIST because Carrefour prepares one physical plateau per unit: ordering
+   * 5 means 5 separate preparations, each composable differently. An empty
+   * entry is a plateau not composed yet — kept as a placeholder so partial
+   * progress survives closing the modal and resumes in place.
+   *
+   * Saved on the product itself (not a separate map) so it rides along the
+   * normal menu sync to the backend, which builds the real cart payload from
+   * it (POST /cart/add, one {options:{plateau}} line per plateau). */
+  plateau_selections?: Record<string, number>[];
+  /** How many pieces ONE plateau holds (composition_plateau.qty at the time it
+   * was composed) — needed alongside plateau_selections to tell a genuinely
+   * COMPLETE order apart from a partial one: there must be one selection per
+   * unit AND each must sum to this. Without it the panel can't gate "Valider
+   * mon menu" on completeness — it would only know selections exist, not
+   * whether they're all finished. */
   plateau_target_qty?: number;
 }
 

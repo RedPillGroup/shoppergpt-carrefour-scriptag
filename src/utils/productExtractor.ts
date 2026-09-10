@@ -1,6 +1,28 @@
 import { Product } from '../types';
 
 /**
+ * Read the per-plateau compositions off a raw backend product.
+ *
+ * Also accepts the single-selection `plateau_selection` this replaced, wrapping
+ * it as the first plateau: a session that had composed a plateau before the
+ * per-unit model landed would otherwise come back reading "not composed" and
+ * silently lose that work on the next sync.
+ */
+function readPlateauSelections(
+  p: Record<string, unknown>
+): Record<string, number>[] | undefined {
+  if (Array.isArray(p.plateau_selections)) {
+    return p.plateau_selections.filter(
+      (sel): sel is Record<string, number> => !!sel && typeof sel === 'object'
+    );
+  }
+  if (p.plateau_selection && typeof p.plateau_selection === 'object') {
+    return [p.plateau_selection as Record<string, number>];
+  }
+  return undefined;
+}
+
+/**
  * Build a Product from a raw backend object.
  * Handles field aliases from GET /menu (sku → id, price_eur → price, etc.).
  */
@@ -25,10 +47,7 @@ export function buildProduct(p: Record<string, unknown>): Product | null {
     volume: p.volume != null ? String(p.volume) : null,
     nb_pieces: p.nb_pieces != null ? Number(p.nb_pieces) : null,
     is_composable: Boolean(p.is_composable),
-    plateau_selection:
-      p.plateau_selection && typeof p.plateau_selection === 'object'
-        ? (p.plateau_selection as Record<string, number>)
-        : undefined,
+    plateau_selections: readPlateauSelections(p),
     plateau_target_qty: p.plateau_target_qty != null ? Number(p.plateau_target_qty) : undefined
   };
 }

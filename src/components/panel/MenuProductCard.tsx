@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import { Product } from '../../types';
 import { useShopperStore } from '../../store';
+import { remainingPlateauCount } from '../../utils/plateau';
 
 interface Props {
   product: Product;
@@ -46,6 +47,22 @@ export function MenuProductCard({
   // disabled suggestion — so the unit price is shown instead, explicitly labelled so
   // the two cases can't be read as the same number (see the `l'unité` tag below).
   const displayPrice = inMenu ? product.price * quantity : product.price;
+
+  // Every ordered plateau is prepared separately and must be composed, so the
+  // badge has to say how much of that is left — a bare "Composer" on a line of
+  // 5 read as one job to do, which is exactly how plateaux ended up
+  // half-composed and silently dropped at checkout.
+  const plateauxLeft = product.is_composable ? remainingPlateauCount(product, quantity) : 0;
+  const composeBadge = !product.is_composable
+    ? null
+    : !inMenu
+      ? 'Composer'
+      : plateauxLeft === 0
+        ? 'Composé'
+        : quantity > 1
+          ? `${quantity - plateauxLeft}/${quantity} composés`
+          : 'À composer';
+  const composeBadgeDone = inMenu && plateauxLeft === 0;
 
   if (horizontal) {
     return (
@@ -128,9 +145,15 @@ export function MenuProductCard({
               <div class="flex items-center gap-1.5 flex-wrap">
                 <PriceBig value={displayPrice} size="lg" />
                 {!inMenu && <span class="text-[10px] text-[#B0A898] leading-none">l'unité</span>}
-                {product.is_composable && (
-                  <span class="px-1.5 py-0.5 rounded-full bg-[#C7B287] text-white text-[9px] font-semibold uppercase tracking-wide leading-none">
-                    Composer
+                {composeBadge && (
+                  <span
+                    class={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide leading-none ${
+                      composeBadgeDone
+                        ? 'bg-white text-[#8D7A4E] border border-[#C7B287]'
+                        : 'bg-[#C7B287] text-white'
+                    }`}
+                  >
+                    {composeBadge}
                   </span>
                 )}
               </div>
@@ -253,9 +276,15 @@ export function MenuProductCard({
                 is_composable) — clicking the card opens the Composer flow
                 instead of the plain description (see AssistantExperience's
                 selectedProduct branch), this badge is just the visual cue. */}
-              {product.is_composable && (
-                <span class="px-1.5 py-0.5 rounded-full bg-[#C7B287] text-white text-[9px] font-semibold uppercase tracking-wide leading-none">
-                  Composer
+              {composeBadge && (
+                <span
+                  class={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide leading-none ${
+                    composeBadgeDone
+                      ? 'bg-white text-[#8D7A4E] border border-[#C7B287]'
+                      : 'bg-[#C7B287] text-white'
+                  }`}
+                >
+                  {composeBadge}
                 </span>
               )}
             </div>

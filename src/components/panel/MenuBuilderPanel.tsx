@@ -7,6 +7,7 @@ import { getStepIcon } from './icons';
 import { MenuProductCard } from './MenuProductCard';
 import { ShoppingListModal } from './ShoppingListModal';
 import { trackCta } from '../../api/track';
+import { isProductFullyComposed } from '../../utils/plateau';
 import cartIcon from '../../assets/icons/cart.svg?raw';
 import upIcon from '../../assets/icons/+(up).svg?raw';
 import leftIcon from '../../assets/icons/left.svg?raw';
@@ -227,21 +228,19 @@ export function MenuBuilderPanel({
   // none at all, if the Composer modal was never opened) is passed down to
   // ShoppingListModal, which surfaces it as a warning and disables "Ajouter
   // au panier" there (see that component) rather than blocking entry to the
-  // recap itself. plateau_target_qty is only ever set once the Composer
-  // modal has been validated at least once (see ComposeProductModal /
-  // handleComposeValidate) — undefined means "never composed", itself
-  // incomplete, not a pass.
+  // recap itself.
+  //
+  // "Fully" means EVERY ordered unit: each plateau is prepared separately, so
+  // 5 in the menu with only 3 composed is incomplete — see utils/plateau,
+  // which holds the one definition this, the modal, and the backend all use.
   const incompleteComposableProducts = useMemo(() => {
     const incomplete: Product[] = [];
     for (const items of Object.values(productsByStep)) {
       for (const p of items) {
         if (!p.is_composable) continue;
-        if ((quantities[p.id] ?? 0) <= 0) continue;
-        const chosenQty = p.plateau_selection
-          ? Object.values(p.plateau_selection).reduce((sum, q) => sum + q, 0)
-          : 0;
-        const complete = p.plateau_target_qty != null && chosenQty === p.plateau_target_qty;
-        if (!complete) incomplete.push(p);
+        const qty = quantities[p.id] ?? 0;
+        if (qty <= 0) continue;
+        if (!isProductFullyComposed(p, qty)) incomplete.push(p);
       }
     }
     return incomplete;
