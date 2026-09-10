@@ -1122,7 +1122,7 @@ export function AssistantExperience() {
     "Pour vous garantir la disponibilité de nos meilleurs produits traiteur, pourriez-vous m'indiquer votre code postal ?";
   const storeGreeting =
     'Je suis là pour vous aider à composer le menu parfait pour votre événement ✨\n\n' +
-    "Pour commencer... quel est l'heureux événement que vous souhaitez célébrer ?";
+    'Pour commencer... parlez-moi un peu de l\'événement que vous préparez.';
   // serverGreetingKind (set by openConversation from the backend's
   // initial_greeting_kind, itself frozen server-side at the conversation's
   // first message — see waib-api's tools.stamp_initial_greeting_kind) takes
