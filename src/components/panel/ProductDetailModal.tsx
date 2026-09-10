@@ -112,7 +112,7 @@ export function ProductDetailModal({ productId, onClose }: Props) {
   }, [productId, jwt, sessionId]);
 
   return (
-    <div class="absolute inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       {/* Backdrop */}
       <motion.div
         class="absolute inset-0 bg-black/40"
