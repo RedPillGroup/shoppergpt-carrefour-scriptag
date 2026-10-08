@@ -4,7 +4,7 @@ import { AssistantExperience } from './components/AssistantExperience';
 import { getInitialSessionId } from './api/config';
 import { initDOMEventListeners } from './events';
 import { useShopperStore } from './store';
-import styles from './styles/tailwind.css';
+import { injectStyles } from './shadow';
 import satisfyWoff2 from './assets/fonts/Satisfy-Regular.woff2';
 
 const queryClient = new QueryClient({
@@ -28,17 +28,8 @@ function injectDocumentFonts() {
   document.head.appendChild(style);
 }
 
-function injectStyles(shadow: ShadowRoot) {
-  const styleEl = document.createElement('style');
-  // Make the shadow host (#shoppergpt-chat) a scroll boundary: the widget scrolls
-  // INTERNALLY, so the host must clip. Without this, a host that sets only a height
-  // (e.g. Carrefour's OpenMage page) isn't a boundary — internal scrolls leak to the
-  // HOST PAGE and the inner chat list never becomes the effective scroller. The
-  // sandbox host sets this in its own CSS; `:host` applies it to every embed. This
-  // one rule keeps ALL widget scrolling (chat auto-scroll, step nav, focus) contained.
-  styleEl.textContent = ':host{overflow:hidden;min-height:0;}\n' + (styles as unknown as string);
-  shadow.appendChild(styleEl);
-}
+// The shadow host (#shoppergpt-chat) must clip: see the note below.
+const HOST_CLIP_CSS = ':host{overflow:hidden;min-height:0;}\n';
 
 function bootstrap() {
   injectDocumentFonts();
@@ -67,7 +58,7 @@ function bootstrap() {
     // the widget grows to its unclipped content — so this is a real integration
     // requirement, not a nicety.
     const shadow = embeddedChatMount.attachShadow({ mode: 'open' });
-    injectStyles(shadow);
+    injectStyles(shadow, HOST_CLIP_CSS);
     const mountPoint = document.createElement('div');
     mountPoint.style.cssText = 'height:100%;display:flex;flex-direction:column;';
     shadow.appendChild(mountPoint);

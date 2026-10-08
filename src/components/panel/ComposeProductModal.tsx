@@ -5,6 +5,7 @@ import { getApiUrl } from '../../api/config';
 import { sessionHeaders } from '../../api/menu';
 import { useShopperStore } from '../../store';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { ModalPortal } from '../ModalPortal';
 import {
   PlateauSelection,
   isPlateauComplete,
@@ -179,9 +180,7 @@ export function ComposeProductModal({
   // user believes they ordered (see routes.py's own matching gate).
   const incompleteIndexes = useMemo(
     () =>
-      selections
-        .map((sel, i) => (isPlateauComplete(sel, targetQty) ? -1 : i))
-        .filter(i => i >= 0),
+      selections.map((sel, i) => (isPlateauComplete(sel, targetQty) ? -1 : i)).filter(i => i >= 0),
     [selections, targetQty]
   );
   const allComplete = targetQty > 0 && incompleteIndexes.length === 0;
@@ -250,113 +249,114 @@ export function ComposeProductModal({
   };
 
   return (
-    <div
-      class="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={closeAndPersist}
-    >
-      {/* Backdrop */}
-      <motion.div
-        class="absolute inset-0 bg-black/40"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-      />
-
-      {/* Modal panel */}
-      <motion.div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={detail?.composition_plateau?.title ?? 'Composez votre plateau'}
-        tabIndex={-1}
-        class="relative z-10 bg-white shadow-2xl w-full max-w-[420px] max-h-[90%] overflow-hidden flex flex-col outline-none"
-        onClick={e => e.stopPropagation()}
-        initial={{ opacity: 0, y: 16, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 12, scale: 0.97 }}
-        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+    <ModalPortal>
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        onClick={closeAndPersist}
       >
-        {/* Close button */}
-        <button
-          onClick={closeAndPersist}
-          class="absolute top-3 right-3 z-20 w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center text-[#6B7280] hover:text-[#1A1A2E] hover:bg-white transition-colors"
-          aria-label="Fermer"
+        {/* Backdrop */}
+        <motion.div
+          class="absolute inset-0 bg-black/40"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        />
+
+        {/* Modal panel */}
+        <motion.div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={detail?.composition_plateau?.title ?? 'Composez votre plateau'}
+          tabIndex={-1}
+          class="relative z-10 bg-white shadow-2xl w-full max-w-[420px] max-h-[90%] overflow-hidden flex flex-col outline-none"
+          onClick={e => e.stopPropagation()}
+          initial={{ opacity: 0, y: 16, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 12, scale: 0.97 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path
-              d="M2 2l10 10M12 2L2 12"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
+          {/* Close button */}
+          <button
+            onClick={closeAndPersist}
+            class="absolute top-3 right-3 z-20 w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center text-[#6B7280] hover:text-[#1A1A2E] hover:bg-white transition-colors"
+            aria-label="Fermer"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M2 2l10 10M12 2L2 12"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
 
-        {loading && (
-          <div class="p-6 flex flex-col gap-3 animate-pulse">
-            <div class="h-4 w-2/3 bg-[#E8E4DE] rounded" />
-            <div class="h-20 w-full bg-[#F3F1EE] rounded" />
-          </div>
-        )}
-        {error && !loading && (
-          <div class="p-6 text-center text-[#6B7280] text-sm">
-            Impossible de charger ce produit à composer.
-          </div>
-        )}
-        {detail && !loading && !detail.composition_plateau && (
-          <div class="p-6 text-center text-[#6B7280] text-sm">
-            Ce produit n'a pas (ou plus) de composition disponible.
-          </div>
-        )}
+          {loading && (
+            <div class="p-6 flex flex-col gap-3 animate-pulse">
+              <div class="h-4 w-2/3 bg-[#E8E4DE] rounded" />
+              <div class="h-20 w-full bg-[#F3F1EE] rounded" />
+            </div>
+          )}
+          {error && !loading && (
+            <div class="p-6 text-center text-[#6B7280] text-sm">
+              Impossible de charger ce produit à composer.
+            </div>
+          )}
+          {detail && !loading && !detail.composition_plateau && (
+            <div class="p-6 text-center text-[#6B7280] text-sm">
+              Ce produit n'a pas (ou plus) de composition disponible.
+            </div>
+          )}
 
-        {/* Product context — name/price/persons/delay still matter even though
+          {/* Product context — name/price/persons/delay still matter even though
             the main point of this modal is picking pieces, not reading a
             description. Leads the modal (above the plateau selector), so the
             product being composed reads as the frame around the whole flow,
             not just another row inside the scrolling content. */}
-        {detail && !loading && detail.composition_plateau && (
-          <div class="shrink-0 bg-white flex gap-3 p-4 pr-8">
-            <img
-              class="w-14 h-14 rounded-lg object-cover shrink-0 bg-[#F3F1EE]"
-              src={detail.image_url || PLACEHOLDER}
-              alt={detail.name}
-              loading="lazy"
-              onError={e => {
-                (e.currentTarget as HTMLImageElement).src = PLACEHOLDER;
-              }}
-            />
-            <div class="flex flex-col gap-0.5 min-w-0">
-              <h2 class="m-0 text-[13px] font-bold text-[#1A1A2E] leading-snug truncate">
-                {detail.name}
-              </h2>
-              <div class="flex items-baseline gap-2 flex-wrap">
-                {detail.price_eur != null && (
-                  <span class="text-[14px] font-bold text-[#E2422B]">
-                    {detail.price_eur.toFixed(2).replace('.', ',')} €
+          {detail && !loading && detail.composition_plateau && (
+            <div class="shrink-0 bg-white flex gap-3 p-4 pr-8">
+              <img
+                class="w-14 h-14 rounded-lg object-cover shrink-0 bg-[#F3F1EE]"
+                src={detail.image_url || PLACEHOLDER}
+                alt={detail.name}
+                loading="lazy"
+                onError={e => {
+                  (e.currentTarget as HTMLImageElement).src = PLACEHOLDER;
+                }}
+              />
+              <div class="flex flex-col gap-0.5 min-w-0">
+                <h2 class="m-0 text-[13px] font-bold text-[#1A1A2E] leading-snug truncate">
+                  {detail.name}
+                </h2>
+                <div class="flex items-baseline gap-2 flex-wrap">
+                  {detail.price_eur != null && (
+                    <span class="text-[14px] font-bold text-[#E2422B]">
+                      {detail.price_eur.toFixed(2).replace('.', ',')} €
+                    </span>
+                  )}
+                  {detail.expression_pvc && (
+                    <span class="text-[10px] text-[#6B7280]">{detail.expression_pvc}</span>
+                  )}
+                </div>
+                {detail.delai_prepa != null && detail.delai_prepa > 0 && (
+                  <span class="text-[10px] text-[#9A8C78]">
+                    {detail.delai_prepa} jour{detail.delai_prepa > 1 ? 's' : ''} de préparation
                   </span>
                 )}
-                {detail.expression_pvc && (
-                  <span class="text-[10px] text-[#6B7280]">{detail.expression_pvc}</span>
-                )}
               </div>
-              {detail.delai_prepa != null && detail.delai_prepa > 0 && (
-                <span class="text-[10px] text-[#9A8C78]">
-                  {detail.delai_prepa} jour{detail.delai_prepa > 1 ? 's' : ''} de préparation
-                </span>
-              )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Per-plateau stepper — only when there's more than one to compose.
+          {/* Per-plateau stepper — only when there's more than one to compose.
             Doubles as the statement of what's required (every plateau, not
             just this one) and as direct navigation: a user who wants to fix
             plateau 2 after finishing 5 shouldn't have to walk back through
             the others. */}
-        {detail && !loading && detail.composition_plateau && isMulti && (
-          <div class="shrink-0 border-t border-b border-[#F0EDE8] bg-[#FBF8F2] px-4 pt-2 pb-2.5 pr-8">
-            {/* The chips themselves already say "which one, out of how many" —
+          {detail && !loading && detail.composition_plateau && isMulti && (
+            <div class="shrink-0 border-t border-b border-[#F0EDE8] bg-[#FBF8F2] px-4 pt-2 pb-2.5 pr-8">
+              {/* The chips themselves already say "which one, out of how many" —
                 a highlighted chip among N is that position — so a separate
                 "Plateau X sur Y" line only repeated the word "plateau" a
                 second time for no new information. Leading with the selector
@@ -364,136 +364,137 @@ export function ComposeProductModal({
                 below a title that said the same thing. pr-8 on the whole
                 block (not just this label) keeps a full row of chips from
                 running under the close button too. */}
-            <span class="block leading-none text-[10px] font-semibold uppercase tracking-wide text-[#9A8C78]">
-              Plateaux
-            </span>
-            <div
-              class="flex flex-wrap gap-1.5 mt-2"
-              role="tablist"
-              aria-label="Plateaux à composer"
-            >
-              {selections.map((sel, index) => {
-                const complete = isPlateauComplete(sel, targetQty);
-                const isActive = index === activeIndex;
-                const started = selectionSize(sel) > 0;
-                return (
-                  <button
-                    key={index}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    aria-label={`Plateau ${index + 1}${
-                      complete ? ', composé' : started ? ', en cours' : ', à composer'
-                    }`}
-                    onClick={() => setActiveIndex(index)}
-                    class={`relative h-7 min-w-[28px] px-2 rounded-full text-[11px] font-bold tabular-nums transition-colors ${
-                      isActive
-                        ? 'bg-[#C7B287] text-white shadow-sm'
-                        : complete
-                          ? 'bg-white text-[#8D7A4E] border border-[#C7B287]'
-                          : started
-                            ? 'bg-white text-[#9A8C78] border border-dashed border-[#C7B287]'
-                            : 'bg-white text-[#B9AFA0] border border-[#E8E4DE]'
-                    }`}
-                  >
-                    {index + 1}
-                    {complete && (
-                      <span
-                        aria-hidden="true"
-                        class={`absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full text-[7px] font-bold ${
-                          isActive ? 'bg-white text-[#C7B287]' : 'bg-[#C7B287] text-white'
-                        }`}
-                      >
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+              <span class="block leading-none text-[10px] font-semibold uppercase tracking-wide text-[#9A8C78]">
+                Plateaux
+              </span>
+              <div
+                class="flex flex-wrap gap-1.5 mt-2"
+                role="tablist"
+                aria-label="Plateaux à composer"
+              >
+                {selections.map((sel, index) => {
+                  const complete = isPlateauComplete(sel, targetQty);
+                  const isActive = index === activeIndex;
+                  const started = selectionSize(sel) > 0;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      aria-label={`Plateau ${index + 1}${
+                        complete ? ', composé' : started ? ', en cours' : ', à composer'
+                      }`}
+                      onClick={() => setActiveIndex(index)}
+                      class={`relative h-7 min-w-[28px] px-2 rounded-full text-[11px] font-bold tabular-nums transition-colors ${
+                        isActive
+                          ? 'bg-[#C7B287] text-white shadow-sm'
+                          : complete
+                            ? 'bg-white text-[#8D7A4E] border border-[#C7B287]'
+                            : started
+                              ? 'bg-white text-[#9A8C78] border border-dashed border-[#C7B287]'
+                              : 'bg-white text-[#B9AFA0] border border-[#E8E4DE]'
+                      }`}
+                    >
+                      {index + 1}
+                      {complete && (
+                        <span
+                          aria-hidden="true"
+                          class={`absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full text-[7px] font-bold ${
+                            isActive ? 'bg-white text-[#C7B287]' : 'bg-[#C7B287] text-white'
+                          }`}
+                        >
+                          ✓
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <p class="mt-2 text-[10px] leading-snug text-[#9A8C78]">
+                Chaque plateau est préparé séparément : composez-les tous, à l'identique ou
+                différemment.
+              </p>
             </div>
-            <p class="mt-2 text-[10px] leading-snug text-[#9A8C78]">
-              Chaque plateau est préparé séparément : composez-les tous, à l'identique ou
-              différemment.
-            </p>
-          </div>
-        )}
+          )}
 
-        {detail && !loading && detail.composition_plateau && (
-          <ComposeContent
-            plateau={detail.composition_plateau}
-            selection={selection}
-            activeIndex={activeIndex}
-            onAdd={addPiece}
-            onRemove={removePiece}
-          />
-        )}
+          {detail && !loading && detail.composition_plateau && (
+            <ComposeContent
+              plateau={detail.composition_plateau}
+              selection={selection}
+              activeIndex={activeIndex}
+              onAdd={addPiece}
+              onRemove={removePiece}
+            />
+          )}
 
-        {detail?.composition_plateau && isMulti && (
-          <div class="shrink-0 border-t border-b border-[#F0EDE8] bg-[#FBF8F2] px-4 py-2">
-            {/* A persistent toggle, not a one-shot action — checking it syncs
+          {detail?.composition_plateau && isMulti && (
+            <div class="shrink-0 border-t border-b border-[#F0EDE8] bg-[#FBF8F2] px-4 py-2">
+              {/* A persistent toggle, not a one-shot action — checking it syncs
                 every plateau to this one immediately AND keeps them in step
                 as the user keeps composing, for the common "N identical
                 plateaux" case. Always here (not just once complete): the
                 point is to let the user opt in before doing the work once,
                 not after doing it N times. */}
-            <label class="flex items-center gap-2 text-[10px] font-semibold text-[#1A1A2E] cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={syncAll}
-                onChange={e => toggleSyncAll((e.target as HTMLInputElement).checked)}
-                class="h-4 w-4 rounded accent-black cursor-pointer"
-              />
-              Appliquer à tous les plateaux
-            </label>
-          </div>
-        )}
-
-        {detail?.composition_plateau && (
-          <div class="shrink-0 border-t bg-[#C8B288] px-4 py-3 flex items-center justify-between gap-3">
-            <div class="flex flex-col">
-              <span class="text-[13px] font-400 text-white">
-                {remaining > 0
-                  ? 'Sélectionnez encore'
-                  : isMulti && !allComplete
-                    ? `Reste ${incompleteIndexes.length} plateau${
-                        incompleteIndexes.length > 1 ? 'x' : ''
-                      } à composer`
-                    : 'Sélection complète'}
-              </span>
-              {remaining > 0 && (
-                <span class="text-[20px] font-700 text-white mt-[-4px]">
-                  {remaining} produit{remaining > 1 ? 's' : ''}
-                </span>
-              )}
+              <label class="flex items-center gap-2 text-[10px] font-semibold text-[#1A1A2E] cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={syncAll}
+                  onChange={e => toggleSyncAll((e.target as HTMLInputElement).checked)}
+                  class="h-4 w-4 rounded accent-black cursor-pointer"
+                />
+                Appliquer à tous les plateaux
+              </label>
             </div>
-            {/* One primary action that always means "move this forward":
+          )}
+
+          {detail?.composition_plateau && (
+            <div class="shrink-0 border-t bg-[#C8B288] px-4 py-3 flex items-center justify-between gap-3">
+              <div class="flex flex-col">
+                <span class="text-[13px] font-400 text-white">
+                  {remaining > 0
+                    ? 'Sélectionnez encore'
+                    : isMulti && !allComplete
+                      ? `Reste ${incompleteIndexes.length} plateau${
+                          incompleteIndexes.length > 1 ? 'x' : ''
+                        } à composer`
+                      : 'Sélection complète'}
+                </span>
+                {remaining > 0 && (
+                  <span class="text-[20px] font-700 text-white mt-[-4px]">
+                    {remaining} produit{remaining > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              {/* One primary action that always means "move this forward":
                 finish the order when everything is composed, otherwise jump
                 to the next plateau that still needs pieces. Disabled while
                 the current plateau is unfinished, so the button never skips
                 over incomplete work. */}
-            <button
-              type="button"
-              disabled={!activeComplete}
-              onClick={() => {
-                if (allComplete) {
-                  persist();
-                  onClose();
-                  return;
-                }
-                goToNextIncomplete();
-              }}
-              class={`px-5 py-2 rounded-full text-[12px] font-semibold uppercase tracking-wide transition-colors ${
-                activeComplete
-                  ? 'bg-white text-[#C7B287] cursor-pointer hover:bg-[#FBF8F2]'
-                  : 'bg-white/40 text-white/70 cursor-not-allowed'
-              }`}
-            >
-              {!isMulti ? 'Valider' : allComplete ? 'Terminer' : 'Plateau suivant'}
-            </button>
-          </div>
-        )}
-      </motion.div>
-    </div>
+              <button
+                type="button"
+                disabled={!activeComplete}
+                onClick={() => {
+                  if (allComplete) {
+                    persist();
+                    onClose();
+                    return;
+                  }
+                  goToNextIncomplete();
+                }}
+                class={`px-5 py-2 rounded-full text-[12px] font-semibold uppercase tracking-wide transition-colors ${
+                  activeComplete
+                    ? 'bg-white text-[#C7B287] cursor-pointer hover:bg-[#FBF8F2]'
+                    : 'bg-white/40 text-white/70 cursor-not-allowed'
+                }`}
+              >
+                {!isMulti ? 'Valider' : allComplete ? 'Terminer' : 'Plateau suivant'}
+              </button>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </ModalPortal>
   );
 }
 

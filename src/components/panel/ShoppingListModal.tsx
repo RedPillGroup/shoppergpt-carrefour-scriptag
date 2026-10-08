@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { motion } from 'framer-motion';
 import { Product } from '../../types';
 import { remainingPlateauCount } from '../../utils/plateau';
+import { ModalPortal } from '../ModalPortal';
 
 interface Props {
   productsByStep: Record<string, Product[]>;
@@ -97,10 +98,7 @@ export function ShoppingListModal({
   // unit is prepared separately, so "3 of your 5 plateaux left" is the only
   // honest way to say it. Read per row below.
   const missingByProduct = new Map(
-    incompleteComposableProducts.map(p => [
-      p.id,
-      remainingPlateauCount(p, quantities[p.id] ?? 0)
-    ])
+    incompleteComposableProducts.map(p => [p.id, remainingPlateauCount(p, quantities[p.id] ?? 0)])
   );
   const canAddToCart = incompleteComposableProducts.length === 0;
   const addToCartTooltip = canAddToCart
@@ -166,194 +164,201 @@ export function ShoppingListModal({
     .filter((s): s is Row => s !== null);
 
   return (
-    // fixed (not absolute): the panel this modal lives in is only the top
-    // fraction of the screen on mobile-collapsed — `absolute inset-0` would
-    // just cover that fraction (its own positioned ancestor), confining the
-    // modal to a tiny box instead of centering over the whole widget/chat.
-    // `fixed` escapes to the viewport instead, same size/style otherwise.
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <motion.div
-        class="absolute inset-0 bg-black/40"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-      />
+    // Rendered through <ModalPortal> (a body-level shadow root) and `fixed`, so the
+    // backdrop covers the whole page: neither the panel's own positioned ancestor
+    // (mobile-collapsed it is only a fraction of the screen) nor a transformed
+    // ancestor on the host page can confine it.
+    <ModalPortal>
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <motion.div
+          class="absolute inset-0 bg-black/40"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        />
 
-      <motion.div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Votre liste de courses"
-        tabIndex={-1}
-        class="relative z-10 bg-white shadow-2xl w-full max-w-[400px] max-h-[90%] overflow-hidden flex flex-col outline-none"
-        onClick={e => e.stopPropagation()}
-        initial={{ opacity: 0, y: 16, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 12, scale: 0.97 }}
-        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      >
-        {/* Header — no divider under the title, matches the reference design */}
-        <div class="relative shrink-0 px-5 pt-5 pb-2">
-          <h2 class="m-0 font-['Satisfy'] font-normal text-[#C7B287] text-2xl leading-none">
-            Votre liste de courses
-          </h2>
-          <button
-            onClick={onClose}
-            class="absolute top-3 right-3 w-8 h-8 rounded-full bg-[#C7B287] shadow flex items-center justify-center text-white hover:bg-[#B8A176] transition-colors border-0"
-            aria-label="Fermer"
-          >
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path
-                d="M2 2l10 10M12 2L2 12"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-          </button>
-        </div>
+        <motion.div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Votre liste de courses"
+          tabIndex={-1}
+          class="relative z-10 bg-white shadow-2xl w-full max-w-[400px] max-h-[90%] overflow-hidden flex flex-col outline-none"
+          onClick={e => e.stopPropagation()}
+          initial={{ opacity: 0, y: 16, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 12, scale: 0.97 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* Header — no divider under the title, matches the reference design */}
+          <div class="relative shrink-0 px-5 pt-5 pb-2">
+            <h2 class="m-0 font-['Satisfy'] font-normal text-[#C7B287] text-2xl leading-none">
+              Votre liste de courses
+            </h2>
+            <button
+              onClick={onClose}
+              class="absolute top-3 right-3 w-8 h-8 rounded-full bg-[#C7B287] shadow flex items-center justify-center text-white hover:bg-[#B8A176] transition-colors border-0"
+              aria-label="Fermer"
+            >
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path
+                  d="M2 2l10 10M12 2L2 12"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </div>
 
-        {/* Scrollable body */}
-        <div class="flex-1 overflow-y-auto min-h-0 px-5 pt-2 pb-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]">
-          {rows.length === 0 ? (
-            <p class="text-center text-[12px] text-[#9A8C78] py-6 m-0">
-              Votre liste est vide pour l'instant.
-            </p>
-          ) : (
-            <div class="flex flex-col gap-4">
-              {rows.map(({ step, items, underCovered }) => (
-                <div key={step}>
-                  <h3 class="m-0 mb-2 pb-1 border-b-[2px] border-[#878787] border-solid text-[11px] font-bold uppercase tracking-wide text-[#878787]">
-                    {step}
-                  </h3>
-                  {underCovered && (
-                    <div class="flex items-start gap-1.5 mb-2 text-[#D14343]">
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        class="shrink-0 mt-[1px]"
-                      >
-                        <circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.4" />
-                        <path
-                          d="M10 6v5"
-                          stroke="currentColor"
-                          stroke-width="1.4"
-                          stroke-linecap="round"
-                        />
-                        <circle cx="10" cy="13.6" r="0.9" fill="currentColor" />
-                      </svg>
-                      <span class="text-[11px] leading-snug">
-                        Nombre{' '}
-                        {step.toLowerCase().startsWith('a') || step.toLowerCase().startsWith('e')
-                          ? "d'"
-                          : 'de '}
-                        {step.toLowerCase()}{' '}
-                        {FEMININE_PLURAL_STEPS.has(step) ? 'inférieures' : 'inférieurs'} au nombre
-                        de convives
-                      </span>
-                    </div>
-                  )}
-                  <ul class="m-0 p-0 list-none flex flex-col gap-2">
-                    {items.map(item => (
-                      <li key={item.id} class="flex flex-col gap-1">
-                        <div class="flex items-center gap-3">
-                          <span class="text-[12px] font-semibold text-[#878787] shrink-0">
-                            {item.qty} X
-                          </span>
-                          <span class="flex-1 text-[12px] text-[#878787] leading-snug">
-                            {item.name}
-                          </span>
-                          <span class="text-[12px] font-semibold text-[#878787] shrink-0 tabular-nums">
-                            {fmtEur(item.lineTotal)}
-                          </span>
-                        </div>
-                        {incompleteIds.has(item.id) && (
-                          <div class="flex items-start gap-1.5 text-[#D14343]">
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 20 20"
-                              fill="none"
-                              class="shrink-0 mt-[1px]"
-                            >
-                              <circle
-                                cx="10"
-                                cy="10"
-                                r="8.5"
-                                stroke="currentColor"
-                                stroke-width="1.4"
-                              />
-                              <path
-                                d="M10 6v5"
-                                stroke="currentColor"
-                                stroke-width="1.4"
-                                stroke-linecap="round"
-                              />
-                              <circle cx="10" cy="13.6" r="0.9" fill="currentColor" />
-                            </svg>
-                            <span class="text-[11px] leading-snug">
-                              {missingByProduct.get(item.id) === item.qty
-                                ? item.qty > 1
-                                  ? `${item.qty} plateaux à composer — ouvrez-les pour choisir vos produits`
-                                  : 'Plateau pas encore composé — ouvrez-le pour choisir vos produits'
-                                : `${missingByProduct.get(item.id)} plateau${
-                                    (missingByProduct.get(item.id) ?? 0) > 1 ? 'x' : ''
-                                  } sur ${item.qty} encore à composer — ouvrez-${
-                                    (missingByProduct.get(item.id) ?? 0) > 1 ? 'les' : 'le'
-                                  } pour terminer`}
+          {/* Scrollable body */}
+          <div class="flex-1 overflow-y-auto min-h-0 px-5 pt-2 pb-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]">
+            {rows.length === 0 ? (
+              <p class="text-center text-[12px] text-[#9A8C78] py-6 m-0">
+                Votre liste est vide pour l'instant.
+              </p>
+            ) : (
+              <div class="flex flex-col gap-4">
+                {rows.map(({ step, items, underCovered }) => (
+                  <div key={step}>
+                    <h3 class="m-0 mb-2 pb-1 border-b-[2px] border-[#878787] border-solid text-[11px] font-bold uppercase tracking-wide text-[#878787]">
+                      {step}
+                    </h3>
+                    {underCovered && (
+                      <div class="flex items-start gap-1.5 mb-2 text-[#D14343]">
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          class="shrink-0 mt-[1px]"
+                        >
+                          <circle
+                            cx="10"
+                            cy="10"
+                            r="8.5"
+                            stroke="currentColor"
+                            stroke-width="1.4"
+                          />
+                          <path
+                            d="M10 6v5"
+                            stroke="currentColor"
+                            stroke-width="1.4"
+                            stroke-linecap="round"
+                          />
+                          <circle cx="10" cy="13.6" r="0.9" fill="currentColor" />
+                        </svg>
+                        <span class="text-[11px] leading-snug">
+                          Nombre{' '}
+                          {step.toLowerCase().startsWith('a') || step.toLowerCase().startsWith('e')
+                            ? "d'"
+                            : 'de '}
+                          {step.toLowerCase()}{' '}
+                          {FEMININE_PLURAL_STEPS.has(step) ? 'inférieures' : 'inférieurs'} au nombre
+                          de convives
+                        </span>
+                      </div>
+                    )}
+                    <ul class="m-0 p-0 list-none flex flex-col gap-2">
+                      {items.map(item => (
+                        <li key={item.id} class="flex flex-col gap-1">
+                          <div class="flex items-center gap-3">
+                            <span class="text-[12px] font-semibold text-[#878787] shrink-0">
+                              {item.qty} X
+                            </span>
+                            <span class="flex-1 text-[12px] text-[#878787] leading-snug">
+                              {item.name}
+                            </span>
+                            <span class="text-[12px] font-semibold text-[#878787] shrink-0 tabular-nums">
+                              {fmtEur(item.lineTotal)}
                             </span>
                           </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Footer — total + confirm. Smaller on mobile (less padding, smaller
-            price/button) — the md: sizes below restore the original desktop scale. */}
-        <div class="shrink-0 bg-[#C7B287] px-4 py-2.5 md:px-5 md:py-4 flex flex-col items-center gap-1.5 md:gap-3">
-          <div class="w-full flex items-center justify-between gap-2">
-            <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6]">
-              Coût total
-            </span>
-            <span class="text-[17px] md:text-[22px] font-bold text-white tabular-nums">
-              {fmtEur(totalCost)}
-            </span>
+                          {incompleteIds.has(item.id) && (
+                            <div class="flex items-start gap-1.5 text-[#D14343]">
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 20 20"
+                                fill="none"
+                                class="shrink-0 mt-[1px]"
+                              >
+                                <circle
+                                  cx="10"
+                                  cy="10"
+                                  r="8.5"
+                                  stroke="currentColor"
+                                  stroke-width="1.4"
+                                />
+                                <path
+                                  d="M10 6v5"
+                                  stroke="currentColor"
+                                  stroke-width="1.4"
+                                  stroke-linecap="round"
+                                />
+                                <circle cx="10" cy="13.6" r="0.9" fill="currentColor" />
+                              </svg>
+                              <span class="text-[11px] leading-snug">
+                                {missingByProduct.get(item.id) === item.qty
+                                  ? item.qty > 1
+                                    ? `${item.qty} plateaux à composer — ouvrez-les pour choisir vos produits`
+                                    : 'Plateau pas encore composé — ouvrez-le pour choisir vos produits'
+                                  : `${missingByProduct.get(item.id)} plateau${
+                                      (missingByProduct.get(item.id) ?? 0) > 1 ? 'x' : ''
+                                    } sur ${item.qty} encore à composer — ouvrez-${
+                                      (missingByProduct.get(item.id) ?? 0) > 1 ? 'les' : 'le'
+                                    } pour terminer`}
+                              </span>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          {/* Empty list uses the native `disabled` (nothing to explain there).
+
+          {/* Footer — total + confirm. Smaller on mobile (less padding, smaller
+            price/button) — the md: sizes below restore the original desktop scale. */}
+          <div class="shrink-0 bg-[#C7B287] px-4 py-2.5 md:px-5 md:py-4 flex flex-col items-center gap-1.5 md:gap-3">
+            <div class="w-full flex items-center justify-between gap-2">
+              <span class="text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-[#F7F2E6]">
+                Coût total
+              </span>
+              <span class="text-[17px] md:text-[22px] font-bold text-white tabular-nums">
+                {fmtEur(totalCost)}
+              </span>
+            </div>
+            {/* Empty list uses the native `disabled` (nothing to explain there).
               An incomplete plateau instead guards the click handler +
               aria-disabled + dimmed styling — same reasoning as the tooltip
               pattern elsewhere: native `disabled` kills hover in Chrome,
               which would kill the tooltip explaining WHY right along with it. */}
-          <span class="relative group">
-            <button
-              onClick={() => canAddToCart && onValidate()}
-              disabled={rows.length === 0}
-              aria-disabled={!canAddToCart}
-              class={`rounded-[30px] px-4 py-1 border border-[#AAAAAA] text-[#8D7A4E] text-[10px] md:text-[11px] font-bold uppercase tracking-wide transition-opacity disabled:cursor-not-allowed disabled:opacity-50 ${
-                canAddToCart
-                  ? 'bg-white cursor-pointer hover:opacity-90'
-                  : 'bg-[#F0EDE8] cursor-not-allowed opacity-70'
-              }`}
-            >
-              Ajouter au panier
-            </button>
-            {addToCartTooltip && (
-              <span class="pointer-events-none absolute bottom-full right-0 mb-2 w-56 rounded-lg bg-[#1A1A2E] px-3 py-2 text-[11px] leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 z-30">
-                {addToCartTooltip}
-                <span class="absolute top-full right-4 -mt-1 h-2 w-2 rotate-45 bg-[#1A1A2E]" />
-              </span>
-            )}
-          </span>
-        </div>
-      </motion.div>
-    </div>
+            <span class="relative group">
+              <button
+                onClick={() => canAddToCart && onValidate()}
+                disabled={rows.length === 0}
+                aria-disabled={!canAddToCart}
+                class={`rounded-[30px] px-4 py-1 border border-[#AAAAAA] text-[#8D7A4E] text-[10px] md:text-[11px] font-bold uppercase tracking-wide transition-opacity disabled:cursor-not-allowed disabled:opacity-50 ${
+                  canAddToCart
+                    ? 'bg-white cursor-pointer hover:opacity-90'
+                    : 'bg-[#F0EDE8] cursor-not-allowed opacity-70'
+                }`}
+              >
+                Ajouter au panier
+              </button>
+              {addToCartTooltip && (
+                <span class="pointer-events-none absolute bottom-full right-0 mb-2 w-56 rounded-lg bg-[#1A1A2E] px-3 py-2 text-[11px] leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 z-30">
+                  {addToCartTooltip}
+                  <span class="absolute top-full right-4 -mt-1 h-2 w-2 rotate-45 bg-[#1A1A2E]" />
+                </span>
+              )}
+            </span>
+          </div>
+        </motion.div>
+      </div>
+    </ModalPortal>
   );
 }

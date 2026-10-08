@@ -5,6 +5,7 @@ import { getApiUrl } from '../../api/config';
 import { sessionHeaders } from '../../api/menu';
 import { useShopperStore } from '../../store';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { ModalPortal } from '../ModalPortal';
 
 interface CompositionPiece {
   name: string;
@@ -112,55 +113,57 @@ export function ProductDetailModal({ productId, onClose }: Props) {
   }, [productId, jwt, sessionId]);
 
   return (
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      {/* Backdrop */}
-      <motion.div
-        class="absolute inset-0 bg-black/40"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-      />
+    <ModalPortal>
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        {/* Backdrop */}
+        <motion.div
+          class="absolute inset-0 bg-black/40"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        />
 
-      {/* Modal panel */}
-      <motion.div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={detail?.name ?? 'Détails du produit'}
-        tabIndex={-1}
-        class="relative z-10 bg-white shadow-2xl w-full max-w-[400px] max-h-[90%] overflow-y-auto flex flex-col outline-none [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]"
-        onClick={e => e.stopPropagation()}
-        initial={{ opacity: 0, y: 16, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 12, scale: 0.97 }}
-        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      >
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          class="absolute top-3 right-3 z-20 w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center text-[#6B7280] hover:text-[#1A1A2E] hover:bg-white transition-colors"
-          aria-label="Fermer"
+        {/* Modal panel */}
+        <motion.div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={detail?.name ?? 'Détails du produit'}
+          tabIndex={-1}
+          class="relative z-10 bg-white shadow-2xl w-full max-w-[400px] max-h-[90%] overflow-y-auto flex flex-col outline-none [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[#d1d5db]"
+          onClick={e => e.stopPropagation()}
+          initial={{ opacity: 0, y: 16, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 12, scale: 0.97 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path
-              d="M2 2l10 10M12 2L2 12"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            class="absolute top-3 right-3 z-20 w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center text-[#6B7280] hover:text-[#1A1A2E] hover:bg-white transition-colors"
+            aria-label="Fermer"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M2 2l10 10M12 2L2 12"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
 
-        {loading && <SkeletonContent />}
-        {error && !loading && (
-          <div class="p-6 text-center text-[#6B7280] text-sm">
-            Impossible de charger les détails du produit.
-          </div>
-        )}
-        {detail && !loading && <DetailContent detail={detail} />}
-      </motion.div>
-    </div>
+          {loading && <SkeletonContent />}
+          {error && !loading && (
+            <div class="p-6 text-center text-[#6B7280] text-sm">
+              Impossible de charger les détails du produit.
+            </div>
+          )}
+          {detail && !loading && <DetailContent detail={detail} />}
+        </motion.div>
+      </div>
+    </ModalPortal>
   );
 }
 
