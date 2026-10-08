@@ -1,4 +1,5 @@
 const path = require("path");
+const webpack = require("webpack");
 
 module.exports = (env, argv) => {
   const isProd = argv.mode === "production";
@@ -75,6 +76,14 @@ module.exports = (env, argv) => {
         },
       ],
     },
+    plugins: [
+      // Build-time kill switch: SHOPPERGPT_DISABLED=1 (set on the Vercel Production
+      // environment only) ships a widget that shows an "unavailable" notice with
+      // disabled controls and makes no network request. See DisabledNotice.tsx.
+      new webpack.DefinePlugin({
+        __WIDGET_DISABLED__: JSON.stringify(process.env.SHOPPERGPT_DISABLED === "1"),
+      }),
+    ],
     optimization: {
       minimize: isProd,
     },
